@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.AuthService.Domain", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.AuthService.Domain\ByteBattlesServer.Microservices.AuthService.Domain.csproj", "{FAE04D8E-A11F-49EF-9A07-592485A05FC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Domain", "ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj", "{4D9458D9-5F6D-4C09-BF49-79CF5513BDDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.AuthServices.Application", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.AuthServices.Application\ByteBattlesServer.Microservices.AuthServices.Application.csproj", "{BA54F192-2086-4239-9B3F-20A1EFFBE435}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.AuthService.Infrastructure", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.AuthService.Infrastructure\ByteBattlesServer.Microservices.AuthService.Infrastructure.csproj", "{16F14FE1-21DC-40EB-B307-4430333583D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattles.Microservices", "ByteBattles.Microservices", "{4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattles.Microservices.AuthServices", "ByteBattles.Microservices.AuthServices", "{1483D10B-154C-45DD-AA4D-AD420F653DFD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FAE04D8E-A11F-49EF-9A07-592485A05FC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAE04D8E-A11F-49EF-9A07-592485A05FC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAE04D8E-A11F-49EF-9A07-592485A05FC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAE04D8E-A11F-49EF-9A07-592485A05FC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D9458D9-5F6D-4C09-BF49-79CF5513BDDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D9458D9-5F6D-4C09-BF49-79CF5513BDDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D9458D9-5F6D-4C09-BF49-79CF5513BDDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D9458D9-5F6D-4C09-BF49-79CF5513BDDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA54F192-2086-4239-9B3F-20A1EFFBE435}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA54F192-2086-4239-9B3F-20A1EFFBE435}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA54F192-2086-4239-9B3F-20A1EFFBE435}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA54F192-2086-4239-9B3F-20A1EFFBE435}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16F14FE1-21DC-40EB-B307-4430333583D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16F14FE1-21DC-40EB-B307-4430333583D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16F14FE1-21DC-40EB-B307-4430333583D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16F14FE1-21DC-40EB-B307-4430333583D1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
+		{FAE04D8E-A11F-49EF-9A07-592485A05FC8} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
+		{16F14FE1-21DC-40EB-B307-4430333583D1} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
+		{BA54F192-2086-4239-9B3F-20A1EFFBE435} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
+	EndGlobalSection
+EndGlobal
