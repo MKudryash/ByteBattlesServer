@@ -12,6 +12,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattles.Microservices",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattles.Microservices.AuthServices", "ByteBattles.Microservices.AuthServices", "{1483D10B-154C-45DD-AA4D-AD420F653DFD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.AuthService.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.AuthService.API\ByteBattlesServer.Microservices.AuthService.API.csproj", "{875F9864-C4EB-42BD-BD5C-D08FB1EC5993}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.Middleware", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.Middleware\ByteBattlesServer.Microservices.Middleware.csproj", "{5BEF42B2-2F60-4800-B3B8-01672356E885}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,11 +38,21 @@ Global
 		{16F14FE1-21DC-40EB-B307-4430333583D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16F14FE1-21DC-40EB-B307-4430333583D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16F14FE1-21DC-40EB-B307-4430333583D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{875F9864-C4EB-42BD-BD5C-D08FB1EC5993}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{875F9864-C4EB-42BD-BD5C-D08FB1EC5993}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{875F9864-C4EB-42BD-BD5C-D08FB1EC5993}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{875F9864-C4EB-42BD-BD5C-D08FB1EC5993}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BEF42B2-2F60-4800-B3B8-01672356E885}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BEF42B2-2F60-4800-B3B8-01672356E885}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BEF42B2-2F60-4800-B3B8-01672356E885}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BEF42B2-2F60-4800-B3B8-01672356E885}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
 		{FAE04D8E-A11F-49EF-9A07-592485A05FC8} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
 		{16F14FE1-21DC-40EB-B307-4430333583D1} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
 		{BA54F192-2086-4239-9B3F-20A1EFFBE435} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
+		{875F9864-C4EB-42BD-BD5C-D08FB1EC5993} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
+		{5BEF42B2-2F60-4800-B3B8-01672356E885} = {1483D10B-154C-45DD-AA4D-AD420F653DFD}
 	EndGlobalSection
 EndGlobal

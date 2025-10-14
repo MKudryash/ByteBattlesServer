@@ -1,4 +1,3 @@
-using ByteBattles.Microservices.Auth.Domain.Configuration;
 using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces;
 using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Repositories;
 using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Services;

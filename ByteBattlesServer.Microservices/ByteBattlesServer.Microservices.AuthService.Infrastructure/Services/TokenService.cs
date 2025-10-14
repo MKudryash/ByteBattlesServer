@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using ByteBattles.Microservices.Auth.Domain.Configuration;
+using ByteBattlesServer.Microservices.AuthService.Domain.Configuration;
 using ByteBattlesServer.Microservices.AuthService.Domain.Entities;
 using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Services;
 using Microsoft.Extensions.Options;
@@ -14,13 +14,20 @@ public class TokenService : ITokenService
 {
     private readonly JwtSettings _jwtSettings;
 
-    public TokenService(IOptions<JwtSettings> jwtSettings)
+    public TokenService(JwtSettings jwtSettings)
     {
-        _jwtSettings = jwtSettings.Value;
+        _jwtSettings = jwtSettings;
+        Console.WriteLine($"TokenService: JWT Secret length = {_jwtSettings.Secret?.Length ?? 0}");
+        Console.WriteLine($"TokenService: JWT Issuer = {_jwtSettings.Issuer}");
+        Console.WriteLine($"TokenService: JWT Audience = {_jwtSettings.Audience}");
     }
 
     public string GenerateAccessToken(User user)
     {
+        if (string.IsNullOrWhiteSpace(_jwtSettings.Secret))
+        {
+            throw new InvalidOperationException("SecretKey cannot be null or empty.");
+        }
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),

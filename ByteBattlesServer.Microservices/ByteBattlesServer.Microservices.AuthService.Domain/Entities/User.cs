@@ -1,8 +1,7 @@
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Entities;
 
-public class User
+public class User:Entity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public string Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }

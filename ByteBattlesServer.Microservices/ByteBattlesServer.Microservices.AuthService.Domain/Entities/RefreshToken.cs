@@ -1,16 +1,16 @@
+// ByteBattlesServer.Microservices.AuthService.Domain/Entities/RefreshToken.cs
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Entities;
 
-public class RefreshToken
+public class RefreshToken : Entity
 {
-    public Guid Id { get; set; } = new Guid();
     public Guid UserId { get; private set; }
     public string Token { get; private set; }
     public DateTime Expires { get; private set; }
     public DateTime Created { get; private set; }
-    public string CreatedByIp { get; private set; }
-    public DateTime? Revoked { get; private set; }
-    public string RevokedByIp { get; private set; }
-    public string ReplacedByToken { get; private set; }
+    public string? CreatedByIp { get; private set; } // Nullable
+    public DateTime? Revoked { get; private set; } // Nullable
+    public string? RevokedByIp { get; private set; } // Nullable - ЭТО ВАЖНО
+    public string? ReplacedByToken { get; private set; } // Nullable
     public bool IsExpired => DateTime.UtcNow >= Expires;
     public bool IsRevoked => Revoked != null;
     public bool IsActive => !IsRevoked && !IsExpired;
@@ -26,6 +26,7 @@ public class RefreshToken
         Expires = expires;
         Created = DateTime.UtcNow;
         CreatedByIp = createdByIp;
+        // Revoked, RevokedByIp, ReplacedByToken остаются null по умолчанию
     }
 
     public void Revoke(string revokedByIp, string replacedByToken = null)

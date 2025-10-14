@@ -1,6 +1,6 @@
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Entities;
 
-public class UserRole
+public class UserRole:Entity
 {
     public Guid UserId { get; private set; }
     public Guid RoleId { get; private set; }
