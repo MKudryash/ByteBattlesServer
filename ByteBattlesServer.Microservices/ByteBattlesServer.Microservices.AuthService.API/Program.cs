@@ -68,13 +68,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Настройка pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Byte API V1");
+    c.RoutePrefix = string.Empty;
+});
 app.UseHttpsRedirection();
 
 // Глобальная обработка исключений
@@ -86,7 +87,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
-    
+
     // Seed initial data if needed
     //await SeedData.InitializeAsync(context);
 }
