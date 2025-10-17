@@ -6,6 +6,8 @@ using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Services;
 using ByteBattlesServer.Microservices.AuthServices.Application.Commands;
 using ByteBattlesServer.Microservices.AuthServices.Application.DTOs;
 using MediatR;
+using SharedContracts.IntegrationEvents;
+using SharedContracts.Messaging;
 
 namespace ByteBattlesServer.Microservices.AuthServices.Application.Handlers;
 
@@ -17,19 +19,22 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IMessageBus _messageBus;
+    
     public RegisterCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMessageBus messageBus)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
+        _messageBus = messageBus;
     }
 
     public async Task<AuthResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -55,6 +60,24 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             DateTime.UtcNow.AddDays(7), 
             "127.0.0.1");
 
+        // Публикация события
+        var userRegisteredEvent = new UserRegisteredIntegrationEvent
+        {
+            UserId = user.Id,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            RegisteredAt = DateTime.UtcNow
+        };
+
+        _messageBus.Publish(
+            userRegisteredEvent,
+            "user-events",
+            "user.registered");
+        
+        
+        
+        
         await _refreshTokenRepository.AddAsync(refreshTokenEntity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

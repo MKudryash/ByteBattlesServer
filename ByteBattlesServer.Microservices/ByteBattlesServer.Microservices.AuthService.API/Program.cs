@@ -10,6 +10,7 @@ using ByteBattlesServer.Microservices.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SharedContracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,16 @@ if (jwtSettings.Secret.Length < 32)
 Console.WriteLine($"JWT Issuer: {jwtSettings.Issuer}");
 Console.WriteLine($"JWT Audience: {jwtSettings.Audience}");
 Console.WriteLine($"JWT Secret length: {jwtSettings.Secret.Length}");
+
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
+
+
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 
 // Добавление сервисов
 builder.Services.AddApplication();

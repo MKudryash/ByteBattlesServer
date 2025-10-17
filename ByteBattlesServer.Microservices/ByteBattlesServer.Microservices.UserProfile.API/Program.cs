@@ -1,12 +1,23 @@
 using ByteBattlesServer.Microservices.Middleware;
 using ByteBattlesServer.Microservices.UserProfile.API;
+using ByteBattlesServer.Microservices.UserProfile.API.BackgroundServices;
 using ByteBattlesServer.Microservices.UserProfile.Application;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using SharedContracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
+
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 // Добавление сервисов
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -19,6 +30,10 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+
+builder.Services.AddHostedService<UserRegisteredEventHandler>();
 
 var app = builder.Build();
 

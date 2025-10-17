@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.UserProfile.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.UserProfile.API\ByteBattlesServer.Microservices.UserProfile.API.csproj", "{BE44B7F3-31FF-444E-A73B-B3318794A3B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedContracts", "SharedContracts\SharedContracts.csproj", "{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{BE44B7F3-31FF-444E-A73B-B3318794A3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE44B7F3-31FF-444E-A73B-B3318794A3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE44B7F3-31FF-444E-A73B-B3318794A3B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
