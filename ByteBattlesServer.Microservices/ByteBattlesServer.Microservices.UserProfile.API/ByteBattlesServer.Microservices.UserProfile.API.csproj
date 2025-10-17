@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\SharedContracts\SharedContracts.csproj" />
+      <ProjectReference Include="..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.Middleware\ByteBattlesServer.Microservices.Middleware.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.UserProfile.Application\ByteBattlesServer.Microservices.UserProfile.Application.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.UserProfile.Infrastructure\ByteBattlesServer.Microservices.UserProfile.Infrastructure.csproj" />
@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <PackageReference Include="MediatR" Version="13.0.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

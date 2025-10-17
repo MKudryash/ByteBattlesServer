@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-namespace SharedContracts.Messaging;
+namespace ByteBattlesServer.SharedContracts.Messaging;
 
 public interface IMessageBus
 {

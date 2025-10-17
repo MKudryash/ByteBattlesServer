@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace SharedContracts.Messaging;
+namespace ByteBattlesServer.SharedContracts.Messaging;
 
 using Polly;
 using RabbitMQ.Client.Exceptions;

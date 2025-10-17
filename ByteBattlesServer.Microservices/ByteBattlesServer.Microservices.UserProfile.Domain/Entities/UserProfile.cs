@@ -6,18 +6,18 @@ namespace ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 public class UserProfile : Entity
 {
     public Guid UserId { get; private set; }
-    public string UserName { get; private set; }
+    public string UserName { get; set; }
     public string? AvatarUrl { get; private set; }
-    public string? Bio { get; private set; }
-    public string? Country { get; private set; }
-    public string? GitHubUrl { get; private set; }
-    public string? LinkedInUrl { get; private set; }
+    public string? Bio { get; set; }
+    public string? Country { get; set; }
+    public string? GitHubUrl { get; set; }
+    public string? LinkedInUrl { get; set; }
     public UserLevel Level { get; private set; }
     public UserStats Stats { get; private set; }
     public UserSettings Settings { get; private set; }
-    public bool IsPublic { get; private set; }
+    public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; } // Оставляем приватный сеттер
+    public DateTime UpdatedAt { get; set; } // Оставляем приватный сеттер
 
     private readonly List<UserAchievement> _achievements = new();
     public IReadOnlyCollection<UserAchievement> Achievements => _achievements.AsReadOnly();

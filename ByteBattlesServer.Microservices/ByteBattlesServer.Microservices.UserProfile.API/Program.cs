@@ -1,11 +1,17 @@
+using System.Reflection;
+using System.Text;
 using ByteBattlesServer.Microservices.Middleware;
 using ByteBattlesServer.Microservices.UserProfile.API;
 using ByteBattlesServer.Microservices.UserProfile.API.BackgroundServices;
 using ByteBattlesServer.Microservices.UserProfile.Application;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data;
+using ByteBattlesServer.SharedContracts.Jwt;
 using Microsoft.EntityFrameworkCore;
-using SharedContracts.Messaging;
+using ByteBattlesServer.SharedContracts.Messaging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +24,46 @@ builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
 
 builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+
+var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
+if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
+{
+    throw new InvalidOperationException("JWT configuration is invalid.");
+}
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token successfully validated");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+
+// Регистрация JWT настроек
+builder.Services.AddSingleton(jwtSettings);
+
+
 // Добавление сервисов
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

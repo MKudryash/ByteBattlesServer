@@ -26,7 +26,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.UserProfile.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.UserProfile.API\ByteBattlesServer.Microservices.UserProfile.API.csproj", "{BE44B7F3-31FF-444E-A73B-B3318794A3B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedContracts", "SharedContracts\SharedContracts.csproj", "{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.SharedContracts", "ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj", "{B650CF50-FF01-4CE2-A48E-AB7FA3E06094}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

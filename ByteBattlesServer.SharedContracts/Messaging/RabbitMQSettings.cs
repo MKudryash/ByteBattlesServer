@@ -1,4 +1,4 @@
-namespace SharedContracts.Messaging;
+namespace ByteBattlesServer.SharedContracts.Messaging;
 
 public class RabbitMQSettings
 {

@@ -1,4 +1,4 @@
-namespace SharedContracts.IntegrationEvents;
+namespace ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 public class UserRegisteredIntegrationEvent
 {

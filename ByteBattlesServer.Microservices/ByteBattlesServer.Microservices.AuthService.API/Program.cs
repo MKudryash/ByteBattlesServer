@@ -2,15 +2,15 @@
 
 using System.Text;
 using ByteBattlesServer.Microservices.AuthService.API;
-using ByteBattlesServer.Microservices.AuthService.Domain.Configuration;
 using ByteBattlesServer.Microservices.AuthService.Infrastructure;
 using ByteBattlesServer.Microservices.AuthService.Infrastructure.Data;
 using ByteBattlesServer.Microservices.AuthServices.Application;
 using ByteBattlesServer.Microservices.Middleware;
+using ByteBattlesServer.SharedContracts.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SharedContracts.Messaging;
+using ByteBattlesServer.SharedContracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 

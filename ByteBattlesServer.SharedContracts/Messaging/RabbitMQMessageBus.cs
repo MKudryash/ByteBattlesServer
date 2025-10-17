@@ -1,4 +1,4 @@
-namespace SharedContracts.Messaging;
+namespace ByteBattlesServer.SharedContracts.Messaging;
 
 using System.Text;
 using System.Text.Json;

@@ -1,4 +1,4 @@
-namespace ByteBattlesServer.Microservices.AuthService.Domain.Configuration;
+namespace ByteBattlesServer.SharedContracts.Jwt;
 
 // AuthService.Domain/Configuration/JwtSettings.cs
 public class JwtSettings

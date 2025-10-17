@@ -6,8 +6,8 @@ using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Services;
 using ByteBattlesServer.Microservices.AuthServices.Application.Commands;
 using ByteBattlesServer.Microservices.AuthServices.Application.DTOs;
 using MediatR;
-using SharedContracts.IntegrationEvents;
-using SharedContracts.Messaging;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+using ByteBattlesServer.SharedContracts.Messaging;
 
 namespace ByteBattlesServer.Microservices.AuthServices.Application.Handlers;
 

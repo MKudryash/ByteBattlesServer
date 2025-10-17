@@ -1,6 +1,6 @@
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
-using SharedContracts.IntegrationEvents;
-using SharedContracts.Messaging;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+using ByteBattlesServer.SharedContracts.Messaging;
 
 namespace ByteBattlesServer.Microservices.UserProfile.API.BackgroundServices;
 

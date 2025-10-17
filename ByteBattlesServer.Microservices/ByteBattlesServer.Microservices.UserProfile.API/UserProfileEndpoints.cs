@@ -1,11 +1,11 @@
 // UserProfile.API/Endpoints/UserProfileEndpoints.cs
-
 using System.Security.Claims;
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Application.Queries;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using MediatR;
+using Microsoft.IdentityModel.JsonWebTokens;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace ByteBattlesServer.Microservices.UserProfile.API;
@@ -17,7 +17,8 @@ public static class UserProfileEndpoints
         var group = routes.MapGroup("/api/user-profiles")
             .WithTags("User Profiles")
             .RequireAuthorization();
-
+        
+        
         // Get current user's profile
         group.MapGet("/me", async (IMediator mediator, HttpContext httpContext) =>
         {
@@ -35,9 +36,10 @@ public static class UserProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem("An error occurred while retrieving user profile");
+                return Results.Problem($"An error occurred while retrieving user profile: {ex.Message}");
             }
         })
+        .RequireAuthorization()
         .WithName("GetMyProfile")
         .WithSummary("Get current user's profile")
         .Produces<UserProfileDto>(StatusCodes.Status200OK)
@@ -66,7 +68,7 @@ public static class UserProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem("An error occurred while updating profile");
+                return Results.Problem($"An error occurred while updating profile: {ex.Message}");
             }
         })
         .WithName("UpdateMyProfile")
@@ -98,7 +100,7 @@ public static class UserProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem("An error occurred while updating settings");
+                return Results.Problem($"An error occurred while updating settings: {ex.Message}");
             }
         })
         .WithName("UpdateMySettings")
@@ -106,44 +108,6 @@ public static class UserProfileEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
-
-        // // Get leaderboard
-        // group.MapGet("/leaderboard", async (IMediator mediator, [AsParameters] LeaderboardQueryParams queryParams) =>
-        // {
-        //     try
-        //     {
-        //         var query = new GetLeaderboardQuery(queryParams.Page, queryParams.PageSize);
-        //         var result = await mediator.Send(query);
-        //         return Results.Ok(result);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         return Results.Problem("An error occurred while retrieving leaderboard");
-        //     }
-        // })
-        // .WithName("GetLeaderboard")
-        // .WithSummary("Get users leaderboard")
-        // .AllowAnonymous()
-        // .Produces<LeaderboardDto>(StatusCodes.Status200OK);
-
-        // // Search users
-        // group.MapGet("/search", async (IMediator mediator, [AsParameters] SearchQueryParams queryParams) =>
-        // {
-        //     try
-        //     {
-        //         var query = new SearchUsersQuery(queryParams.SearchTerm, queryParams.Page, queryParams.PageSize);
-        //         var result = await mediator.Send(query);
-        //         return Results.Ok(result);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         return Results.Problem("An error occurred while searching users");
-        //     }
-        // })
-        // .WithName("SearchUsers")
-        // .WithSummary("Search users by name or bio")
-        // .AllowAnonymous()
-        // .Produces<SearchResultsDto>(StatusCodes.Status200OK);
 
         // Get user profile by ID
         group.MapGet("/{profileId:guid}", async (Guid profileId, IMediator mediator) =>
@@ -168,7 +132,7 @@ public static class UserProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem("An error occurred while retrieving user profile");
+                return Results.Problem($"An error occurred while retrieving user profile: {ex.Message}");
             }
         })
         .WithName("GetUserProfileById")
@@ -197,7 +161,7 @@ public static class UserProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem("An error occurred while creating user profile");
+                return Results.Problem($"An error occurred while creating user profile: {ex.Message}");
             }
         })
         .WithName("CreateUserProfile")
@@ -209,9 +173,19 @@ public static class UserProfileEndpoints
 
     private static Guid GetUserIdFromClaims(HttpContext context)
     {
-        var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        // Пробуем разные типы claims, которые могут содержать UserId
+        var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                       ?? context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                       ?? context.User.FindFirst("sub")?.Value
+                       ?? context.User.FindFirst("userId")?.Value;
+
         if (string.IsNullOrEmpty(userIdClaim))
+        {
+            // Для отладки: выводим все claims
+            var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
+            Console.WriteLine("Available claims: " + string.Join(", ", allClaims));
             throw new UnauthorizedAccessException("User ID not found in claims");
+        }
 
         return Guid.Parse(userIdClaim);
     }
