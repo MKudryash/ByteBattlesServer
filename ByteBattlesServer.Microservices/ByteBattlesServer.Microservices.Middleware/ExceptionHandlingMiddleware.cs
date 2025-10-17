@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ByteBattlesServer.Microservices.AuthService.Domain.Exceptions;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -31,6 +32,14 @@ public class ExceptionHandlingMiddleware
             await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, 
                 new { message = ex.Message, code = ex.ErrorCode });
         }
+        catch (UserProfileException ex)
+        {
+            _logger.LogWarning(ex, "User exception occurred");
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, 
+                new { message = ex.Message, code = ex.ErrorCode });
+        }
+     
+        
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation exception occurred");
