@@ -13,7 +13,7 @@ COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthServi
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Domain/ByteBattlesServer.Microservices.UserProfile.Domain.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Domain/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Application/ByteBattlesServer.Microservices.UserProfile.Application.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Application/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Infrastructure/ByteBattlesServer.Microservices.UserProfile.Infrastructure.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Infrastructure/"]
-COPY ["SharedContracts/SharedContracts.csproj", "SharedContracts/"]
+COPY ["ByteBattlesServer.SharedContracts/ByteBattlesServer.SharedContracts.csproj", "ByteBattlesServer.SharedContracts/"]
 RUN dotnet restore "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API/ByteBattlesServer.Microservices.UserProfile.API.csproj"
 COPY . .
 WORKDIR "/src/ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API"
