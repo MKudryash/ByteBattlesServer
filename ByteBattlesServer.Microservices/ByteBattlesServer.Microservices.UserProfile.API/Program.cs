@@ -68,15 +68,34 @@ builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Add authentication and authorization services
-builder.Services.AddAuthentication() // Add this line
-    .AddCookie(); // Or your preferred authentication scheme
+// // Add authentication and authorization services
+// builder.Services.AddAuthentication() // Add this line
+//     .AddCookie(); // Or your preferred authentication scheme
 
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "User Profile Service API",
+        Version = "v1",
+        Description = "User Profile Management Service"
+    });
 
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    // Регистрируем фильтр
+    options.OperationFilter<AuthResponsesOperationFilter>();
+});
 
 
 builder.Services.AddHostedService<UserRegisteredEventHandler>();
@@ -84,10 +103,10 @@ builder.Services.AddHostedService<UserRegisteredEventHandler>();
 var app = builder.Build();
 
 app.UseSwagger();
-app.UseSwaggerUI(c =>
+app.UseSwaggerUI(options =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Byte API V1");
-    c.RoutePrefix = string.Empty;
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service API v1");
+    options.RoutePrefix = string.Empty;
 });
 app.UseHttpsRedirection();
 

@@ -15,8 +15,7 @@ public static class UserProfileEndpoints
     public static void MapUserProfileEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/api/user-profiles")
-            .WithTags("User Profiles")
-            .RequireAuthorization();
+            .WithTags("User Profiles");
         
         
         // Get current user's profile
@@ -71,6 +70,7 @@ public static class UserProfileEndpoints
                 return Results.Problem($"An error occurred while updating profile: {ex.Message}");
             }
         })
+        .RequireAuthorization()
         .WithName("UpdateMyProfile")
         .WithSummary("Update current user's profile")
         .Produces(StatusCodes.Status200OK)
@@ -103,6 +103,7 @@ public static class UserProfileEndpoints
                 return Results.Problem($"An error occurred while updating settings: {ex.Message}");
             }
         })
+        .RequireAuthorization()
         .WithName("UpdateMySettings")
         .WithSummary("Update current user's settings")
         .Produces(StatusCodes.Status200OK)
@@ -164,6 +165,7 @@ public static class UserProfileEndpoints
                 return Results.Problem($"An error occurred while creating user profile: {ex.Message}");
             }
         })
+        .AllowAnonymous()
         .WithName("CreateUserProfile")
         .WithSummary("Create new user profile")
         .Produces<UserProfileDto>(StatusCodes.Status201Created)
