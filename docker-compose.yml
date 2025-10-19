@@ -1,12 +1,10 @@
 ﻿# docker-compose.yml
-version: '3.8'
 
 services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: bytebattles-rabbitmq
     ports:
-      - "5672:5672"
       - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
@@ -17,7 +15,7 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: AuthService.API/Dockerfile
+      dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthService.API/Dockerfile
     environment:
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -27,7 +25,7 @@ services:
   userprofile-service:
     build:
       context: .
-      dockerfile: UserProfile.API/Dockerfile
+      dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API/Dockerfile
     environment:
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
