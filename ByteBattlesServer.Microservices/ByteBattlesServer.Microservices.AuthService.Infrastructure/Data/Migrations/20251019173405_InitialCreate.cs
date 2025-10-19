@@ -51,10 +51,10 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                     Token = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     Expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedByIp = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: false),
+                    CreatedByIp = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     Revoked = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RevokedByIp = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: false),
-                    ReplacedByToken = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
+                    RevokedByIp = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    ReplacedByToken = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -91,6 +91,12 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_Token",
+                table: "refresh_tokens",
+                column: "Token",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_UserId",

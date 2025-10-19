@@ -70,7 +70,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             User = new UserDto
             {
                 Id = user.Id,
-                Email = user.Email,
+                Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name)

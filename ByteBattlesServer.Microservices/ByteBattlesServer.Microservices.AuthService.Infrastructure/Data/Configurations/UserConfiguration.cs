@@ -13,9 +13,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         
         builder.HasKey(u => u.Id);
         
-        builder.Property(u => u.Email)
-            .IsRequired()
-            .HasMaxLength(255);
+        builder.OwnsOne(u => u.Email, ownedNavigationBuilder =>
+        {
+            ownedNavigationBuilder.Property(e => e.Value)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("Email"); 
+            
+            ownedNavigationBuilder.HasIndex(e => e.Value)
+                .IsUnique();
+        });
             
         builder.Property(u => u.PasswordHash)
             .IsRequired()
@@ -37,8 +44,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             
         builder.Property(u => u.UpdatedAt);
 
-        builder.HasIndex(u => u.Email)
-            .IsUnique();
 
         builder.HasMany(u => u.UserRoles)
             .WithOne(ur => ur.User)

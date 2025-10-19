@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251014091308_FixRefreshTokenNullConstraints")]
-    partial class FixRefreshTokenNullConstraints
+    [Migration("20251019173405_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,11 +106,6 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -133,9 +128,6 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
 
                     b.ToTable("users", (string)null);
                 });
@@ -171,6 +163,34 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.User", b =>
+                {
+                    b.OwnsOne("ByteBattlesServer.Microservices.AuthService.Domain.ValueObject.Email", "Email", b1 =>
+                        {
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("Email");
+
+                            b1.HasKey("UserId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("users");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserId");
+                        });
+
+                    b.Navigation("Email")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.UserRole", b =>

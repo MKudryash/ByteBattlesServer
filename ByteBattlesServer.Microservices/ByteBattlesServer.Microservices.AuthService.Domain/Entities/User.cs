@@ -1,8 +1,10 @@
+using ByteBattlesServer.Microservices.AuthService.Domain.ValueObject;
+
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Entities;
 
 public class User:Entity
 {
-    public string Email { get; private set; }
+    public Email Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
@@ -15,7 +17,7 @@ public class User:Entity
 
     public User(string email, string passwordHash, string firstName, string lastName)
     {
-        Email = email;
+       Email =  Email.Create(email);
         PasswordHash = passwordHash;
         FirstName = firstName;
         LastName = lastName;

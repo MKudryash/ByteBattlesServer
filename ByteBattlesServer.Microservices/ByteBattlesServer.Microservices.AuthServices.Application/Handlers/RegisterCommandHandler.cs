@@ -16,6 +16,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IPasswordPolicyService _passwordPolicyService;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -24,6 +25,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
     public RegisterCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
+        IPasswordPolicyService passwordPolicyService,
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
         IUnitOfWork unitOfWork,
@@ -31,6 +33,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _passwordPolicyService = passwordPolicyService;
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
@@ -42,6 +45,9 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         // Check if user already exists
         if (await _userRepository.ExistsByEmailAsync(request.Email))
             throw new ErrorRequest("User with this email already exists");
+        var passwordValidationResult =  _passwordPolicyService.ValidatePassword(request.Password);
+        if (!passwordValidationResult.IsValid)
+            throw new ErrorRequest($"Invalid password: {string.Join(", ", passwordValidationResult.Errors)}");
 
         // Create user
         var passwordHash = _passwordHasher.HashPassword(request.Password);
@@ -64,7 +70,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         var userRegisteredEvent = new UserRegisteredIntegrationEvent
         {
             UserId = user.Id,
-            Email = user.Email,
+            Email = user.Email.Value,
             FirstName = user.FirstName,
             LastName = user.LastName,
             RegisteredAt = DateTime.UtcNow
@@ -89,7 +95,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             User = new UserDto
             {
                 Id = user.Id,
-                Email = user.Email,
+                Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.AuthService.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
@@ -29,27 +30,32 @@ public class ExceptionHandlingMiddleware
         catch (AuthException ex)
         {
             _logger.LogWarning(ex, "Auth exception occurred");
-            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, 
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
                 new { message = ex.Message, code = ex.ErrorCode });
         }
         catch (UserProfileException ex)
         {
             _logger.LogWarning(ex, "User exception occurred");
-            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, 
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
                 new { message = ex.Message, code = ex.ErrorCode });
         }
-     
-        
+        catch (ErrorRequest ex)
+        {
+            _logger.LogWarning(ex, "Error exception occurred");
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
+                new { message = ex.Message });
+        }
+
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation exception occurred");
-            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, 
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
                 new { message = "Validation failed", errors = ex.Errors });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception occurred");
-            await HandleExceptionAsync(context, StatusCodes.Status500InternalServerError, 
+            await HandleExceptionAsync(context, StatusCodes.Status500InternalServerError,
                 new { message = "Internal server error", code = "INTERNAL_ERROR" });
         }
     }
