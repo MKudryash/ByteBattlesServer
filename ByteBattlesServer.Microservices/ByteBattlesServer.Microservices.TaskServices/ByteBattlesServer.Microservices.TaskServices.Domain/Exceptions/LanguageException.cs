@@ -1,11 +1,10 @@
 namespace ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 
-
-public class UserProfileException : Exception
+public class LanguageException : Exception
 {
     public string ErrorCode { get; }
 
-    public UserProfileException(string message, string errorCode = "USER_PROFILE_ERROR") 
+    public LanguageException(string message, string errorCode = "LANGUAGE_ERROR") 
         : base(message)
     {
         ErrorCode = errorCode;

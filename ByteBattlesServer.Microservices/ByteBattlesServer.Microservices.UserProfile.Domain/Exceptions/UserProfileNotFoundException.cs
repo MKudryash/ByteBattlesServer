@@ -12,3 +12,4 @@ public class UserProfileNotFoundException : UserProfileException
     {
     }
 }
+
