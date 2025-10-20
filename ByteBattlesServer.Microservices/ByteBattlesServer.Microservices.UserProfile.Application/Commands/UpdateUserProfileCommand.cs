@@ -1,3 +1,4 @@
+using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Application.Commands;
@@ -9,4 +10,4 @@ public record UpdateUserProfileCommand(
     string? Country, 
     string? GitHubUrl, 
     string? LinkedInUrl, 
-    bool IsPublic) : IRequest;
+    bool IsPublic) : IRequest<UserProfileDto>;

@@ -59,5 +59,6 @@ public class UserProfileRepository : IUserProfileRepository
     public void Update(Domain.Entities.UserProfile userProfile)
     {
         _context.UserProfiles.Update(userProfile);
+        
     }
 }

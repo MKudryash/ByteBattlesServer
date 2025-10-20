@@ -175,7 +175,6 @@ public static class UserProfileEndpoints
 
     private static Guid GetUserIdFromClaims(HttpContext context)
     {
-        // Пробуем разные типы claims, которые могут содержать UserId
         var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                        ?? context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                        ?? context.User.FindFirst("sub")?.Value
@@ -183,7 +182,6 @@ public static class UserProfileEndpoints
 
         if (string.IsNullOrEmpty(userIdClaim))
         {
-            // Для отладки: выводим все claims
             var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
             Console.WriteLine("Available claims: " + string.Join(", ", allClaims));
             throw new UnauthorizedAccessException("User ID not found in claims");

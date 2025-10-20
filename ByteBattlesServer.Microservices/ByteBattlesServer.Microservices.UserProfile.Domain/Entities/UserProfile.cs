@@ -14,10 +14,10 @@ public class UserProfile : Entity
     public string? LinkedInUrl { get; set; }
     public UserLevel Level { get; private set; }
     public UserStats Stats { get; private set; }
-    public UserSettings Settings { get; private set; }
+    public UserSettings Settings { get; set; }
     public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; set; } // Оставляем приватный сеттер
+    public DateTime UpdatedAt { get; set; } 
 
     private readonly List<UserAchievement> _achievements = new();
     public IReadOnlyCollection<UserAchievement> Achievements => _achievements.AsReadOnly();
@@ -42,6 +42,21 @@ public class UserProfile : Entity
     public void UpdateProfile(string userName, string? bio, string? country, 
         string? githubUrl, string? linkedInUrl, bool isPublic)
     {
+        if (!string.IsNullOrWhiteSpace(userName))
+            UserName =userName.Trim();
+        
+        if (bio != null)
+            Bio = string.IsNullOrWhiteSpace(bio) ? null : bio.Trim();
+        
+        if (country != null)
+            Country = string.IsNullOrWhiteSpace(country) ? null : country.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(githubUrl))
+            GitHubUrl = string.IsNullOrWhiteSpace(githubUrl) ? null : githubUrl.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(linkedInUrl))
+            LinkedInUrl = string.IsNullOrWhiteSpace(linkedInUrl) ? null : linkedInUrl.Trim();
+
         UserName = userName;
         Bio = bio;
         Country = country;
@@ -56,7 +71,30 @@ public class UserProfile : Entity
         AvatarUrl = avatarUrl;
         UpdateTimestamps();
     }
+    public void UpdateSettings(
+        string? preferredLanguage = null,
+        string? theme = null,
+        string? codeEditorTheme = null,
+        bool? achievementNotifications = null,
+        bool? battleInvitations = null,
+        bool? emailNotifications = null)
+    {
+        if (Settings == null)
+        {
+            Settings = new UserSettings();
+        }
 
+        Settings.Update(
+            preferredLanguage,
+            theme,
+            codeEditorTheme,
+            achievementNotifications,
+            battleInvitations,
+            emailNotifications
+        );
+
+        UpdateTimestamps();
+    }
     public void AddAchievement(Achievement achievement)
     {
         if (!_achievements.Any(a => a.AchievementId == achievement.Id))
