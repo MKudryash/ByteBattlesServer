@@ -1,5 +1,6 @@
 // UserProfile.API/Endpoints/UserProfileEndpoints.cs
 using System.Security.Claims;
+using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Application.Queries;
@@ -18,7 +19,7 @@ public static class UserProfileEndpoints
             .WithTags("User Profiles");
         
         
-        // Get current user's profile
+        
         group.MapGet("/me", async (IMediator mediator, HttpContext httpContext) =>
         {
             try
@@ -44,7 +45,7 @@ public static class UserProfileEndpoints
         .Produces<UserProfileDto>(StatusCodes.Status200OK)
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
 
-        // Update user profile
+       
         group.MapPut("/me", async (UpdateProfileCommandDto dto, IMediator mediator, HttpContext httpContext) =>
         {
             try
@@ -110,7 +111,7 @@ public static class UserProfileEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
 
-        // Get user profile by ID
+        
         group.MapGet("/{profileId:guid}", async (Guid profileId, IMediator mediator) =>
         {
             try
@@ -143,7 +144,7 @@ public static class UserProfileEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status403Forbidden);
 
-        // Create user profile (для тестирования или админки)
+        
         group.MapPost("/", async (CreateUserProfileCommandDto dto, IMediator mediator) =>
         {
             try
@@ -171,7 +172,45 @@ public static class UserProfileEndpoints
         .Produces<UserProfileDto>(StatusCodes.Status201Created)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
         .Produces<ErrorResponse>(StatusCodes.Status409Conflict);
+        
+        
+        
+        group.MapGet("/leaderboard", async (IMediator mediator, [AsParameters] LeaderboardQueryParams queryParams) =>
+            {
+                try
+                {
+                    var query = new GetLeaderboardQuery(queryParams.countTop);
+                    var result = await mediator.Send(query);
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem("An error occurred while retrieving leaderboard");
+                }
+            })
+            .WithName("GetLeaderboard")
+            .WithSummary("Get users leaderboard")
+            .AllowAnonymous()
+            .Produces<List<LeaderboardUserDto>>(StatusCodes.Status200OK);
+        group.MapGet("/search", async (IMediator mediator, [AsParameters] SearchQueryParams queryParams) =>
+        {
+            try
+            {
+                var query = new SearchQueryParams(queryParams.SearchTerm, queryParams.Page, queryParams.PageSize);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem("An error occurred while searching users");
+            }
+        })
+        .WithName("SearchUsers")
+        .WithSummary("Search users by name or bio")
+        .AllowAnonymous()
+        .Produces<List<UserProfileDto>>(StatusCodes.Status200OK);
     }
+
 
     private static Guid GetUserIdFromClaims(HttpContext context)
     {
@@ -191,13 +230,5 @@ public static class UserProfileEndpoints
     }
 }
 
-// DTO для параметров запроса
-public record LeaderboardQueryParams(int Page = 1, int PageSize = 20);
 
-public record SearchQueryParams(string SearchTerm, int Page = 1, int PageSize = 10);
 
-// DTO для создания профиля
-public record CreateUserProfileCommandDto(Guid UserId, string UserName);
-
-// Response DTO для ошибок
-public record ErrorResponse(string Message, string Code);

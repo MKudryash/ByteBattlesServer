@@ -1,0 +1,5 @@
+using MediatR;
+
+namespace ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
+
+public record SearchQueryParams(string SearchTerm, int Page = 1, int PageSize = 10) : IRequest<List<UserProfileDto>>;
