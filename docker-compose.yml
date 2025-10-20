@@ -5,7 +5,7 @@ services:
     image: rabbitmq:3-management
     container_name: bytebattles-rabbitmq
     ports:
-      - "15672:15672"
+      - "50301:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
