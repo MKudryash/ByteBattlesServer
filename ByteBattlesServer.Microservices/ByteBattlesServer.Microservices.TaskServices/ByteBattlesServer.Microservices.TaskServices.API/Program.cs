@@ -70,7 +70,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Task Service API",
         Version = "v1",
-        Description = "User Profile Management Service"
+        Description = "Task Management Service"
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

@@ -1,8 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.API.EndPoints;
@@ -14,7 +18,7 @@ public static class LanguageEndpoints
         var group = routes.MapGroup("/api/language")
             .WithTags("Language");
 
-
+        // Получение языка по ID
         group.MapGet("/{languageId:guid}", async (Guid languageId, IMediator mediator) =>
         {
             try
@@ -22,29 +26,103 @@ public static class LanguageEndpoints
                 var query = new GetLanguageByIdQuery(languageId);
                 var result = await mediator.Send(query);
                 return Results.Ok(result);
-
             }
-            catch (Exception e)
+            catch (LanguageNotFoundException ex)
             {
-                Console.WriteLine(e);
-                throw;
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
             }
-        });
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving language: {ex.Message}");
+            }
+        })
+        .WithName("GetLanguageById")
+        .WithSummary("Получить язык по идентификатору")
+        .WithDescription("Извлекает определенный язык программирования по его уникальному идентификатору")
+        .Produces<LanguageDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
+        // Создание нового языка
         group.MapPost("/", async (CreateLanguageDto dto, IMediator mediator, HttpContext http) =>
         {
             try
             {
                 var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle);
                 var result = await mediator.Send(command);
-                return Results.Created($"api/language/{result.Id}", result);
+                return Results.Created($"/api/language/{result.Id}", result);
             }
-            catch (Exception e)
+            catch (LanguageAlreadyExistsException ex)
             {
-                Console.WriteLine(e);
-                throw;
+                return Results.Conflict(new ErrorResponse(ex.Message, ex.ErrorCode));
             }
-        });
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while creating language: {ex.Message}");
+            }
+        })
+        .WithName("CreateLanguage")
+        .WithSummary("Создание нового языка программирования")
+        .WithDescription("Создание новый язык программирования с названием и кратким заголовком")
+        .Produces<LanguageDto>(StatusCodes.Status201Created)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        // Обновление языка
+        group.MapPut("/", async (UpdateLanguageDto dto, IMediator mediator, HttpContext http) =>
+        {
+            try
+            {
+                var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (LanguageNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while updating language: {ex.Message}");
+            }
+        })
+        .WithName("UpdateLanguage")
+        .WithSummary("Обновление языка программирования")
+        .WithDescription("Обновляет название существующего языка программирования и краткое название")
+        .Produces<LanguageDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        // Получение всех языков (добавьте если нужно)
+        group.MapGet("/", async (IMediator mediator) =>
+        {
+            try
+            {
+                // var query = new GetAllLanguagesQuery();
+                // var result = await mediator.Send(query);
+                return Results.Ok("result");
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving languages: {ex.Message}");
+            }
+        })
+        .WithName("GetAllLanguages")
+        .WithSummary("Получение всех языков программирования")
+        .WithDescription("Извлекает все доступные языки программирования")
+        .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)

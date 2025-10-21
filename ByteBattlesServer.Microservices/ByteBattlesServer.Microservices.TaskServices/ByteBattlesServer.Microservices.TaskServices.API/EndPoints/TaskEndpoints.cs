@@ -1,8 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.API.EndPoints;
@@ -14,40 +17,137 @@ public static class TaskEndpoints
         var group = routes.MapGroup("/api/task")
             .WithTags("Task");
 
-
+        // Получение задачи по ID
         group.MapGet("/{taskId:guid}", async (Guid taskId, IMediator mediator) =>
         {
             try
             {
-               var query = new GetTaskByIdQuery(taskId);
-               var result = await mediator.Send(query);
-               return Results.Ok(result);
-
+                var query = new GetTaskByIdQuery(taskId);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
             }
-            catch (Exception e)
+            catch (TaskNotFoundException ex)
             {
-                Console.WriteLine(e);
-                throw;
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
             }
-        });
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving task: {ex.Message}");
+            }
+        })
+        .WithName("GetTaskById")
+        .WithSummary("Получение задачи по идентификатору")
+        .WithDescription("Определяет конкретную задачу по ее уникальному идентификатору")
+        .Produces<TaskDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
+        // Создание новой задачи
         group.MapPost("/", async (CreateTaskDto dto, IMediator mediator, HttpContext http) =>
         {
             try
             {
-                var command = new CreateTaskCommand(dto.Title, dto.Description,
-                    dto.Difficulty, dto.Author,
-                    dto.FunctionName, dto.InputParameters,
-                    dto.OutputParameters, DateTime.Now, dto.LanguageId);
+                var command = new CreateTaskCommand(
+                    dto.Title, 
+                    dto.Description,
+                    dto.Difficulty, 
+                    dto.Author,
+                    dto.FunctionName, 
+                    dto.InputParameters,
+                    dto.OutputParameters, 
+                    dto.LanguageId);
                 var result = await mediator.Send(command);
-                return Results.Created($"api/task/{result.Id}", result);
+                return Results.Created($"/api/task/{result.Id}", result);
             }
-            catch (Exception e)
+            catch (TaskAlreadyExistsException ex)
             {
-                Console.WriteLine(e);
-                throw;
+                return Results.Conflict(new ErrorResponse(ex.Message, ex.ErrorCode));
             }
-        });
+            catch (LanguageNotFoundException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while creating task: {ex.Message}");
+            }
+        })
+        .WithName("CreateTask")
+        .WithSummary("Создание новой задачи")
+        .WithDescription("Создание новую задачу программирования с заданными языками и уровнем сложности")
+        .Produces<TaskDto>(StatusCodes.Status201Created)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        // Обновление задачи
+        group.MapPut("/", async (UpdateTaskDto dto, IMediator mediator, HttpContext http) =>
+        {
+            try
+            {
+                var command = new UpdateTaskCommand(
+                    dto.Id, 
+                    dto.Title, 
+                    dto.Description,
+                    dto.Difficulty, 
+                    dto.Author,
+                    dto.FunctionName, 
+                    dto.InputParameters,
+                    dto.OutputParameters, 
+                    dto.LanguageIds);
+                
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (LanguageNotFoundException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while updating task: {ex.Message}");
+            }
+        })
+        .WithName("UpdateTask")
+        .WithSummary("Обновление задачи")
+        .WithDescription("Обновляет существующую задачу, включая связанные с ней языки программирования")
+        .Produces<TaskDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        // Получение всех задач (добавьте если нужно)
+        group.MapGet("/", async (IMediator mediator, [AsParameters] TaskFilterDto filter) =>
+        {
+            try
+            {
+                // var query = new GetTaskByIdQuery(filter);
+                // var result = await mediator.Send(query);
+                return Results.Ok("result");
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving tasks: {ex.Message}");
+            }
+        })
+        .WithName("GetAllTasks")
+        .WithSummary("Получение списка задач")
+        .WithDescription("Извлекает все задачи с дополнительной фильтрацией и разбивкой по страницам")
+        .Produces<List<TaskDto>>(StatusCodes.Status200OK);
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)

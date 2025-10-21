@@ -1,3 +1,4 @@
+using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
 using ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data;
@@ -22,7 +23,10 @@ public class TaskRepository : ITaskRepository
             .ThenInclude(ua => ua.Language)
             .FirstOrDefaultAsync(up => up.Id == id);
     }
-
+    public void RemoveTaskLanguage(TaskLanguage taskLanguage)
+    {
+        _dbContext.TaskLanguages.Remove(taskLanguage);
+    }
     public async Task<Task> GetByTitleAsync(string title)
     {
         return await _dbContext.Tasks
@@ -54,6 +58,17 @@ public class TaskRepository : ITaskRepository
         _dbContext.Tasks.Remove(task);
     }
 
+    public async Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId)
+    {
+        return await _dbContext.TaskLanguages
+            .Where(tl => tl.IdTask == taskId)
+            .Include(tl => tl.Language)
+            .ToListAsync();
+    }
+    public async System.Threading.Tasks.Task AddTaskLanguageAsync(TaskLanguage taskLanguage)
+    {
+        await _dbContext.TaskLanguages.AddAsync(taskLanguage);
+    }
     public async Task<List<Task>> SearchTask(Difficulty difficulty,
         Guid languageId,
         string searchTerm, int page, int pageSize)

@@ -7,33 +7,31 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 
-public class CreateLanguageCommandHandler : IRequestHandler<CreateLanguageCommand, LanguageDto>
+public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageCommand, LanguageDto>
 {
     private readonly ILanguageRepository _languageRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateLanguageCommandHandler( ILanguageRepository languageRepository, IUnitOfWork unitOfWork)
+    public UpdateLanguageCommandHandler(ILanguageRepository languageRepository, IUnitOfWork unitOfWork)
     {
         _languageRepository = languageRepository;
         _unitOfWork = unitOfWork;
     }
-    public async Task<LanguageDto> Handle(CreateLanguageCommand request, CancellationToken cancellationToken)
+
+    public async Task<LanguageDto> Handle(UpdateLanguageCommand request, CancellationToken cancellationToken)
     {
-       
+        var language = await _languageRepository.GetByIdAsync(request.LanguageId);
+        if (language == null)
+            throw new LanguageNotFoundException(request.LanguageId);
         
-        var existingLanguage = await _languageRepository.GetByNameAsync(request.LanguageTitle);
-        if (existingLanguage!= null)
-            throw new LanguageNotFoundException(request.LanguageTitle);
-
-        var language = new Language(request.LanguageTitle, request.LanguageShortTitle);
-
-        await _languageRepository.AddAsync(language);
+        language.Update(request.LanguageTitle, request.LanguageShortTitle);
+        
+        _languageRepository.Update(language);
+        
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
+
         return MapToDto(language);
-
     }
-
     private LanguageDto MapToDto(Language language) => new()
     {
         Id = language.Id,

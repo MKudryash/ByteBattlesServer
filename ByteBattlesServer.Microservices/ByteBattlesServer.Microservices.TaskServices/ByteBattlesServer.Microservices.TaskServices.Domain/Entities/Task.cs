@@ -42,7 +42,9 @@ public class Task:Entity
         string? description= null,
         string? difficulty = null, 
         string? author = null,
-        string? functionName = null)
+        string? functionName = null,
+        string? inputParameters = null,
+        string? outputParameters = null)
     {
         if (!string.IsNullOrWhiteSpace(title))
             Title =title.Trim();
@@ -58,8 +60,15 @@ public class Task:Entity
         }
         if (!string.IsNullOrWhiteSpace(author))
             Author = author.Trim();
+        
         if (!string.IsNullOrWhiteSpace(functionName))
             FunctionName = functionName.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(inputParameters))
+            InputParameters = inputParameters.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(outputParameters))
+            OutputParameters = outputParameters.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
 
