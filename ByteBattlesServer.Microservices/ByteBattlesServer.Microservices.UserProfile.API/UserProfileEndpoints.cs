@@ -77,8 +77,7 @@ public static class UserProfileEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
-
-        // Update user settings
+        
         group.MapPut("/me/settings", async (UpdateSettingsCommandDto dto, IMediator mediator, HttpContext httpContext) =>
         {
             try

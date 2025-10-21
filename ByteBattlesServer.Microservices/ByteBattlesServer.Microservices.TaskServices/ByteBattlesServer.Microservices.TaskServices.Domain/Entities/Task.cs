@@ -8,7 +8,7 @@ public class Task:Entity
 
     public string? Description { get; set; }
     
-    public Difficulty? Difficulty { get; private set; }
+    public Difficulty Difficulty { get; private set; }
 
     public string? Author { get; private set; }
 

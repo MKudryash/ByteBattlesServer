@@ -6,6 +6,7 @@ namespace ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
 public interface ILanguageRepository
 {
     Task<Language> GetByIdAsync(Guid id);
+    Task<Language> GetByNameAsync(string name);
     Task<List<Language>> GetAllAsync();
     Task AddAsync(Language language);
     Task Update(Language language);

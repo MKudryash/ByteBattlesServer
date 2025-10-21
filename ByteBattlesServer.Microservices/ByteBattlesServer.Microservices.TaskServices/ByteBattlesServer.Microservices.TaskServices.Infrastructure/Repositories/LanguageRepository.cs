@@ -20,6 +20,12 @@ public class LanguageRepository:ILanguageRepository
         return await _dbContext.Language.FirstOrDefaultAsync(up => up.Id == id);
     }
 
+    public async Task<Language> GetByNameAsync(string name)
+    {
+        return await _dbContext.Language.FirstOrDefaultAsync(up => up.Title == name);
+
+    }
+
     public Task<List<Language>> GetAllAsync()
     {
         return _dbContext.Language.ToListAsync();

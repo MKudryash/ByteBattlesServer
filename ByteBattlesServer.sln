@@ -34,6 +34,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.TaskServices.Infrastructure", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.Infrastructure\ByteBattlesServer.Microservices.TaskServices.Infrastructure.csproj", "{2C801727-3DE4-4D16-9A3E-1D0A267162FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.TaskServices.Application", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.Application\ByteBattlesServer.Microservices.TaskServices.Application.csproj", "{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.TaskServices.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.API\ByteBattlesServer.Microservices.TaskServices.API.csproj", "{9061E9B5-D157-44CA-B880-9A0A6F030E7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +96,14 @@ Global
 		{2C801727-3DE4-4D16-9A3E-1D0A267162FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C801727-3DE4-4D16-9A3E-1D0A267162FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C801727-3DE4-4D16-9A3E-1D0A267162FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9061E9B5-D157-44CA-B880-9A0A6F030E7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9061E9B5-D157-44CA-B880-9A0A6F030E7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9061E9B5-D157-44CA-B880-9A0A6F030E7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9061E9B5-D157-44CA-B880-9A0A6F030E7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
@@ -107,5 +119,7 @@ Global
 		{732F62D5-0DD5-4AA7-9AB2-70F559DBF3F5} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
 		{47E0AD3C-E952-4FD1-AA0B-FDF77ED692B7} = {732F62D5-0DD5-4AA7-9AB2-70F559DBF3F5}
 		{2C801727-3DE4-4D16-9A3E-1D0A267162FD} = {732F62D5-0DD5-4AA7-9AB2-70F559DBF3F5}
+		{00EAB357-BCA0-4A2C-A0C0-74E033B70EE6} = {732F62D5-0DD5-4AA7-9AB2-70F559DBF3F5}
+		{9061E9B5-D157-44CA-B880-9A0A6F030E7C} = {732F62D5-0DD5-4AA7-9AB2-70F559DBF3F5}
 	EndGlobalSection
 EndGlobal

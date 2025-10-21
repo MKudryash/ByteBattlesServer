@@ -6,4 +6,9 @@ public class TaskLanguage:Entity
     public Guid IdLanguage { get; private set; }
     public Task Task { get; private set; }
     public Language Language{ get; private set; }
+    public TaskLanguage(Guid idTask, Guid idLanguage)
+    {
+        IdTask = idTask;
+        IdLanguage = idLanguage;
+    }
 }

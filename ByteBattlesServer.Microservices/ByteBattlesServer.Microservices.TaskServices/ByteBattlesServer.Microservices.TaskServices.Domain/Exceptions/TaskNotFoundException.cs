@@ -14,3 +14,15 @@ public class TaskNotFoundException:TaskException
     {
     }
 }
+public class LanguageNotFoundException:LanguageException
+
+{
+    public LanguageNotFoundException(Guid languageId) 
+        : base($"Task not found for languageId ID: {languageId}", "TASK_NOT_FOUND")
+    {
+    }
+    public LanguageNotFoundException(string title) 
+        : base($"User language not found for title: {title}", "TASK_NOT_FOUND")
+    {
+    }
+}
