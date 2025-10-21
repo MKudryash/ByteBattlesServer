@@ -1,0 +1,52 @@
+using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
+using ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Task = System.Threading.Tasks.Task;
+
+namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Repositories;
+
+public class LanguageRepository:ILanguageRepository
+{
+    private readonly TaskDbContext _dbContext;
+
+    public LanguageRepository(TaskDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Language> GetByIdAsync(Guid id)
+    {
+        return await _dbContext.Language.FirstOrDefaultAsync(up => up.Id == id);
+    }
+
+    public Task<List<Language>> GetAllAsync()
+    {
+        return _dbContext.Language.ToListAsync();
+    }
+
+    public async Task AddAsync(Language language)
+    {
+      await _dbContext.Language.AddAsync(language);
+    }
+
+    public async Task Update(Language language)
+    {
+         _dbContext.Language.Update(language);
+    }
+
+    public async Task Delete(Language language)
+    {
+        _dbContext.Language.Remove(language);
+    }
+
+    public async Task<List<Language>> SearchLanguage(string searchTerm, int page, int pageSize)
+    {
+        return await _dbContext.Language
+            .Where(up => 
+                         up.Title.Contains(searchTerm) || up.ShortTitle.Contains(searchTerm))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+}

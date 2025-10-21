@@ -1,0 +1,79 @@
+using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
+using ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Task = ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task;
+
+namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Repositories;
+
+public class TaskRepository:ITaskRepository
+{
+    private readonly TaskDbContext _dbContext;
+
+    public TaskRepository(TaskDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Task> GetByIdAsync(Guid id)
+    {
+        return await _dbContext.Tasks
+            .Include(up=>up.TaskLanguages)
+            .ThenInclude(ua=> ua.Language)
+            .FirstOrDefaultAsync(up => up.Id == id);
+    }
+
+    public async Task<List<Task>> GetAllAsync()
+    {
+        return await _dbContext.Tasks
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .ToListAsync();
+    }
+
+    public async  System.Threading.Tasks.Task AddAsync(Task task)
+    {
+        await _dbContext.Tasks.AddAsync(task);
+    }
+
+    public async  System.Threading.Tasks.Task Update(Task task)
+    {
+        _dbContext.Tasks.Update(task);
+    }
+
+    public async  System.Threading.Tasks.Task Delete(Task task)
+    {
+        _dbContext.Tasks.Remove(task);
+    }
+
+    public async Task<List<Task>> SearchTask(string searchTerm, int page, int pageSize)
+    {
+        return await _dbContext.Tasks
+            .Where(t => t.Title.Contains(searchTerm) || 
+                        t.Description.Contains(searchTerm) ||
+                        t.Author.Contains(searchTerm))
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<List<Task>> GetByDifficultyAsync(Difficulty difficulty)
+    {
+        return await _dbContext.Tasks
+            .Where(t => t.Difficulty == difficulty)
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .ToListAsync();
+    }
+
+    public async Task<List<Task>> GetByLanguageAsync(Guid languageId)
+    {
+        return await _dbContext.Tasks
+            .Where(t => t.TaskLanguages.Any(tl => tl.IdLanguage == languageId))
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .ToListAsync();
+    }
+}
