@@ -69,20 +69,56 @@ public class TaskRepository : ITaskRepository
     {
         await _dbContext.TaskLanguages.AddAsync(taskLanguage);
     }
-    public async Task<List<Task>> SearchTask(Difficulty difficulty,
-        Guid languageId,
-        string searchTerm, int page, int pageSize)
+
+    public async Task<List<Task>> SearchTask(Difficulty? difficulty, Guid? languageId, string? searchTerm)
     {
-        return await _dbContext.Tasks
-            .Where(t => t.Title.Contains(searchTerm) ||
-                        t.Description.Contains(searchTerm) ||
-                        t.Author.Contains(searchTerm) ||
-                        t.TaskLanguages.Any(tl => tl.IdLanguage == languageId) ||
-                        t.TaskLanguages.Any(tl => tl.IdLanguage == languageId))
-            .Include(t => t.TaskLanguages)
-            .ThenInclude(tl => tl.Language)
+        var query = BuildSearchQuery(difficulty, languageId, searchTerm);
+        
+        return await query
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Task>> SearchTasksPagedAsync(Difficulty? difficulty, Guid? languageId, string? searchTerm, int page, int pageSize)
+    {
+        var query = BuildSearchQuery(difficulty, languageId, searchTerm);
+
+        
+        return await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
     }
+    private IQueryable<Task> BuildSearchQuery(
+        Difficulty? difficulty,
+        Guid? languageId,
+        string? searchTerm)
+    {
+        var query = _dbContext.Tasks
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(t => 
+                t.Title.Contains(searchTerm) ||
+                t.Description.Contains(searchTerm) ||
+                t.Author.Contains(searchTerm));
+        }
+
+        if (difficulty.HasValue)
+        {
+            query = query.Where(t => t.Difficulty == difficulty.Value);
+        }
+
+        if (languageId.HasValue)
+        {
+            query = query.Where(t => t.TaskLanguages.Any(tl => tl.IdLanguage == languageId.Value));
+        }
+
+        return query;
+    }
+
+   
 }

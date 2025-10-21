@@ -1,10 +1,15 @@
+using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+
 namespace ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 
 public class TaskFilterDto
 {
-    private string? SearchTerm { get; set; } = null;
-    private string? Difficulty { get; set; } = null;
-    private Guid? LanguageId { get; set; } = null;
-        private int Page { get; set; } = 1;
-        private int PageSize { get; set; } = 20;
+    public string? SearchTerm { get; set; } = null;
+    public Difficulty? Difficulty { get; set; } = null;
+    public Guid? LanguageId { get; set; } = null;
+}
+
+public class LanguageFilerDto
+{
+    public string? SearchTerm { get; set; } = null;
 }

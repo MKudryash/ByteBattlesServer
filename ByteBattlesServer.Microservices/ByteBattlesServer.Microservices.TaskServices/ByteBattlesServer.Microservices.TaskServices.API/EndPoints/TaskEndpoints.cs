@@ -130,14 +130,33 @@ public static class TaskEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
-        // Получение всех задач (добавьте если нужно)
-        group.MapGet("/", async (IMediator mediator, [AsParameters] TaskFilterDto filter) =>
+
+        group.MapGet("/search-paged", async (IMediator mediator, [AsParameters] TaskTaskFilterPagedDto taskTaskFilter) =>
         {
             try
             {
-                // var query = new GetTaskByIdQuery(filter);
-                // var result = await mediator.Send(query);
-                return Results.Ok("result");
+                var query = new SearchTasksPagedQuery(taskTaskFilter.SearchTerm, taskTaskFilter.Difficulty, taskTaskFilter.LanguageId,
+                    taskTaskFilter.Page, taskTaskFilter.PageSize);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving tasks: {ex.Message}");
+            }
+        })
+        .WithName("GetAllTasksPaged")
+        .WithSummary("Получение списка задач")
+        .WithDescription("Извлекает все задачи с дополнительной фильтрацией и разбивкой по страницам")
+        .Produces<List<TaskDto>>(StatusCodes.Status200OK);
+        
+        group.MapGet("/search", async (IMediator mediator, [AsParameters] TaskFilterDto taskFilter) =>
+        {
+            try
+            {
+                var query = new SearchTasksQuery(taskFilter.SearchTerm, taskFilter.Difficulty, taskFilter.LanguageId);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
             }
             catch (Exception ex)
             {
@@ -146,8 +165,34 @@ public static class TaskEndpoints
         })
         .WithName("GetAllTasks")
         .WithSummary("Получение списка задач")
-        .WithDescription("Извлекает все задачи с дополнительной фильтрацией и разбивкой по страницам")
+        .WithDescription("Извлекает все задачи с дополнительной фильтрацией")
         .Produces<List<TaskDto>>(StatusCodes.Status200OK);
+        
+        group.MapDelete("/{taskId:guid}", async (Guid taskId, IMediator mediator) =>
+            {
+                try
+                {
+                    var command = new RemoveTaskCommand(taskId);
+                    var result = await mediator.Send(command);
+                    return Results.Ok(result);
+                }
+                catch (TaskNotFoundException ex)
+                {
+                    return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+                }
+                catch (ValidationException ex)
+                {
+                    return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem($"An error occurred while retrieving tasks: {ex.Message}");
+                }
+            })
+            .WithName("DeleterTasks")
+            .WithSummary("Удаления задачи")
+            .WithDescription("Удаляет задачи по его уникальному идентификатору")
+            .Produces<List<TaskDto>>(StatusCodes.Status200OK);;
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)

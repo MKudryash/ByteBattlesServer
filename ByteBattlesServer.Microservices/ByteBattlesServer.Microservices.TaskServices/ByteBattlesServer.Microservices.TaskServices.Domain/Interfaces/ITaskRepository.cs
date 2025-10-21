@@ -17,7 +17,11 @@ public interface ITaskRepository
     void RemoveTaskLanguage(TaskLanguage taskLanguage);
     System.Threading.Tasks.Task AddTaskLanguageAsync(TaskLanguage taskLanguage);
 
-    System.Threading.Tasks.Task<List<Task>> SearchTask(Difficulty difficulty,
-        Guid languageId,
-        string searchTerm, int page, int pageSize);
+    System.Threading.Tasks.Task<List<Task>> SearchTask(Difficulty? difficulty,
+        Guid? languageId,
+        string? searchTerm); 
+    
+    System.Threading.Tasks.Task<List<Task>> SearchTasksPagedAsync(Difficulty? difficulty,
+        Guid? languageId,
+        string? searchTerm, int page, int pageSize);
 }
