@@ -126,7 +126,7 @@ public static class LanguageEndpoints
                     }
                 })
             .WithName("GetAllLanguagesPaged")
-            .WithSummary("Получение списка языков программирования")
+            .WithSummary("Получение списка языков программирования с пагинацией")
             .WithDescription(
                 "Извлекает все языки программирования с дополнительной фильтрацией и разбивкой по страницам")
             .Produces<List<LanguageDto>>(StatusCodes.Status200OK);

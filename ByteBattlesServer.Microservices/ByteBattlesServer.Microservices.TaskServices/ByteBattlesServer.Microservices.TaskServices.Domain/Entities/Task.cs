@@ -23,6 +23,7 @@ public class Task:Entity
     public DateTime? UpdatedAt { get; private set; }
 
     public virtual ICollection<TaskLanguage> TaskLanguages { get; private set; } = new List<TaskLanguage>();
+    public virtual ICollection<TestCases> TestCases { get; private set; } = new List<TestCases>();
     private Task() { }
 
     public Task(string title, string description, string difficulty, string author, string functionName,
@@ -70,6 +71,40 @@ public class Task:Entity
         if (!string.IsNullOrWhiteSpace(outputParameters))
             OutputParameters = outputParameters.Trim();
         UpdatedAt = DateTime.UtcNow;
+    }
+    
+    public void AddTestCase(string input, string expectedOutput)
+    {
+        var testCase = new TestCases
+        {
+            TaskId = Id,
+            Input = input,
+            ExpectedOutput = expectedOutput,
+            CreatedAd = DateTime.UtcNow,
+            UpdatedAd = DateTime.UtcNow
+        };
+        
+        TestCases.Add(testCase);
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public void RemoveTestCase(TestCases testCase)
+    {
+        TestCases.Remove(testCase);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+
+    public void UpdateDate()
+    {
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddTestCases(IEnumerable<(string Input, string ExpectedOutput)> testCases)
+    {
+        foreach (var (input, expectedOutput) in testCases)
+        {
+            AddTestCase(input, expectedOutput);
+        }
     }
 
 }

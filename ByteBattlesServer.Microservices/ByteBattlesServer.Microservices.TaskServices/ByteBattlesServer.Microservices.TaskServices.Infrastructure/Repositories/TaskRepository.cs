@@ -119,6 +119,40 @@ public class TaskRepository : ITaskRepository
 
         return query;
     }
+    public async System.Threading.Tasks.Task<List<TestCases>> GetTestCasesAsync(Guid taskId)
+    {
+        return await _dbContext.TestsTasks
+            .Where(tt => tt.TaskId == taskId)
+            .OrderBy(tt => tt.CreatedAd)
+            .ToListAsync();
+    }
+
+    public async Task<TestCases?> GetTestCaseByIdAsync(Guid testCaseId)
+    {
+        return await _dbContext.TestsTasks
+            .Include(tt => tt.Task)
+            .FirstOrDefaultAsync(tt => tt.Id == testCaseId);
+    }
+
+    public async System.Threading.Tasks.Task AddTestCaseAsync(TestCases testCase)
+    {
+        await _dbContext.TestsTasks.AddAsync(testCase);
+    }
+
+    public async System.Threading.Tasks.Task UpdateTestCaseAsync(TestCases testCase)
+    {
+        _dbContext.TestsTasks.Update(testCase);
+    }
+
+    public async System.Threading.Tasks.Task DeleteTestCaseAsync(TestCases testCase)
+    {
+        _dbContext.TestsTasks.Remove(testCase);
+    }
+
+    public async System.Threading.Tasks.Task AddTestCasesAsync(IEnumerable<TestCases> testCases)
+    {
+        await _dbContext.TestsTasks.AddRangeAsync(testCases);
+    }
 
    
 }

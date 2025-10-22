@@ -146,7 +146,7 @@ public static class TaskEndpoints
             }
         })
         .WithName("GetAllTasksPaged")
-        .WithSummary("Получение списка задач")
+        .WithSummary("Получение списка задач с пагинацией")
         .WithDescription("Извлекает все задачи с дополнительной фильтрацией и разбивкой по страницам")
         .Produces<List<TaskDto>>(StatusCodes.Status200OK);
         
@@ -192,7 +192,30 @@ public static class TaskEndpoints
             .WithName("DeleterTasks")
             .WithSummary("Удаления задачи")
             .WithDescription("Удаляет задачи по его уникальному идентификатору")
-            .Produces<List<TaskDto>>(StatusCodes.Status200OK);;
+            .Produces<List<TaskDto>>(StatusCodes.Status200OK);
+
+        group.MapPost("/testCases/{taskId:guid}", async (Guid taskId,CreateTestCasesDto dto, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new AddTestCasesCommand(taskId, dto.TestCases);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving tasks: {ex.Message}");
+            }
+        });
+
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)
@@ -212,3 +235,5 @@ public static class TaskEndpoints
         return Guid.Parse(userIdClaim);
     }
 }
+
+

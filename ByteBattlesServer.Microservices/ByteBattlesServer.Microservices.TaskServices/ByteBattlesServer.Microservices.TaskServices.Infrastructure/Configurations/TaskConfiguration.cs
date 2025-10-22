@@ -7,7 +7,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
 {
     public void Configure(EntityTypeBuilder<Task> builder)
     {
-        builder.ToTable("Tasks"); // Явно указываем имя таблицы
+        builder.ToTable("Tasks"); 
         
         builder.HasKey(t => t.Id);
         
@@ -22,7 +22,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             
         builder.Property(t => t.Difficulty)
             .IsRequired()
-            .HasConversion<string>() // Сохраняем enum как строку в БД
+            .HasConversion<string>() 
             .HasMaxLength(20);
             
         builder.Property(t => t.Author)
@@ -53,6 +53,10 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             .HasForeignKey(tl => tl.IdTask)
             .OnDelete(DeleteBehavior.Cascade);
             
+        builder.HasMany(t => t.TestCases)
+            .WithOne(tt => tt.Task)
+            .HasForeignKey(tt => tt.TaskId)
+            .OnDelete(DeleteBehavior.Cascade);
       
         builder.HasIndex(t => t.Difficulty);
         builder.HasIndex(t => t.Author);

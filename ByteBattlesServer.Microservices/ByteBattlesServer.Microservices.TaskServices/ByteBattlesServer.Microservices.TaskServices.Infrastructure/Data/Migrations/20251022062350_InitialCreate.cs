@@ -69,6 +69,28 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TestsTasks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TaskId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Input = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    ExpectedOutput = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TestsTasks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TestsTasks_Tasks_TaskId",
+                        column: x => x.TaskId,
+                        principalTable: "Tasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Languages_ShortTitle",
                 table: "Languages",
@@ -106,6 +128,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 name: "IX_Tasks_Difficulty",
                 table: "Tasks",
                 column: "Difficulty");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TestsTasks_TaskId",
+                table: "TestsTasks",
+                column: "TaskId");
         }
 
         /// <inheritdoc />
@@ -113,6 +140,9 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
         {
             migrationBuilder.DropTable(
                 name: "TaskLanguages");
+
+            migrationBuilder.DropTable(
+                name: "TestsTasks");
 
             migrationBuilder.DropTable(
                 name: "Languages");

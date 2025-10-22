@@ -129,6 +129,38 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.ToTable("TaskLanguages", (string)null);
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExpectedOutput")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Input")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TestsTasks", (string)null);
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLanguage", b =>
                 {
                     b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Language", "Language")
@@ -148,6 +180,17 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", "Task")
+                        .WithMany("TestCases")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Language", b =>
                 {
                     b.Navigation("TasksLanguage");
@@ -156,6 +199,8 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", b =>
                 {
                     b.Navigation("TaskLanguages");
+
+                    b.Navigation("TestCases");
                 });
 #pragma warning restore 612, 618
         }
