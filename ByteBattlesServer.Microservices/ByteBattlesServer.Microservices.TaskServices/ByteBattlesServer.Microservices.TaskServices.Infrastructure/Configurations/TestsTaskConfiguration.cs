@@ -19,6 +19,10 @@ public class TestsTaskConfiguration : IEntityTypeConfiguration<TestCases>
         builder.Property(tt => tt.ExpectedOutput)
             .IsRequired()
             .HasMaxLength(1000);
+        
+        builder.Property(tt=>tt.IsExample)
+            .IsRequired()
+            .HasDefaultValue(false);
             
         builder.Property(tt => tt.CreatedAd)
             .IsRequired();

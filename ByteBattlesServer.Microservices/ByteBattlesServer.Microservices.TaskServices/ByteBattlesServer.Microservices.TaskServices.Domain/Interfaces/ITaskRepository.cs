@@ -24,7 +24,7 @@ public interface ITaskRepository
     Task<TestCases?> GetTestCaseByIdAsync(Guid testCaseId);
     System.Threading.Tasks.Task AddTestCaseAsync(TestCases testCase);
     System.Threading.Tasks.Task UpdateTestCaseAsync(TestCases testCase);
-    System.Threading.Tasks.Task DeleteTestCaseAsync(TestCases testCase);
+    System.Threading.Tasks.Task RemoveTestCaseAsync(TestCases testCase);
     System.Threading.Tasks.Task AddTestCasesAsync(IEnumerable<TestCases> testCases);
     
     

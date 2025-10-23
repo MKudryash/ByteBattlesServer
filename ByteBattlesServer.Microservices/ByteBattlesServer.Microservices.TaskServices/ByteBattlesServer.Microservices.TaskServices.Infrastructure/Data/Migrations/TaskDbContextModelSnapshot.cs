@@ -148,6 +148,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("IsExample")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid");
 

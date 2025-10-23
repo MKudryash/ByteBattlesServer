@@ -194,13 +194,16 @@ public static class TaskEndpoints
             .WithDescription("Удаляет задачи по его уникальному идентификатору")
             .Produces<List<TaskDto>>(StatusCodes.Status200OK);
 
-        group.MapPost("/testCases/{taskId:guid}", async (Guid taskId,CreateTestCasesDto dto, IMediator mediator) =>
+
+
+
+        group.MapPost("/testCases/{taskId:guid}", async (Guid taskId, CreateTestCasesDto dto, IMediator mediator) =>
         {
             try
             {
-                var command = new AddTestCasesCommand(taskId, dto.TestCases);
+                var command = new CreateTestCasesCommand(taskId, dto.TestCases);
                 var result = await mediator.Send(command);
-                return Results.Ok(result);
+                return Results.Created($"/api/task/{taskId}/test-cases", result);
             }
             catch (TaskNotFoundException ex)
             {
@@ -212,9 +215,97 @@ public static class TaskEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"An error occurred while retrieving tasks: {ex.Message}");
+                return Results.Problem($"An error occurred while creating test cases: {ex.Message}");
             }
-        });
+        })
+        .WithName("CreateTestCases")
+        .WithSummary("Добавление тестов для задачи")
+        .WithDescription("Добавляет набор тестовых случаев для проверки решений конкретной задачи программирования")
+        .Produces<List<TestCaseDto>>(StatusCodes.Status201Created)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+        
+        // Обновление тестового случая
+        group.MapPut("/testCases", async (UpdateTestCaseDto dto, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new UpdateTestsCaseCommand(dto.Id, dto.Input, dto.Output, dto.IsExample);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (TestCaseNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while updating test case: {ex.Message}");
+            }
+        })
+        .WithName("UpdateTestCase")
+        .WithSummary("Обновление тестового случая")
+        .WithDescription("Обновляет входные данные или ожидаемый результат конкретного тестового случая")
+        .Produces<TestCaseDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+        
+        // Удаление тестового случая
+        group.MapDelete("/testCases/{testCaseId:guid}", async (Guid testCaseId, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new RemoveTestCasesCommand(testCaseId);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (TestCaseNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while deleting test case: {ex.Message}");
+            }
+        })
+        .WithName("DeleteTestCase")
+        .WithSummary("Удаление тестового случая")
+        .WithDescription("Удаляет конкретный тестовый случай из задачи программирования")
+        .Produces<DeleteResponseDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+       
+        group.MapGet("/testCases/{taskId:guid}", async (Guid taskId, IMediator mediator) =>
+        {
+            try
+            {
+                var query = new GetTestCasesByTaskQuery(taskId);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving test cases: {ex.Message}");
+            }
+        })
+        .WithName("GetTestCasesByTask")
+        .WithSummary("Получение тестовых случаев задачи")
+        .WithDescription("Извлекает все тестовые случаи для конкретной задачи программирования")
+        .Produces<List<TestCaseDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
 
     }
 

@@ -33,6 +33,13 @@ public class GetTaskByIdQueryHandler: IRequestHandler<GetTaskByIdQuery, TaskDto?
             LanguageId = tl.Id,
             LanguageTitle = tl.Language.Title,
             LanguageShortTitle = tl.Language.ShortTitle,
+        }).ToList(),
+        TestCases = task.TestCases.Select(t => new TestCaseDto()
+        {
+            Id = t.Id,
+            Input = t.Input,
+            Output = t.ExpectedOutput,
+            IsExample = t.IsExample,
         }).ToList()
     };
 }

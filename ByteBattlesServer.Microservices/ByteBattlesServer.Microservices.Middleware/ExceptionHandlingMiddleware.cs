@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.AuthService.Domain.Exceptions;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

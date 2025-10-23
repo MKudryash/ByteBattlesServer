@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251022062350_InitialCreate")]
+    [Migration("20251023164921_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -150,6 +150,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsExample")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid");

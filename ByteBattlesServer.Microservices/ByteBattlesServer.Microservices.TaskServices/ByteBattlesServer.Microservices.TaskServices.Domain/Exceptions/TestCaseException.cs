@@ -1,10 +1,10 @@
 namespace ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 
-public class TaskException : Exception
+public class TestCaseException : Exception
 {
     public string ErrorCode { get; }
 
-    public TaskException(string message, string errorCode = "TASK_ERROR") 
+    public TestCaseException(string message, string errorCode = "TASK_CASE_ERROR") 
         : base(message)
     {
         ErrorCode = errorCode;

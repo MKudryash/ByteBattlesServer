@@ -5,5 +5,6 @@ namespace ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 
 public record UpdateTestsCaseCommand(
     Guid Id,
-    string Input,
-    string Output):IRequest<TestCaseDto>;
+    string? Input,
+    string? Output,
+    bool IsExample):IRequest<TestCaseDto>;

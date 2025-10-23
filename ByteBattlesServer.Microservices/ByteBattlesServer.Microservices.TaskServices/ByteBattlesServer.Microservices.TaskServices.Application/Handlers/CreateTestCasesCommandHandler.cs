@@ -7,18 +7,18 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 
-public class AddTestCasesCommandHandler : IRequestHandler<AddTestCasesCommand, List<TestCaseDto>>
+public class CreateTestCasesCommandHandler : IRequestHandler<CreateTestCasesCommand, List<TestCaseDto>>
 {
     private readonly ITaskRepository _taskRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AddTestCasesCommandHandler(ITaskRepository taskRepository, IUnitOfWork unitOfWork)
+    public CreateTestCasesCommandHandler(ITaskRepository taskRepository, IUnitOfWork unitOfWork)
     {
         _taskRepository = taskRepository;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<List<TestCaseDto>> Handle(AddTestCasesCommand request, CancellationToken cancellationToken)
+    public async Task<List<TestCaseDto>> Handle(CreateTestCasesCommand request, CancellationToken cancellationToken)
     {
         var task = await _taskRepository.GetByIdAsync(request.TaskId);
         if (task == null)
@@ -31,7 +31,8 @@ public class AddTestCasesCommandHandler : IRequestHandler<AddTestCasesCommand, L
             var testCase = new TestCases(
                 request.TaskId,
                 testCaseDto.Input,
-                testCaseDto.Output
+                testCaseDto.Output,
+                testCaseDto.IsExample
             );
 
             await _taskRepository.AddTestCaseAsync(testCase);

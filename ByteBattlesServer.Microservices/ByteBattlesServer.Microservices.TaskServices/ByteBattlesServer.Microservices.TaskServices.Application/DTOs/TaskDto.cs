@@ -13,4 +13,5 @@ public class TaskDto
   public  DateTime CreatedAt { get; set; }
   public  DateTime? UpdatedAt { get; set; }
   public  List<TaskLanguageDto> TaskLanguages { get; set; }
+  public List<TestCaseDto> TestCases { get; set; }
 }

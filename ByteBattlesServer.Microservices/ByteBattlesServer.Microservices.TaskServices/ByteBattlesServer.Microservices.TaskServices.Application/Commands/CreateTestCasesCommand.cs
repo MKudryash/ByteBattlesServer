@@ -4,7 +4,7 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 
-public record AddTestCasesCommand(
+public record CreateTestCasesCommand(
     Guid TaskId,
     List<CreateTestCaseDto> TestCases
     ):IRequest<List<TestCaseDto>>;

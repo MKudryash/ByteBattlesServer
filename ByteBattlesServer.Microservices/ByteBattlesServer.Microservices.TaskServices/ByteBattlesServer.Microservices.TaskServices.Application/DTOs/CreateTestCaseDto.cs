@@ -4,8 +4,5 @@ public class CreateTestCaseDto
 {
     public string Input { get; set; }
     public string Output { get; set; }
-}
-public class CreateTestCasesDto
-{
-   public List<CreateTestCaseDto> TestCases { get; set; }
+    public bool IsExample { get; set; }
 }

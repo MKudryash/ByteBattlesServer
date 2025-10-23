@@ -21,6 +21,7 @@ public class TaskRepository : ITaskRepository
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
+            .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Id == id);
     }
     public void RemoveTaskLanguage(TaskLanguage taskLanguage)
@@ -32,6 +33,7 @@ public class TaskRepository : ITaskRepository
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
+            .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Title == title);
     }
 
@@ -144,7 +146,7 @@ public class TaskRepository : ITaskRepository
         _dbContext.TestsTasks.Update(testCase);
     }
 
-    public async System.Threading.Tasks.Task DeleteTestCaseAsync(TestCases testCase)
+    public async System.Threading.Tasks.Task RemoveTestCaseAsync(TestCases testCase)
     {
         _dbContext.TestsTasks.Remove(testCase);
     }

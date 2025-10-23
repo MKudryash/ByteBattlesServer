@@ -77,6 +77,7 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     TaskId = table.Column<Guid>(type: "uuid", nullable: false),
                     Input = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     ExpectedOutput = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    IsExample = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

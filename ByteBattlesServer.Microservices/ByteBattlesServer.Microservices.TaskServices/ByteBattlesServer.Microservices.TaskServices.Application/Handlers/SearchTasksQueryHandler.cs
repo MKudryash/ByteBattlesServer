@@ -1,6 +1,5 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
-using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
 using MediatR;
 
@@ -33,49 +32,12 @@ public class SearchTasksQueryHandler: IRequestHandler<SearchTasksQuery, List<Tas
             LanguageId = tl.Id,
             LanguageTitle = tl.Language.Title,
             LanguageShortTitle = tl.Language.ShortTitle,
+        }).ToList(),
+        TestCases = task.TestCases.Select(t => new TestCaseDto()
+        {
+            Id = t.Id,
+            Input = t.Input,
+            Output = t.ExpectedOutput
         }).ToList()
     };
 }
-
-
-public class SearchLanguageQueryHandler: IRequestHandler<SearchLanguagesQuery, List<LanguageDto>>
-{
-    private readonly ILanguageRepository _repository;
-    
-    public SearchLanguageQueryHandler(ILanguageRepository repository)=> _repository = repository;
-    
-    public async Task<List<LanguageDto>> Handle(SearchLanguagesQuery request, CancellationToken cancellationToken)
-    {
-        var languages = await _repository.SearchLanguages(request.SearchTerm);
-        
-        return languages.Select(x=>MapToDto(x)).ToList();
-    }
-    private LanguageDto MapToDto(Language language) => new()
-    {
-        Id = language.Id,
-        Title = language.Title,
-        ShortTitle = language.ShortTitle
-    };
-}
-
-public class SearchLanguagePagedQueryHandler: IRequestHandler<SearchLanguagesPagedQuery, List<LanguageDto>>
-{
-    private readonly ILanguageRepository _repository;
-    
-    public SearchLanguagePagedQueryHandler(ILanguageRepository repository)=> _repository = repository;
-    
-    public async Task<List<LanguageDto>> Handle(SearchLanguagesPagedQuery request, CancellationToken cancellationToken)
-    {
-        var languages = await _repository.SearchLanguagesPagedAsync(request.SearchTerm
-        ,request.Page, request.PageSize);
-        
-        return languages.Select(x=>MapToDto(x)).ToList();
-    }
-    private LanguageDto MapToDto(Language language) => new()
-    {
-        Id = language.Id,
-        Title = language.Title,
-        ShortTitle = language.ShortTitle
-    };
-}
-
