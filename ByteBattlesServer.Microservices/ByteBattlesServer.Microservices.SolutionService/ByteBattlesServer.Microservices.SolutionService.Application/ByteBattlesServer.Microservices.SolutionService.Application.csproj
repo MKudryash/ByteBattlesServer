@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.1.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
+      <ProjectReference Include="..\ByteBattlesServer.Microservices.SolutionService.Domain\ByteBattlesServer.Microservices.SolutionService.Domain.csproj" />
+    </ItemGroup>
+
+</Project>
