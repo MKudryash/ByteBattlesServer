@@ -24,10 +24,12 @@ public class CreateTestCasesCommandHandler : IRequestHandler<CreateTestCasesComm
         if (task == null)
             throw new TaskNotFoundException(request.TaskId);
 
+       
         var createdTestCases = new List<TestCases>();
         
         foreach (var testCaseDto in request.TestCases)
         {
+            
             var testCase = new TestCases(
                 request.TaskId,
                 testCaseDto.Input,

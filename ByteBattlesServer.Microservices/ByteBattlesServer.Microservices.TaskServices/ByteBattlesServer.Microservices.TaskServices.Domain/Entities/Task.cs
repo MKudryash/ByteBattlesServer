@@ -21,6 +21,12 @@ public class Task:Entity
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
+    
+    public int TotalAttempts { get; private set; }
+    public int SuccessfulAttempts { get; private set; }
+    public double SuccessRate => TotalAttempts > 0 ? (double)SuccessfulAttempts / TotalAttempts * 100 : 0;
+    public double AverageExecutionTime { get; private set; }
+    
 
     public virtual ICollection<TaskLanguage> TaskLanguages { get; private set; } = new List<TaskLanguage>();
     public virtual ICollection<TestCases> TestCases { get; private set; } = new List<TestCases>();
@@ -73,38 +79,24 @@ public class Task:Entity
         UpdatedAt = DateTime.UtcNow;
     }
     
-    public void AddTestCase(string input, string expectedOutput)
-    {
-        var testCase = new TestCases
-        {
-            TaskId = Id,
-            Input = input,
-            ExpectedOutput = expectedOutput,
-            CreatedAd = DateTime.UtcNow,
-            UpdatedAd = DateTime.UtcNow
-        };
-        
-        TestCases.Add(testCase);
-        UpdatedAt = DateTime.UtcNow;
-    }
-    public void RemoveTestCase(TestCases testCase)
-    {
-        TestCases.Remove(testCase);
-        UpdatedAt = DateTime.UtcNow;
-    }
+
 
 
     public void UpdateDate()
     {
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public void AddTestCases(IEnumerable<(string Input, string ExpectedOutput)> testCases)
+    
+    public void RecordAttempt(bool isSuccessful, TimeSpan executionTime)
     {
-        foreach (var (input, expectedOutput) in testCases)
+        TotalAttempts++;
+        if (isSuccessful)
         {
-            AddTestCase(input, expectedOutput);
+            SuccessfulAttempts++;
         }
+        
+        AverageExecutionTime = ((AverageExecutionTime * (TotalAttempts - 1)) + executionTime.TotalMilliseconds) / TotalAttempts;
+        UpdatedAt = DateTime.UtcNow;
     }
 
 }
