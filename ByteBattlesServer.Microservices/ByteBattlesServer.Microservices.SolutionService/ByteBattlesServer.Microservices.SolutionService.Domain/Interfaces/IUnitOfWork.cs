@@ -1,4 +1,4 @@
-namespace ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
+namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces;
 
 
 public interface IUnitOfWork : IDisposable

@@ -46,6 +46,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.CodeExecution.Domain", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.CodeExecution\ByteBattlesServer.Microservices.CodeExecution.Domain\ByteBattlesServer.Microservices.CodeExecution.Domain.csproj", "{B00D01D7-095B-49DA-8E54-9A32262AF10D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.SolutionService.Infrastructure", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.SolutionService\ByteBattlesServer.Microservices.SolutionService.Infrastructure\ByteBattlesServer.Microservices.SolutionService.Infrastructure.csproj", "{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,6 +122,10 @@ Global
 		{B00D01D7-095B-49DA-8E54-9A32262AF10D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B00D01D7-095B-49DA-8E54-9A32262AF10D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B00D01D7-095B-49DA-8E54-9A32262AF10D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
@@ -141,5 +147,6 @@ Global
 		{57F48C81-1FB8-446A-BAE3-813EB80AF293} = {485ED3E4-52C9-4C1F-BC1F-64E925683120}
 		{82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
 		{B00D01D7-095B-49DA-8E54-9A32262AF10D} = {82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A}
+		{66E1A7D4-F54E-46F3-A4DA-9CE816C1FEFD} = {485ED3E4-52C9-4C1F-BC1F-64E925683120}
 	EndGlobalSection
 EndGlobal
