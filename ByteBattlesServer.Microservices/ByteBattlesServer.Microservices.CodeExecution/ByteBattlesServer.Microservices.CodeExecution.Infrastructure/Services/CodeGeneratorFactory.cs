@@ -25,5 +25,12 @@ namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
             return _generators[submission.Language].GenerateExecutableCode(submission);
         }
 
-        public string GetFileExtension() => throw new NotImplementedException();
+        public string GetFileExtension(ProgrammingLanguage language)
+        {
+            if (_generators.TryGetValue(language, out var generator))
+            {
+                return generator.GetFileExtension(language);
+            }
+            throw new NotSupportedException($"Language {language} is not supported");
+        }
     }

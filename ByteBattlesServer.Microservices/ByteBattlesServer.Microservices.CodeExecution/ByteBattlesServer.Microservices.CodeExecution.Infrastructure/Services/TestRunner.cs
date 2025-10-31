@@ -26,9 +26,10 @@ public class TestRunner : ITestRunner
         //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
         var executableCode = submission.Code;
 
-       // var test = _codeGenerator.GetFileExtension();
+        
+        // var test = _codeGenerator.GetFileExtension(submission.Language);
         // Создание временного файла
-        var filePath = _fileService.GetTempFilePath(".cs");
+        var filePath = _fileService.GetTempFilePath(_codeGenerator.GetFileExtension(submission.Language));
         //var filePath = "/app/test.cs";
         await _fileService.WriteToFileAsync(executableCode, filePath);
 
