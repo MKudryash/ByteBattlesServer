@@ -27,7 +27,6 @@ public class TestRunner : ITestRunner
         var executableCode = submission.Code;
 
         
-        // var test = _codeGenerator.GetFileExtension(submission.Language);
         // Создание временного файла
         var filePath = _fileService.GetTempFilePath(_codeGenerator.GetFileExtension(submission.Language));
         //var filePath = "/app/test.cs";
@@ -36,14 +35,14 @@ public class TestRunner : ITestRunner
         try
         {
             // Компиляция (если требуется)
-            // if (submission.Language == ProgrammingLanguage.C || submission.Language == ProgrammingLanguage.CSharp)
-            // {
-            //     var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
-            //     if (!compileResult.IsSuccess)
-            //     {
-            //         return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
-            //     }
-            // }
+            if (submission.Language == ProgrammingLanguage.C)
+            {
+                var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
+                if (!compileResult.IsSuccess)
+                {
+                    return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
+                }
+            }
 
             // Запуск тестов
             foreach (var testCase in submission.TestCases)
