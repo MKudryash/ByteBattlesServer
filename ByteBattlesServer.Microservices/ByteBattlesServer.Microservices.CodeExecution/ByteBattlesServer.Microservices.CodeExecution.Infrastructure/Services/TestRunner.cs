@@ -28,20 +28,21 @@ public class TestRunner : ITestRunner
 
        // var test = _codeGenerator.GetFileExtension();
         // Создание временного файла
-        var filePath = _fileService.GetTempFilePath(".c");
+        var filePath = _fileService.GetTempFilePath(".cs");
+        //var filePath = "/app/test.cs";
         await _fileService.WriteToFileAsync(executableCode, filePath);
 
         try
         {
             // Компиляция (если требуется)
-            if (submission.Language == ProgrammingLanguage.C || submission.Language == ProgrammingLanguage.CSharp)
-            {
-                var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
-                if (!compileResult.IsSuccess)
-                {
-                    return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
-                }
-            }
+            // if (submission.Language == ProgrammingLanguage.C || submission.Language == ProgrammingLanguage.CSharp)
+            // {
+            //     var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
+            //     if (!compileResult.IsSuccess)
+            //     {
+            //         return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
+            //     }
+            // }
 
             // Запуск тестов
             foreach (var testCase in submission.TestCases)
