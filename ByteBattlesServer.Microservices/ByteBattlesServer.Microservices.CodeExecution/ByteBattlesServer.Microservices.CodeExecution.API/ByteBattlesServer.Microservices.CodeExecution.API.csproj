@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj" />
+      <ProjectReference Include="..\..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
+      <ProjectReference Include="..\..\ByteBattlesServer.Microservices.Middleware\ByteBattlesServer.Microservices.Middleware.csproj" />
+      <ProjectReference Include="..\ByteBattlesServer.Microservices.CodeExecution.Application\ByteBattlesServer.Microservices.CodeExecution.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+</Project>
