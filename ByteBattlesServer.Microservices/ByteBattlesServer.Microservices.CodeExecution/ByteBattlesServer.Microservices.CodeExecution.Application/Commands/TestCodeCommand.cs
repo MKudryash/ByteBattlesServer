@@ -4,5 +4,5 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Application.Commands;
 
-public record TestCodeCommand(string Code, ProgrammingLanguage Language, List<TestCaseDto> TestCases )
+public record TestCodeCommand(string Code, Guid Language, List<TestCaseDto> TestCases )
     :IRequest<CodeTestResultResponse>;

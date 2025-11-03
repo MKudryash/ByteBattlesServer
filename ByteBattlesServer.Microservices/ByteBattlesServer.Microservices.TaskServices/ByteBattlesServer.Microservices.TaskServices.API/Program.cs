@@ -2,24 +2,34 @@ using System.Reflection;
 using System.Text;
 using ByteBattlesServer.Microservices.Middleware;
 using ByteBattlesServer.Microservices.TaskServices.API.EndPoints;
+using ByteBattlesServer.Microservices.TaskServices.API.Messaging;
 using ByteBattlesServer.Microservices.TaskServices.Application;
 using ByteBattlesServer.Microservices.TaskServices.Infrastructure;
 using ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Jwt;
+using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
+// Конфигурация RabbitMQ
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+// Конфигурация JWT
 var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
 if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
 {
     throw new InvalidOperationException("JWT configuration is invalid.");
 }
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -48,20 +58,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
-// Регистрация JWT настроек
+// Регистрация сервисов
 builder.Services.AddSingleton(jwtSettings);
-
-
-// Добавление сервисов
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-// // Add authentication and authorization services
-// builder.Services.AddAuthentication() // Add this line
-//     .AddCookie(); // Or your preferred authentication scheme
-
 builder.Services.AddAuthorization();
+
+// // Регистрация RabbitMQ с Resilient оберткой
+// builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
+// {
+//     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
+//     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
+//     var messageBus = new RabbitMQMessageBus(settings);
+//     return new ResilientMessageBus(messageBus, logger);
+// });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -81,15 +91,25 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
-    
 });
 
+// Регистрируем LanguageMessageHandler как Singleton, если он не зависит от scoped сервисов
+builder.Services.AddSingleton<LanguageMessageHandler>();
 
-//builder.Services.AddHostedService();
+builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
+{
+    var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
+    var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
+    var messageBus = new RabbitMQMessageBus(settings);
+    return new ResilientMessageBus(messageBus, logger);
+});
+
+// LanguageMessageHandler регистрируется как Hosted Service
+builder.Services.AddHostedService<LanguageMessageHandler>();
 
 var app = builder.Build();
 
+// Конфигурация middleware
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
@@ -97,25 +117,20 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = string.Empty;
 });
 app.UseHttpsRedirection();
-
-
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 
 
 app.UseRouting();
 app.UseAuthentication(); 
 app.UseAuthorization();
 
-
+// Миграции базы данных
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TaskDbContext>();
     context.Database.Migrate();
-
-    // Seed initial data if needed
-    //await SeedData.InitializeAsync(context);
 }
-
 
 app.MapTaskEndpoints();
 app.MapLanguageEndpoints();

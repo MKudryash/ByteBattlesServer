@@ -22,6 +22,10 @@ public class SearchLanguageQueryHandler: IRequestHandler<SearchLanguagesQuery, L
     {
         Id = language.Id,
         Title = language.Title,
-        ShortTitle = language.ShortTitle
+        ShortTitle = language.ShortTitle,
+        CompilerCommand = language.CompilerCommand,
+        ExecutionCommand = language.ExecutionCommand,
+        FileExtension = language.FileExtension,
+        SupportsCompilation = language.SupportsCompilation,
     };
 }

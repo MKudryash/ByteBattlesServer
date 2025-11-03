@@ -52,7 +52,8 @@ public static class LanguageEndpoints
             {
                 try
                 {
-                    var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle);
+                    var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle, dto.FileExtension,
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation);
                     var result = await mediator.Send(command);
                     return Results.Created($"/api/language/{result.Id}", result);
                 }
@@ -81,7 +82,8 @@ public static class LanguageEndpoints
             {
                 try
                 {
-                    var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle);
+                    var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle, dto.FileExtension,
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation);
                     var result = await mediator.Send(command);
                     return Results.Ok(result);
                 }

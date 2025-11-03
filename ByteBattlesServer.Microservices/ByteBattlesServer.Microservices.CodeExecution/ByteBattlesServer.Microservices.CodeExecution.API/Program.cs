@@ -1,10 +1,23 @@
 using ByteBattlesServer.Microservices.CodeExecution.API;
 using ByteBattlesServer.Microservices.CodeExecution.Application;
+using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
 using ByteBattlesServer.Microservices.CodeExecution.Infrastructure;
+using ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
 using ByteBattlesServer.Microservices.Middleware;
+using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
+
+
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 //
 // var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 // var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
@@ -66,7 +79,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ILanguageService, RabbitMQLanguageService>();
 //builder.Services.AddHostedService();
 
 var app = builder.Build();

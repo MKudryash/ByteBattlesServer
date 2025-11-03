@@ -1,6 +1,8 @@
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Entities;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.enums;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+using ByteBattlesServer.SharedContracts.Messaging;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
 
@@ -9,12 +11,19 @@ public class TestRunner : ITestRunner
     private readonly ICodeGenerator _codeGenerator;
     private readonly ICodeCompiler _codeCompiler;
     private readonly IFileService _fileService;
+    private readonly ILanguageService _languageService;
+    
 
-    public TestRunner(ICodeGenerator codeGenerator, ICodeCompiler codeCompiler, IFileService fileService)
+    public TestRunner(ICodeGenerator codeGenerator, 
+        ICodeCompiler codeCompiler, 
+        IFileService fileService,
+        IMessageBus messageBus,
+        ILanguageService languageService)
     {
         _codeGenerator = codeGenerator;
         _codeCompiler = codeCompiler;
         _fileService = fileService;
+        _languageService = languageService;
     }
 
     public async Task<TestResult> RunTestsAsync(CodeSubmission submission)
@@ -26,17 +35,27 @@ public class TestRunner : ITestRunner
         //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
         var executableCode = submission.Code;
 
+        //Получить информацию о языке submission.Language
+        //var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
+
+        var languageInfo = new LanguageInfo()
+        {
+            ShortTitle = "C",
+            ExecutionCommand = ".c"
+        };
+ 
+        
         
         // Создание временного файла
-        var filePath = _fileService.GetTempFilePath(_codeGenerator.GetFileExtension(submission.Language));
+        var filePath = _fileService.GetTempFilePath(languageInfo.FileExtension);
         await _fileService.WriteToFileAsync(executableCode, filePath);
 
         try
         {
             // Компиляция (если требуется)
-            if (submission.Language == ProgrammingLanguage.C)
+            if (languageInfo.SupportsCompilation)
             {
-                var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
+                var compileResult = await _codeCompiler.CompileAsync(filePath, languageInfo);
                 if (!compileResult.IsSuccess)
                 {
                     return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
@@ -46,7 +65,7 @@ public class TestRunner : ITestRunner
             // Запуск тестов
             foreach (var testCase in submission.TestCases)
             {
-                var executionResult = await _codeCompiler.ExecuteAsync(filePath, submission.Language, testCase.Input);
+                var executionResult = await _codeCompiler.ExecuteAsync(filePath, languageInfo, testCase.Input);
                     
                 var isPassed = executionResult.IsSuccess && 
                                executionResult.Output.Trim() == testCase.ExpectedOutput.Trim();

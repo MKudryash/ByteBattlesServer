@@ -2,6 +2,7 @@ using System.Diagnostics;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Entities;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.enums;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using Microsoft.Extensions.Logging;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
@@ -15,13 +16,13 @@ public class ProcessService : ICodeCompiler
         _logger = logger;
     }
 
-    public async Task<CodeExecutionResult> CompileAsync(string filePath, ProgrammingLanguage language)
+    public async Task<CodeExecutionResult> CompileAsync(string filePath, LanguageInfo language)
     {
         _logger.LogInformation("Starting compilation for {Language} file: {FilePath}", language, filePath);
         
         try
         {
-            var startInfo = CreateCompileProcessInfo(filePath, language);
+            var startInfo = CreateCompileProcessInfo(filePath, language.ShortTitle);
             _logger.LogDebug("Compile command: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
             
             return await ExecuteProcessAsync(startInfo, "compilation");
@@ -33,14 +34,14 @@ public class ProcessService : ICodeCompiler
         }
     }
 
-    public async Task<CodeExecutionResult> ExecuteAsync(string filePath, ProgrammingLanguage language, string arguments)
+    public async Task<CodeExecutionResult> ExecuteAsync(string filePath, LanguageInfo language, string arguments)
     {
         _logger.LogInformation("Starting execution for {Language} file: {FilePath} with arguments: {Arguments}", 
             language, filePath, arguments);
         
         try
         {
-            var startInfo = CreateExecuteProcessInfo(filePath, language, arguments);
+            var startInfo = CreateExecuteProcessInfo(filePath, language.ShortTitle, arguments);
             _logger.LogDebug("Execute command: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
             
             return await ExecuteProcessAsync(startInfo, "execution");
@@ -53,15 +54,15 @@ public class ProcessService : ICodeCompiler
         }
     }
 
-    private ProcessStartInfo CreateCompileProcessInfo(string filePath, ProgrammingLanguage language)
+    private ProcessStartInfo CreateCompileProcessInfo(string filePath, string language)
     {
         var outputFileName = Path.Combine(Path.GetDirectoryName(filePath)!, Path.GetFileNameWithoutExtension(filePath));
         
         _logger.LogDebug("Generated output file name: {OutputFileName}", outputFileName);
         
-        return language switch
+        return language.ToLower() switch
         {
-            ProgrammingLanguage.C => new ProcessStartInfo
+            "c" => new ProcessStartInfo
             {
                 FileName = "gcc",
                 Arguments = $"{filePath} -o {outputFileName}",
@@ -70,7 +71,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.CSharp => new ProcessStartInfo
+            "csharp" => new ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = $"build {filePath} -o {Path.GetDirectoryName(filePath)}",
@@ -79,7 +80,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.Cpp => new ProcessStartInfo
+            "cpp" => new ProcessStartInfo
             {
                 FileName = "g++",
                 Arguments = $"{filePath} -o {outputFileName}",
@@ -92,16 +93,16 @@ public class ProcessService : ICodeCompiler
         };
     }
 
-    private ProcessStartInfo CreateExecuteProcessInfo(string filePath, ProgrammingLanguage language, string arguments)
+    private ProcessStartInfo CreateExecuteProcessInfo(string filePath, string language, string arguments)
     {
         var outputFileName = Path.Combine(Path.GetDirectoryName(filePath)!, Path.GetFileNameWithoutExtension(filePath));
         
         _logger.LogDebug("Execution - File: {FilePath}, Output: {OutputFileName}, Args: {Arguments}", 
             filePath, outputFileName, arguments);
 
-        return language switch
+        return language.ToLower() switch
         {
-            ProgrammingLanguage.C => new ProcessStartInfo
+            "c" => new ProcessStartInfo
             {
                 FileName = outputFileName,
                 Arguments = arguments,
@@ -110,7 +111,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.Cpp => new ProcessStartInfo
+            "cpp" => new ProcessStartInfo
             {
                 FileName = outputFileName,
                 Arguments = arguments,
@@ -119,7 +120,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.CSharp => new ProcessStartInfo
+            "csharp" => new ProcessStartInfo
             {
                 FileName = "dotnet-exec",
                 Arguments = $"{outputFileName}.cs --args \"{arguments}\"",
@@ -128,7 +129,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.Python => new ProcessStartInfo
+            "puthon" => new ProcessStartInfo
             {
                 FileName = "python",
                 Arguments = $"{filePath} {arguments}",
@@ -137,7 +138,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            ProgrammingLanguage.Java => new ProcessStartInfo
+            "java" => new ProcessStartInfo
             {
                 FileName = "java",
                 Arguments = $"-cp {Path.GetDirectoryName(filePath)} {Path.GetFileNameWithoutExtension(filePath)} {arguments}",

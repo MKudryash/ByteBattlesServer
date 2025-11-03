@@ -20,10 +20,10 @@ namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
             };
         }
 
-        public string GenerateExecutableCode(CodeSubmission submission)
-        {
-            return _generators[submission.Language].GenerateExecutableCode(submission);
-        }
+        // public string GenerateExecutableCode(CodeSubmission submission)
+        // {
+        //     return _generators[submission.Language].GenerateExecutableCode(submission);
+        // }
 
         public string GetFileExtension(ProgrammingLanguage language)
         {

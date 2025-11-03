@@ -17,7 +17,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    ShortTitle = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false)
+                    ShortTitle = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    FileExtension = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    CompilerCommand = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ExecutionCommand = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    SupportsCompilation = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {

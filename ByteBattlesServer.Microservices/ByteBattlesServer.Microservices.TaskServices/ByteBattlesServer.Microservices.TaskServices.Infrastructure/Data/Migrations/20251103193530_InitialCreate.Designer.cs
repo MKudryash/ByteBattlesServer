@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251103143757_InitialCreate")]
+    [Migration("20251103193530_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -31,10 +31,30 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CompilerCommand")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ExecutionCommand")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<string>("ShortTitle")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("SupportsCompilation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Title")
                         .IsRequired()

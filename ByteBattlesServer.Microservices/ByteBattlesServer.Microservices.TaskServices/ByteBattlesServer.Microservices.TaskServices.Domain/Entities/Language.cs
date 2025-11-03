@@ -6,6 +6,11 @@ public class Language:Entity
     public string? Title { get; private set; }
 
     public string? ShortTitle { get; private set; }
+    
+    public string FileExtension { get; set; } = string.Empty;
+    public string CompilerCommand { get; set; } = string.Empty;
+    public string ExecutionCommand { get; set; } = string.Empty;
+    public bool SupportsCompilation { get; set; }
 
     public virtual ICollection<TaskLanguage> TasksLanguage { get; private set; } = new List<TaskLanguage>();
 

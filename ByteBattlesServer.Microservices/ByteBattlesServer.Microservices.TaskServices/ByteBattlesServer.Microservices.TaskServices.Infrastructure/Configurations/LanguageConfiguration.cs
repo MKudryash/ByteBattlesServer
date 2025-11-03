@@ -20,6 +20,22 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
             .IsRequired()
             .HasMaxLength(10); 
         
+        builder.Property(l => l.FileExtension)
+            .IsRequired()
+            .HasMaxLength(10); 
+        
+        builder.Property(l => l.CompilerCommand)
+            .IsRequired()
+            .HasMaxLength(50); // Ограничение длины
+    
+        builder.Property(l => l.ExecutionCommand)
+            .IsRequired()
+            .HasMaxLength(50);
+    
+        builder.Property(l => l.SupportsCompilation)
+            .IsRequired()
+            .HasDefaultValue(false); // Значение по умолчанию
+        
         builder.HasMany(l => l.TasksLanguage)
             .WithOne(tl => tl.Language)
             .HasForeignKey(tl => tl.IdLanguage)

@@ -5,5 +5,9 @@ namespace ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 
 public record CreateLanguageCommand(
     string LanguageTitle,
-    string LanguageShortTitle
+    string LanguageShortTitle,
+    string FileExtension ,
+    string CompilerCommand,
+    string ExecutionCommand,
+    bool SupportsCompilation
     ): IRequest<LanguageDto>;
