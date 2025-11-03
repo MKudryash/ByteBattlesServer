@@ -36,13 +36,14 @@ public class TestRunner : ITestRunner
         var executableCode = submission.Code;
 
         //Получить информацию о языке submission.Language
-        //var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
+        var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
 
-        var languageInfo = new LanguageInfo()
-        {
-            ShortTitle = "C",
-            ExecutionCommand = ".c"
-        };
+        // var languageInfo = new LanguageInfo()
+        // {
+        //     ShortTitle = "C",
+        //     ExecutionCommand = ".c",
+        //     SupportsCompilation = true
+        // };
  
         
         

@@ -40,7 +40,7 @@ public class LanguageMessageHandler : BackgroundService
                 FileExtension = language.FileExtension,
                 CompilerCommand = language.CompilerCommand,
                 ExecutionCommand = language.ExecutionCommand,
-                SupportsCompilation = !string.IsNullOrEmpty(language.CompilerCommand),
+                SupportsCompilation = language.SupportsCompilation,
                 CorrelationId = request.CorrelationId,
                 Success = true
             };
@@ -86,7 +86,7 @@ public class LanguageMessageHandler : BackgroundService
                 FileExtension = l.FileExtension,
                 CompilerCommand = l.CompilerCommand,
                 ExecutionCommand = l.ExecutionCommand,
-                SupportsCompilation = !string.IsNullOrEmpty(l.CompilerCommand)
+                SupportsCompilation = l.SupportsCompilation
             }).ToList();
             
             var response = new AllLanguagesResponse

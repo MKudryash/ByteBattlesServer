@@ -120,7 +120,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            "csharp" => new ProcessStartInfo
+            "charp" => new ProcessStartInfo
             {
                 FileName = "dotnet-exec",
                 Arguments = $"{outputFileName}.cs --args \"{arguments}\"",
@@ -129,7 +129,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            "puthon" => new ProcessStartInfo
+            "py" => new ProcessStartInfo
             {
                 FileName = "python",
                 Arguments = $"{filePath} {arguments}",
