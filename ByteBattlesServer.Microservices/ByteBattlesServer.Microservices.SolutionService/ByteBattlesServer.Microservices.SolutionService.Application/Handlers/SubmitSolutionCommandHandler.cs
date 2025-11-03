@@ -14,20 +14,20 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
     private readonly ISolutionRepository _solutionRepository;
     private readonly ICompilationService _compilationService;
     private readonly ITaskServiceClient _taskServiceClient;
-    //private readonly IUserServiceClient _userServiceClient;
+    private readonly IUserServiceClient _userServiceClient;
     private readonly IUnitOfWork _unitOfWork;
 
     public SubmitSolutionCommandHandler(
         ISolutionRepository solutionRepository,
         ICompilationService compilationService,
         ITaskServiceClient taskServiceClient,
-       // IUserServiceClient userServiceClient,
+        IUserServiceClient userServiceClient,
         IUnitOfWork unitOfWork)
     {
         _solutionRepository = solutionRepository;
         _compilationService = compilationService;
         _taskServiceClient = taskServiceClient;
-        //_userServiceClient = userServiceClient;
+        _userServiceClient = userServiceClient;
         _unitOfWork = unitOfWork;
     }
 
@@ -100,11 +100,13 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
             solution.UpdateStatus(finalStatus, passedTests, testCases.Count, averageExecutionTime);
             attempt.UpdateStatus(finalStatus, averageExecutionTime);
 
-            // // 8. Update user stats
-            // await _userServiceClient.UpdateUserStatsAsync(
-            //     request.UserId, 
-            //     finalStatus == SolutionStatus.Completed,
-            //     averageExecutionTime);
+            // 8. Update user stats
+            await _userServiceClient.UpdateUserStatsAsync(
+                request.UserId, 
+                finalStatus == SolutionStatus.Completed,
+                averageExecutionTime,
+                task.Difficulty, // Передаем сложность задачи
+                request.TaskId);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             

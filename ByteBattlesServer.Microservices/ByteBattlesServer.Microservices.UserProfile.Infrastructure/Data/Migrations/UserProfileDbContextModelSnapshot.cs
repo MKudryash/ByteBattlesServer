@@ -220,9 +220,13 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("IsPublic");
 
                     b.HasIndex("Level");
+
+                    b.HasIndex("UpdatedAt");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -336,6 +340,18 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                                 .HasDefaultValue(0)
                                 .HasColumnName("draws");
 
+                            b1.Property<int>("EasyProblemsSolved")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("easy_problems_solved");
+
+                            b1.Property<int>("HardProblemsSolved")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("hard_problems_solved");
+
                             b1.Property<int>("Losses")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
@@ -348,11 +364,33 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                                 .HasDefaultValue(0)
                                 .HasColumnName("max_streak");
 
+                            b1.Property<int>("MediumProblemsSolved")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("medium_problems_solved");
+
+                            b1.Property<string>("SolvedTaskIds")
+                                .HasColumnType("text")
+                                .HasColumnName("solved_task_ids");
+
+                            b1.Property<int>("SuccessfulSubmissions")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("successful_submissions");
+
                             b1.Property<int>("TotalBattles")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
                                 .HasDefaultValue(0)
                                 .HasColumnName("total_battles");
+
+                            b1.Property<long>("TotalExecutionTime")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint")
+                                .HasDefaultValue(0L)
+                                .HasColumnName("total_execution_time");
 
                             b1.Property<int>("TotalExperience")
                                 .ValueGeneratedOnAdd()
@@ -366,6 +404,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                                 .HasDefaultValue(0)
                                 .HasColumnName("total_problems_solved");
 
+                            b1.Property<int>("TotalSubmissions")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0)
+                                .HasColumnName("total_submissions");
+
                             b1.Property<int>("Wins")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
@@ -374,7 +418,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                             b1.HasKey("UserProfileId");
 
-                            b1.ToTable("user_profiles");
+                            b1.ToTable("user_stats", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("UserProfileId");

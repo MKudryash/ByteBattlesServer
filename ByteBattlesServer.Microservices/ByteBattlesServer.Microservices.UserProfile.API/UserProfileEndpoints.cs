@@ -109,6 +109,37 @@ public static class UserProfileEndpoints
         .Produces(StatusCodes.Status200OK)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+        
+        group.MapPut("/me/stats", async (UserStatsCommandDto dto, IMediator mediator, HttpContext httpContext) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var command = new UpdateUserStatsCommand(
+                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId);
+                    
+                await mediator.Send(command);
+                return Results.Ok(new { message = "Settings updated successfully" });
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while updating settings: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("UpdateMyStats")
+        .WithSummary("Update current user's stats")
+        .Produces(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
 
         
         group.MapGet("/{profileId:guid}", async (Guid profileId, IMediator mediator) =>

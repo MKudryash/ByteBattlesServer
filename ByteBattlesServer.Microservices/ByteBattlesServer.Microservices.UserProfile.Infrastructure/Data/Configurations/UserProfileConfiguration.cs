@@ -1,13 +1,11 @@
-// UserProfile.Infrastructure/Data/Configurations/UserProfileConfiguration.cs
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Configurations;
 
-public class UserProfileConfiguration : IEntityTypeConfiguration<ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile>
+public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities.UserProfile>
 {
-    public void Configure(EntityTypeBuilder<ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile> builder)
+    public void Configure(EntityTypeBuilder<Domain.Entities.UserProfile> builder)
     {
         builder.ToTable("user_profiles");
         
@@ -28,23 +26,28 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<ByteBattlesServ
             
         builder.Property(up => up.AvatarUrl)
             .HasColumnName("avatar_url")
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired(false);
             
         builder.Property(up => up.Bio)
             .HasColumnName("bio")
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired(false);
             
         builder.Property(up => up.Country)
             .HasColumnName("country")
-            .HasMaxLength(100);
+            .HasMaxLength(100)
+            .IsRequired(false);
             
         builder.Property(up => up.GitHubUrl)
             .HasColumnName("github_url")
-            .HasMaxLength(200);
+            .HasMaxLength(200)
+            .IsRequired(false);
             
         builder.Property(up => up.LinkedInUrl)
             .HasColumnName("linkedin_url")
-            .HasMaxLength(200);
+            .HasMaxLength(200)
+            .IsRequired(false);
             
         builder.Property(up => up.Level)
             .HasColumnName("level")
@@ -64,9 +67,11 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<ByteBattlesServ
             .HasColumnName("updated_at")
             .IsRequired();
 
-        // Owned types (Value Objects)
+        // Owned type for UserStats with proper column names
         builder.OwnsOne(up => up.Stats, stats =>
         {
+            stats.ToTable("user_stats"); // Optional: separate table
+            
             stats.Property(s => s.TotalProblemsSolved)
                 .HasColumnName("total_problems_solved")
                 .HasDefaultValue(0);
@@ -98,8 +103,45 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<ByteBattlesServ
             stats.Property(s => s.TotalExperience)
                 .HasColumnName("total_experience")
                 .HasDefaultValue(0);
+                
+            stats.Property(s => s.EasyProblemsSolved)
+                .HasColumnName("easy_problems_solved")
+                .HasDefaultValue(0);
+                
+            stats.Property(s => s.MediumProblemsSolved)
+                .HasColumnName("medium_problems_solved")
+                .HasDefaultValue(0);
+                
+            stats.Property(s => s.HardProblemsSolved)
+                .HasColumnName("hard_problems_solved")
+                .HasDefaultValue(0);
+                
+            stats.Property(s => s.TotalSubmissions)
+                .HasColumnName("total_submissions")
+                .HasDefaultValue(0);
+                
+            stats.Property(s => s.SuccessfulSubmissions)
+                .HasColumnName("successful_submissions")
+                .HasDefaultValue(0);
+                
+            stats.Property(s => s.TotalExecutionTime)
+                .HasColumnName("total_execution_time")
+                .HasConversion(
+                    v => v.Ticks,
+                    v => TimeSpan.FromTicks(v))
+                .HasDefaultValue(TimeSpan.Zero);
+
+            // Store SolvedTaskIds as JSON or in separate table
+            stats.Property(s => s.SolvedTaskIds)
+                .HasColumnName("solved_task_ids")
+                .HasConversion(
+                    v => string.Join(',', v),
+                    v => new HashSet<Guid>(v.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                          .Select(Guid.Parse)))
+                .IsRequired(false);
         });
 
+        // Owned type for UserSettings
         builder.OwnsOne(up => up.Settings, settings =>
         {
             settings.Property(s => s.EmailNotifications)
@@ -141,17 +183,14 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<ByteBattlesServ
             .HasForeignKey(br => br.UserProfileId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexes - ИСПРАВЛЕННЫЕ
+        // Indexes
         builder.HasIndex(up => up.UserId)
             .IsUnique();
             
         builder.HasIndex(up => up.UserName);
-        
-        // Простые индексы вместо составного с owned type
         builder.HasIndex(up => up.IsPublic);
         builder.HasIndex(up => up.Level);
-        
-        // Если нужен индекс по опыту, можно добавить отдельное свойство
-        // или использовать HasIndex с именем колонки
+        builder.HasIndex(up => up.CreatedAt);
+        builder.HasIndex(up => up.UpdatedAt);
     }
 }

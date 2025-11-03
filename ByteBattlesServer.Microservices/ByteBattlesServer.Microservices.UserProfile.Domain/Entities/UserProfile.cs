@@ -13,7 +13,7 @@ public class UserProfile : Entity
     public string? GitHubUrl { get; set; }
     public string? LinkedInUrl { get; set; }
     public UserLevel Level { get; private set; }
-    public UserStats Stats { get; private set; }
+    public UserStats Stats { get; set; }
     public UserSettings Settings { get; set; }
     public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; private set; }
@@ -95,6 +95,20 @@ public class UserProfile : Entity
 
         UpdateTimestamps();
     }
+
+    public void UpdateProblemStats(bool isSuccessful, TaskDifficulty difficulty, TimeSpan executionTime, Guid taskId)
+    {
+        if (Stats == null)
+        {
+            Stats = new UserStats();
+        }
+        
+        Stats.UpdateProblemStats(isSuccessful, difficulty, executionTime, taskId);
+        //CheckAndUnlockAchievements();
+        UpdateLevel();
+        UpdateTimestamps();
+    }
+
     public void AddAchievement(Achievement achievement)
     {
         if (!_achievements.Any(a => a.AchievementId == achievement.Id))
@@ -117,14 +131,12 @@ public class UserProfile : Entity
     {
         Level = UserLevelCalculator.CalculateLevel(Stats.TotalExperience);
     }
-
-    // Внутренний метод для обновления временных меток
+    
     private void UpdateTimestamps()
     {
         UpdatedAt = DateTime.UtcNow;
     }
-
-    // Метод для EF Core чтобы обновлять UpdatedAt при сохранении
+    
     public void SetUpdatedAt(DateTime updatedAt)
     {
         UpdatedAt = updatedAt;

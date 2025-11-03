@@ -25,4 +25,5 @@ public class Achievement : Entity
         RewardExperience = rewardExperience;
         IsSecret = isSecret;
     }
+    
 }
