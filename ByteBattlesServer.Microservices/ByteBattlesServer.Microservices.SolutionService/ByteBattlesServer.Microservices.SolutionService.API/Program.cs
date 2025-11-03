@@ -69,7 +69,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Solution Service API",
         Version = "v1",
-        Description = "Task Management Service"
+        Description = "Solution Management Service"
     });
 });
 var services = builder.Services;

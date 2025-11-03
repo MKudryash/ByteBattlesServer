@@ -3,4 +3,4 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.SolutionService.Application.Queries;
 
-public record GetSolutionQuery(Guid SolutionId) : IRequest<SolutionDto>;
+public record GetTaskSolutionsQuery(Guid TaskId, Guid UserId) : IRequest<List<SolutionDto>>;

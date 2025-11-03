@@ -7,25 +7,22 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.SolutionService.Application.Handlers;
 
-
-public class GetSolutionQueryHandler : IRequestHandler<GetSolutionQuery, SolutionDto>
+public class GetUserSolutionsQueryHandler : IRequestHandler<GetUserSolutionsQuery, List<SolutionDto>>
 {
     private readonly ISolutionRepository _solutionRepository;
 
-    public GetSolutionQueryHandler(ISolutionRepository solutionRepository)
+    public GetUserSolutionsQueryHandler(ISolutionRepository solutionRepository)
     {
         _solutionRepository = solutionRepository;
     }
-
-    public async Task<SolutionDto> Handle(GetSolutionQuery request, CancellationToken cancellationToken)
+    public async Task<List<SolutionDto>> Handle(GetUserSolutionsQuery request, CancellationToken cancellationToken)
     {
-        var solution = await _solutionRepository.GetByIdAsync(request.SolutionId);
+        var solution = await _solutionRepository.GetByUserIdAsync(request.UserId);
         if (solution == null)
-            throw new SolutionNotFoundException(request.SolutionId);
+            throw new UserSolutionException(request.UserId.ToString());
 
-        return MapToDto(solution);
+        return solution.Select(x=> MapToDto(x)).ToList();
     }
-
     private SolutionDto MapToDto(Solution solution)
     {
         return new SolutionDto
