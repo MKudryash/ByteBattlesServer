@@ -1,7 +1,13 @@
-using ByteBattlesServer.Microservices.CodeExecution.API;
-using ByteBattlesServer.Microservices.CodeExecution.Application;
-using ByteBattlesServer.Microservices.CodeExecution.Infrastructure;
+
 using ByteBattlesServer.Microservices.Middleware;
+using ByteBattlesServer.Microservices.SolutionService.API;
+using ByteBattlesServer.Microservices.SolutionService.Application;
+using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces;
+using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
+using ByteBattlesServer.Microservices.SolutionService.Infrastructure;
+using ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +53,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Добавление сервисов
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // // Add authentication and authorization services
 // builder.Services.AddAuthentication() // Add this line
@@ -60,12 +66,39 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Compiler Service API",
+        Title = "Solution Service API",
         Version = "v1",
         Description = "Task Management Service"
     });
 });
+var services = builder.Services;
 
+services.Configure<CompilerServiceOptions>(options =>
+{
+    builder.Configuration.GetSection("CompilerService").Bind(options);
+});
+
+services.AddHttpClient<ICompilerClient, CompilerClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<CompilerServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+    //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// Task Service Client Configuration
+services.Configure<TaskServiceOptions>(options =>
+{
+    builder.Configuration.GetSection("TaskService").Bind(options);
+});
+
+services.AddHttpClient<ITaskServiceClient, TaskServiceClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<TaskServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+    //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 //builder.Services.AddHostedService();
 
@@ -74,11 +107,19 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Compiler Service API v1");
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Solution Service API v1");
     options.RoutePrefix = string.Empty;
 });
 app.UseHttpsRedirection();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<SolutionDbContext>();
+    context.Database.Migrate();
+
+    // Seed initial data if needed
+    //await SeedData.InitializeAsync(context);
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -90,6 +131,6 @@ app.UseRouting();
 
 
 
-app.MapCompilerEndpoints();
+ app.MapSolutionEndpoints();
 
 app.Run();

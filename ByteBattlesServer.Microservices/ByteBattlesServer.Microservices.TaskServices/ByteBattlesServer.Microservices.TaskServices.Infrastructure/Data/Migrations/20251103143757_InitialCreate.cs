@@ -37,7 +37,10 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     InputParameters = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     OutputParameters = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TotalAttempts = table.Column<int>(type: "integer", nullable: false),
+                    SuccessfulAttempts = table.Column<int>(type: "integer", nullable: false),
+                    AverageExecutionTime = table.Column<double>(type: "double precision", nullable: false)
                 },
                 constraints: table =>
                 {

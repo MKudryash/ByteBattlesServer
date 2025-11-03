@@ -1,6 +1,6 @@
 using ByteBattlesServer.Microservices.SolutionService.Domain.Models;
 
-namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Repository;
+namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
 
 public interface ITaskServiceClient
 {

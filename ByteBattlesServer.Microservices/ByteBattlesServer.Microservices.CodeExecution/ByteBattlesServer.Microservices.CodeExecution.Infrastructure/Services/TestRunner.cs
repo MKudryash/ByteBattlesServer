@@ -29,7 +29,6 @@ public class TestRunner : ITestRunner
         
         // Создание временного файла
         var filePath = _fileService.GetTempFilePath(_codeGenerator.GetFileExtension(submission.Language));
-        //var filePath = "/app/test.cs";
         await _fileService.WriteToFileAsync(executableCode, filePath);
 
         try

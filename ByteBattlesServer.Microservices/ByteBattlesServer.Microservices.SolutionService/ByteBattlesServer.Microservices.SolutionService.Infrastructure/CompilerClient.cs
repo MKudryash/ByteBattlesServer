@@ -27,113 +27,56 @@ public class CompilerClient : ICompilerClient
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
         _httpClient.Timeout = TimeSpan.FromSeconds(_options.TimeoutSeconds);
     }
+    
 
-    public async Task<CompilationResult> CompileAsync(string code, Guid languageId, string functionName)
+   
+    public async Task<BatchTestExecutionResult> ExecuteTestsAsync(string compiledCode, List<TestCase> testCases, Guid languageId)
     {
         try
         {
-            var request = new CompilationRequest(code, languageId, functionName);
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new 
+            {
+                Code = compiledCode,
+                Language = 0,
+                TestCases = testCases.Select(tc => new 
+                {
+                    Input = tc.Input,
+                    ExpectedOutput = tc.ExpectedOutput
+                })
+            };
 
-            _logger.LogInformation("Sending compilation request for language {LanguageId}", languageId);
-
-            var response = await _httpClient.PostAsync("/api/compiler/compile", content);
-            response.EnsureSuccessStatusCode();
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var compilationResponse = JsonSerializer.Deserialize<CompilationResponse>(
-                responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (compilationResponse == null)
-                throw new InvalidOperationException("Invalid response from compiler service");
-
-            return new CompilationResult(
-                compilationResponse.IsSuccess,
-                compilationResponse.CompiledCode,
-                compilationResponse.ErrorMessage,
-                compilationResponse.CompilationTime);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Error calling compiler service for language {LanguageId}", languageId);
-            return new CompilationResult(false, null, $"Compiler service unavailable: {ex.Message}", TimeSpan.Zero);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error during compilation for language {LanguageId}", languageId);
-            return new CompilationResult(false, null, $"Compilation failed: {ex.Message}", TimeSpan.Zero);
-        }
-    }
-
-    public async Task<TestExecutionResult> ExecuteTestAsync(string compiledCode, TestCase testCase, Guid languageId)
-    {
-        try
-        {
-            var request = new TestExecutionRequest(compiledCode, testCase.Input, languageId);
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            _logger.LogInformation("Executing test {TestCaseId} for language {LanguageId}", testCase.Id, languageId);
-
-            var response = await _httpClient.PostAsync("/api/compiler/execute", content);
-            response.EnsureSuccessStatusCode();
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var executionResponse = JsonSerializer.Deserialize<TestExecutionResponse>(
-                responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (executionResponse == null)
-                throw new InvalidOperationException("Invalid response from compiler service");
-
-            return new TestExecutionResult(
-                executionResponse.IsSuccess,
-                executionResponse.Output,
-                executionResponse.ErrorMessage,
-                executionResponse.ExecutionTime,
-                executionResponse.MemoryUsed);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Error executing test {TestCaseId} for language {LanguageId}", testCase.Id, languageId);
-            return new TestExecutionResult(false, null, $"Test execution service unavailable: {ex.Message}", TimeSpan.Zero, 0);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error during test execution {TestCaseId}", testCase.Id);
-            return new TestExecutionResult(false, null, $"Test execution failed: {ex.Message}", TimeSpan.Zero, 0);
-        }
-    }
-
-    public async Task<BatchTestExecutionResult> ExecuteTestsAsync(string compiledCode, IEnumerable<TestCase> testCases, Guid languageId)
-    {
-        try
-        {
-            var testRequests = testCases.Select(tc => new TestExecutionRequest(compiledCode, tc.Input, languageId)).ToList();
-            var request = new BatchTestExecutionRequest(compiledCode, testRequests, languageId);
-            
             var json = JsonSerializer.Serialize(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             _logger.LogInformation("Executing batch of {TestCount} tests for language {LanguageId}", testCases.Count(), languageId);
 
-            var response = await _httpClient.PostAsync("/api/compiler/execute-batch", content);
-            response.EnsureSuccessStatusCode();
+            var response = await _httpClient.PostAsync("/api/compiler/test", content);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Batch test execution failed: {errorContent}");
+            }
 
             var responseContent = await response.Content.ReadAsStringAsync();
-            var batchResponse = JsonSerializer.Deserialize<BatchTestExecutionResponse>(
+            var testResult = JsonSerializer.Deserialize<CodeTestResultResponse>(
                 responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            if (batchResponse == null)
-                throw new InvalidOperationException("Invalid response from compiler service");
-
-            var results = batchResponse.Results.Select(r => new TestExecutionResult(
-                r.IsSuccess,
-                r.Output,
-                r.ErrorMessage,
-                r.ExecutionTime,
-                r.MemoryUsed
-            )).ToList();
+            var results = new List<TestExecutionResult>();
+            
+            if (testResult?.Results != null)
+            {
+                foreach (var (testCase, resultDto) in testCases.Zip(testResult.Results))
+                {
+                    results.Add(new TestExecutionResult(
+                        resultDto.IsPassed,
+                        resultDto.ActualOutput,
+                        resultDto.IsPassed ? null : $"Expected: {resultDto.ExpectedOutput}, Actual: {resultDto.ActualOutput}",
+                        resultDto.ExecutionTime,
+                        0 // Memory usage not available
+                    ));
+                }
+            }
 
             return new BatchTestExecutionResult(results);
         }

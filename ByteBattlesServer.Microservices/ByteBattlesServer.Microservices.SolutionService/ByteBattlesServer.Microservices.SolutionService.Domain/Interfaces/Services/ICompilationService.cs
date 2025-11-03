@@ -4,6 +4,6 @@ namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Serv
 
 public interface ICompilationService
 {
-    Task<CompilationResult> CompileAsync(string code, Guid languageId, string functionName);
-    Task<TestExecutionResult> ExecuteTestAsync(string compiledCode, TestCase testCase, Guid languageId);
+    Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode, List<TestCaseDto> testCases,
+        Guid languageId);
 }

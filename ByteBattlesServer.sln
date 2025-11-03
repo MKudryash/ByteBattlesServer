@@ -56,6 +56,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.CodeExecution.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.CodeExecution\ByteBattlesServer.Microservices.CodeExecution.API\ByteBattlesServer.Microservices.CodeExecution.API.csproj", "{7E2901FC-8788-4506-90AD-6CB2A8907787}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microservices.SolutionService.API", "ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.SolutionService\ByteBattlesServer.Microservices.SolutionService.API\ByteBattlesServer.Microservices.SolutionService.API.csproj", "{3D734AF3-2427-481D-BB83-6EE8A862DDBE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -150,6 +152,10 @@ Global
 		{7E2901FC-8788-4506-90AD-6CB2A8907787}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E2901FC-8788-4506-90AD-6CB2A8907787}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E2901FC-8788-4506-90AD-6CB2A8907787}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D734AF3-2427-481D-BB83-6EE8A862DDBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D734AF3-2427-481D-BB83-6EE8A862DDBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D734AF3-2427-481D-BB83-6EE8A862DDBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D734AF3-2427-481D-BB83-6EE8A862DDBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
@@ -176,5 +182,6 @@ Global
 		{31F8139E-22A7-45FD-8776-FC951858FCC1} = {82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A}
 		{A1AF121D-3107-4415-A625-7C10FE7F9B18} = {82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A}
 		{7E2901FC-8788-4506-90AD-6CB2A8907787} = {82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A}
+		{3D734AF3-2427-481D-BB83-6EE8A862DDBE} = {485ED3E4-52C9-4C1F-BC1F-64E925683120}
 	EndGlobalSection
 EndGlobal

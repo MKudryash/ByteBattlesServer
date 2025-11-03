@@ -1,28 +1,29 @@
 using System.ComponentModel.DataAnnotations;
 using ByteBattlesServer.Domain.Results;
-using ByteBattlesServer.Microservices.CodeExecution.Application.Commands;
-using ByteBattlesServer.Microservices.CodeExecution.Application.DTOs;
+using ByteBattlesServer.Microservices.SolutionService.Application.Commands;
+using ByteBattlesServer.Microservices.SolutionService.Application.DTOs;
 using MediatR;
 
-namespace ByteBattlesServer.Microservices.CodeExecution.API;
+namespace ByteBattlesServer.Microservices.SolutionService.API;
 
 
-public static class CompilerEndpoints
+public static class SolutionEndpoints
 {
-    public static void MapCompilerEndpoints(this IEndpointRouteBuilder routes)
+    public static void MapSolutionEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/api/compiler")
-            .WithTags("Compiler");
+        var group = routes.MapGroup("/api/solution")
+            .WithTags("Solution");
         
         // Тестирование кода с набором тестов
-        group.MapPost("/test", async (CodeSubmissionRequest dto, IMediator mediator) =>
+        group.MapPost("/test", async (SubmitSolutionDto dto, IMediator mediator) =>
             {
                 try
                 {
-                    var command = new TestCodeCommand(
-                        dto.Code,
-                        dto.Language,
-                        dto.TestCases);
+                    var command = new SubmitSolutionCommand(
+                        dto.TaskId,
+                        dto.UserId,
+                        dto.LanguageId,
+                        dto.Code);
 
                     var result = await mediator.Send(command);
                     return Results.Ok(result);
@@ -39,7 +40,7 @@ public static class CompilerEndpoints
             .WithName("TestCode")
             .WithSummary("Тестирование кода")
             .WithDescription("Запускает код на выполнение с набором тестов и возвращает результаты")
-            .Produces<CodeTestResultResponse>(StatusCodes.Status200OK)
+            .Produces<SolutionDto>(StatusCodes.Status200OK)
             .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
     }
