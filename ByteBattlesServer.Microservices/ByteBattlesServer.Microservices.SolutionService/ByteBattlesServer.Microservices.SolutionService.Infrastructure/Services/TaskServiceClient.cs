@@ -4,8 +4,7 @@ using ByteBattlesServer.Microservices.SolutionService.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure;
-
+namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Services;
 
 public class TaskServiceClient : ITaskServiceClient
 {
@@ -127,6 +126,7 @@ public class TaskServiceOptions
     public string BaseUrl { get; set; } = "http://localhost:5276";
     public int TimeoutSeconds { get; set; } = 30;
 }
+
 
 // Custom exceptions
 public class TaskNotFoundException : Exception
