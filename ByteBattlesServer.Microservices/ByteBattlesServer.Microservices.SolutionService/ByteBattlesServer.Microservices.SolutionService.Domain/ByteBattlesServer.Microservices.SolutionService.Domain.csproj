@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
+    </ItemGroup>
+
 </Project>

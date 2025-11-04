@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.CodeExecution.API;
+using ByteBattlesServer.Microservices.CodeExecution.API.Messaging;
 using ByteBattlesServer.Microservices.CodeExecution.Application;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
 using ByteBattlesServer.Microservices.CodeExecution.Infrastructure;
@@ -78,6 +79,10 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Task Management Service"
     });
 });
+builder.Services.AddSingleton<CodeExecutionMessageHandler>();
+
+builder.Services.AddHostedService<CodeExecutionMessageHandler>();
+
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ILanguageService, RabbitMQLanguageService>();

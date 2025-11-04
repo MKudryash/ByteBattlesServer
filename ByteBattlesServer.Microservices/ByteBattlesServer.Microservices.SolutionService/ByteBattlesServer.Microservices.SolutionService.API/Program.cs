@@ -7,11 +7,22 @@ using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services
 using ByteBattlesServer.Microservices.SolutionService.Infrastructure;
 using ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data;
 using ByteBattlesServer.Microservices.SolutionService.Infrastructure.Services;
+using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
+
+
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 //
 // var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 // var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
@@ -72,6 +83,11 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Solution Management Service"
     });
 });
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ITestCasesServices, RabbitMQTestCasesService>();
+builder.Services.AddScoped<ICompilationService, RabbitMqCompilationService>();
+
 var services = builder.Services;
 
 services.Configure<CompilerServiceOptions>(options =>
@@ -79,13 +95,13 @@ services.Configure<CompilerServiceOptions>(options =>
     builder.Configuration.GetSection("CompilerService").Bind(options);
 });
 
-services.AddHttpClient<ICompilerClient, CompilerClient>((serviceProvider, client) =>
-{
-    var options = serviceProvider.GetRequiredService<IOptions<CompilerServiceOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
-    //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
+// services.AddHttpClient<ICompilerClient, CompilerClient>((serviceProvider, client) =>
+// {
+//     var options = serviceProvider.GetRequiredService<IOptions<CompilerServiceOptions>>().Value;
+//     client.BaseAddress = new Uri(options.BaseUrl);
+//     //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+//     client.DefaultRequestHeaders.Add("Accept", "application/json");
+// });
 
 // Task Service Client Configuration
 services.Configure<TaskServiceOptions>(options =>

@@ -22,6 +22,8 @@ builder.Services.Configure<RabbitMQSettings>(
 builder.Services.AddSingleton(sp => 
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
 builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+
+
 // Конфигурация JWT
 var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
@@ -95,6 +97,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Регистрируем LanguageMessageHandler как Singleton, если он не зависит от scoped сервисов
 builder.Services.AddSingleton<LanguageMessageHandler>();
+builder.Services.AddSingleton<TaskMessageHandler>();
 
 builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
 {
@@ -106,6 +109,7 @@ builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
 
 // LanguageMessageHandler регистрируется как Hosted Service
 builder.Services.AddHostedService<LanguageMessageHandler>();
+builder.Services.AddHostedService<TaskMessageHandler>();
 
 var app = builder.Build();
 

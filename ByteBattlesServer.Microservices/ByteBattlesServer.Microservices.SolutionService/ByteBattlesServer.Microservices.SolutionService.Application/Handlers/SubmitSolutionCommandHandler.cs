@@ -5,6 +5,8 @@ using ByteBattlesServer.Microservices.SolutionService.Domain.Enums;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Repository;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
+using ByteBattlesServer.Microservices.SolutionService.Domain.Models;
+using ByteBattlesServer.SharedContracts.Messaging;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.SolutionService.Application.Handlers;
@@ -16,27 +18,39 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
     private readonly ITaskServiceClient _taskServiceClient;
     //private readonly IUserServiceClient _userServiceClient;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITestCasesServices _testCasesServices;
+    private readonly IMessageBus _messageBus;
+    
 
     public SubmitSolutionCommandHandler(
         ISolutionRepository solutionRepository,
         ICompilationService compilationService,
         ITaskServiceClient taskServiceClient,
         //IUserServiceClient userServiceClient,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ITestCasesServices testCasesServices,
+        IMessageBus messageBus)
     {
         _solutionRepository = solutionRepository;
         _compilationService = compilationService;
         _taskServiceClient = taskServiceClient;
         //_userServiceClient = userServiceClient;
         _unitOfWork = unitOfWork;
+        _testCasesServices = testCasesServices;
+        _messageBus = messageBus;
     }
 
     public async Task<SolutionDto> Handle(SubmitSolutionCommand request, CancellationToken cancellationToken)
     {
         // 1. Get task and test cases
-        var task = await _taskServiceClient.GetTaskAsync(request.TaskId);
-        var testCases = await _taskServiceClient.GetTestCasesAsync(request.TaskId);
+        //var task = await _taskServiceClient.GetTaskAsync(request.TaskId);
+        //var testCases = await _taskServiceClient.GetTestCasesAsync(request.TaskId);
 
+        var testCasesInfo = await _testCasesServices.GetTestCasesInfoAsync(request.TaskId);
+
+        var testCases = testCasesInfo.Select(x => 
+            new TestCaseDto(x.TaskId, x.Input, x.Output, false)).ToList();
+        
         // 2. Create solution entity
         var solution = new Solution(request.TaskId, request.UserId, request.LanguageId, request.Code);
         await _solutionRepository.AddAsync(solution);
@@ -57,8 +71,12 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
             solution.UpdateStatus(SolutionStatus.RunningTests, 0, testCases.Count);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var executionResults = await _compilationService.ExecuteAllTestsAsync(
-                request.Code, 
+            // var executionResults = await _compilationService.ExecuteAllTestsAsync(
+            //     request.Code, 
+            //     testCases,
+            //     request.LanguageId);
+
+            var executionResults = await _compilationService.ExecuteAllTestsAsync(request.Code,
                 testCases,
                 request.LanguageId);
 
