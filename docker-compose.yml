@@ -18,10 +18,10 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.CodeExecution/ByteBattlesServer.Microservices.CodeExecution.API/Dockerfile
     container_name: bytebattles-codeexecution
     ports:
-      - "5277:8081"
+      - "50302:50302"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8081
+      - ASPNETCORE_URLS=http://+:50302
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=bytebattles_tasks;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -37,10 +37,10 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.API/Dockerfile
     container_name: bytebattles-taskservices
     ports:
-      - "5278:8082"
+      - "50304:50304"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8082
+      - ASPNETCORE_URLS=http://+:50304
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=task_service;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -49,7 +49,7 @@
       - postgres
     networks:
       - bytebattles-network
-
+  
   postgres:
     image: postgres:15
     container_name: bytebattles-postgres
@@ -63,6 +63,63 @@
       - postgres_data:/var/lib/postgresql/data
     networks:
       - bytebattles-network
+  authservices:
+    build:
+      context: .
+      dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthService.API/Dockerfile
+    container_name: bytebattles-authservices
+    ports:
+      - "50307:50307"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:50307
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=auth_service;Username=postgres;Password=1;Port=5432
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - bytebattles-network
+  
+  userprofileservices:
+    build:
+      context: .
+      dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API/Dockerfile
+    container_name: bytebattles-userprofileservices
+    ports:
+      - "50303:50303"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:50303
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=user_profile_service;Username=postgres;Password=1;Port=5432
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - bytebattles-network
+  
+  solutionservices:
+    build:
+      context: .
+      dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.SolutionService/ByteBattlesServer.Microservices.SolutionService.API/Dockerfile
+    container_name: bytebattles-solutionservices
+    ports:
+      - "50306:50306"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:50306
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=solution_service;Username=postgres;Password=1;Port=5432
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - bytebattles-network
+
 
 networks:
   bytebattles-network:

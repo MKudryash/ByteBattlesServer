@@ -2,10 +2,6 @@ using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace ByteBattlesServer.Microservices.TaskServices.API.Messaging;
 
 public class LanguageMessageHandler : BackgroundService
 {
@@ -25,13 +21,18 @@ public class LanguageMessageHandler : BackgroundService
 
     public async Task HandleLanguageInfoRequest(LanguageInfoRequest request)
     {
+        _logger.LogInformation(
+            "🟠 [TaskServices] Received language info request for {LanguageId}, correlation: {CorrelationId}, replyTo: {ReplyToQueue}",
+            request.LanguageId, request.CorrelationId, request.ReplyToQueue);
+
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
         try
         {
             var query = new GetLanguageByIdQuery(request.LanguageId);
             var language = await mediator.Send(query);
-            
+
             var response = new LanguageInfoResponse
             {
                 LanguageId = language.Id,
@@ -45,18 +46,26 @@ public class LanguageMessageHandler : BackgroundService
                 Success = true
             };
 
-            // Отправляем ответ обратно
+            // ВАЖНО: Всегда используем фиксированный routing key для ответов
+            // Не используем request.ReplyToQueue как routing key!
+            var routingKey = "language.info.response";
+
+            _logger.LogInformation(
+                "🟠 [TaskServices] Sending language info response for {LanguageId} with routing: {RoutingKey}",
+                request.LanguageId, routingKey);
+
             _messageBus.Publish(
                 response,
                 "language.exchange",
-                "language.info.response");
+                routingKey);
 
-            _logger.LogDebug("Sent language info response for {LanguageId}", request.LanguageId);
+            _logger.LogInformation("🟠 [TaskServices] Language info response sent successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling language info request for {LanguageId}", request.LanguageId);
-            
+            _logger.LogError(ex, "🔴 [TaskServices] Error handling language info request for {LanguageId}",
+                request.LanguageId);
+
             var errorResponse = new LanguageInfoResponse
             {
                 LanguageId = request.LanguageId,
@@ -71,13 +80,18 @@ public class LanguageMessageHandler : BackgroundService
 
     public async Task HandleAllLanguagesRequest(AllLanguagesRequest request)
     {
+        _logger.LogInformation(
+            "🟠 [TaskServices] Received all languages request, correlation: {CorrelationId}, replyTo: {ReplyToQueue}",
+            request.CorrelationId, request.ReplyToQueue);
+
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
         try
         {
-            var query = new SearchLanguagesQuery(null); // Get all languages
+            var query = new SearchLanguagesQuery(null);
             var languages = await mediator.Send(query);
-            
+
             var languageInfos = languages.Select(l => new LanguageInfo
             {
                 Id = l.Id,
@@ -88,7 +102,7 @@ public class LanguageMessageHandler : BackgroundService
                 ExecutionCommand = l.ExecutionCommand,
                 SupportsCompilation = l.SupportsCompilation
             }).ToList();
-            
+
             var response = new AllLanguagesResponse
             {
                 Languages = languageInfos,
@@ -96,13 +110,20 @@ public class LanguageMessageHandler : BackgroundService
                 Success = true
             };
 
-            _messageBus.Publish(response, "language.exchange", "language.all.response");
-            _logger.LogDebug("Sent all languages response with {Count} languages", languageInfos.Count);
+            // ВАЖНО: Фиксированный routing key для ответов
+            var routingKey = "language.all.response";
+
+            _logger.LogInformation(
+                "🟠 [TaskServices] Sending all languages response with {Count} languages with routing: {RoutingKey}",
+                languageInfos.Count, routingKey);
+
+            _messageBus.Publish(response, "language.exchange", routingKey);
+            _logger.LogInformation("🟠 [TaskServices] All languages response sent successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling all languages request");
-            
+            _logger.LogError(ex, "🔴 [TaskServices] Error handling all languages request");
+
             var errorResponse = new AllLanguagesResponse
             {
                 CorrelationId = request.CorrelationId,
@@ -116,30 +137,31 @@ public class LanguageMessageHandler : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting LanguageMessageHandler background service");
+        _logger.LogInformation("🟠 [TaskServices] Starting LanguageMessageHandler background service");
 
-        // Подписываемся на оба типа запросов
-        _messageBus.Subscribe<LanguageInfoRequest>(
-            "language.exchange",
-            "task_services.language.requests",
-            "language.info.request",
-            HandleLanguageInfoRequest);
-
-        _messageBus.Subscribe<AllLanguagesRequest>(
-            "language.exchange", 
-            "task_services.language.requests",
-            "language.all.request",
-            HandleAllLanguagesRequest);
-
-        _logger.LogInformation("LanguageMessageHandler subscriptions started");
-        
         try
         {
+            // Подписываемся на оба типа запросов
+            _messageBus.Subscribe<LanguageInfoRequest>(
+                "language.exchange",
+                "task_services.language.requests",
+                "language.info.request",
+                HandleLanguageInfoRequest);
+
+            _messageBus.Subscribe<AllLanguagesRequest>(
+                "language.exchange", 
+                "task_services.language.requests",
+                "language.all.request",
+                HandleAllLanguagesRequest);
+
+            _logger.LogInformation("🟢 [TaskServices] LanguageMessageHandler subscriptions started successfully");
+            
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
-        catch (TaskCanceledException)
+        catch (Exception ex)
         {
-            _logger.LogInformation("LanguageMessageHandler was cancelled");
+            _logger.LogError(ex, "🔴 [TaskServices] Error in LanguageMessageHandler");
+            throw;
         }
     }
 }
