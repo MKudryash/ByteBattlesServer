@@ -3,6 +3,7 @@ using ByteBattlesServer.Microservices.CodeExecution.Domain.enums;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
+using Microsoft.Extensions.Logging;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
 
@@ -12,18 +13,21 @@ public class TestRunner : ITestRunner
     private readonly ICodeCompiler _codeCompiler;
     private readonly IFileService _fileService;
     private readonly ILanguageService _languageService;
+    private readonly ILogger<TestRunner> _logger;
     
 
     public TestRunner(ICodeGenerator codeGenerator, 
         ICodeCompiler codeCompiler, 
         IFileService fileService,
         IMessageBus messageBus,
-        ILanguageService languageService)
+        ILanguageService languageService,
+        ILogger<TestRunner> logger)
     {
         _codeGenerator = codeGenerator;
         _codeCompiler = codeCompiler;
         _fileService = fileService;
         _languageService = languageService;
+        _logger = logger;
     }
 
     public async Task<TestResult> RunTestsAsync(CodeSubmission submission)
@@ -37,7 +41,8 @@ public class TestRunner : ITestRunner
 
         //Получить информацию о языке submission.Language
         var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
-
+        _logger.LogInformation(languageInfo.CompilerCommand);
+        _logger.LogInformation(languageInfo.FileExtension);
         // var languageInfo = new LanguageInfo()
         // {
         //     ShortTitle = "C",
@@ -56,6 +61,7 @@ public class TestRunner : ITestRunner
             // Компиляция (если требуется)
             if (languageInfo.SupportsCompilation)
             {
+                _logger.LogInformation("Compiling code...");
                 var compileResult = await _codeCompiler.CompileAsync(filePath, languageInfo);
                 if (!compileResult.IsSuccess)
                 {
