@@ -77,6 +77,7 @@ public class RabbitMQMessageBus : IMessageBus, IDisposable
         _channel.BasicConsume(queueName, autoAck: false, consumer);
     }
 
+
     public void Dispose()
     {
         _channel?.Close();

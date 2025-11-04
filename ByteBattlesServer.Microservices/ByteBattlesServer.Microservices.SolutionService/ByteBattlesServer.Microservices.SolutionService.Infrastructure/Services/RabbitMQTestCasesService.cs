@@ -77,7 +77,7 @@ public class RabbitMQTestCasesService : ITestCasesServices
 
             if (!response.Success)
             {
-                throw new InvalidOperationException($"Failed to get language info: {response.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to get testcases info: {response.ErrorMessage}");
             }
 
             var testCases = response.TestCases;
@@ -106,11 +106,11 @@ public class RabbitMQTestCasesService : ITestCasesServices
         {
             _messageBus.Subscribe<TestCasesInfoResponse>(
                 "testcase.exchange",
-                "solution.language.responses", 
-                "task_services.testcase.response",
+                "solution.testcase.responses",
+                "testcase.info.response",
                 async (response) =>
                 {
-                    _logger.LogDebug("Received all languages response for correlation {CorrelationId}", 
+                    _logger.LogDebug("Received all testcases response for correlation {CorrelationId}", 
                         response.CorrelationId);
 
                     TaskCompletionSource<TestCasesInfoResponse> tcs;
@@ -131,11 +131,11 @@ public class RabbitMQTestCasesService : ITestCasesServices
                 });
 
             _isSubscribed = true;
-            _logger.LogInformation("Successfully subscribed to language responses");
+            _logger.LogInformation("Successfully subscribed to testcases responses");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to subscribe to language responses");
+            _logger.LogError(ex, "Failed to subscribe to testcases responses");
         }
     }
 

@@ -22,6 +22,7 @@ public static class SolutionEndpoints
                 {
                     var command = new SubmitSolutionCommand(
                         dto.TaskId,
+                        dto.Difficulty,
                         dto.UserId,
                         dto.LanguageId,
                         dto.Code);

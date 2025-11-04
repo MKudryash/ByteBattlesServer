@@ -1,5 +1,6 @@
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Application.Commands;

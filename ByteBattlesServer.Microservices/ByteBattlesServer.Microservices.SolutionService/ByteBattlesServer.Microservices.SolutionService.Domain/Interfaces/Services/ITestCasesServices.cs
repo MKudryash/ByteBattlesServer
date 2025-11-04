@@ -5,5 +5,4 @@ namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Serv
 public interface ITestCasesServices
 {
     Task<List<TestCaseInfo>> GetTestCasesInfoAsync(Guid taskId);
-    
 }

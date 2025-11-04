@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 

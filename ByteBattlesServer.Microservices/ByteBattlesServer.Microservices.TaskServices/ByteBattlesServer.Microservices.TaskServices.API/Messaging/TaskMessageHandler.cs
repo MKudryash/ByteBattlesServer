@@ -55,6 +55,7 @@ public class TaskMessageHandler : BackgroundService
                         {
                             Input = x.Input,
                             Output = x.Output,
+                            TaskId = arg.TaskId  
                         }
                     ).ToList(),
                     CorrelationId = arg.CorrelationId,
@@ -64,7 +65,8 @@ public class TaskMessageHandler : BackgroundService
             _messageBus.Publish(
                 response,
                 "testcase.exchange",
-                "task_services.testcase.response");
+                "testcase.info.response");  // ← Измените на этот routing key!
+
 
         }
         catch (Exception ex)
@@ -79,7 +81,7 @@ public class TaskMessageHandler : BackgroundService
 
             _messageBus.Publish(errorResponse, 
                 "testcase.exchange",
-                "task_services.testcase.response");
+                "testcase.info.response");  // ← И здесь тоже!
 
         }
     }

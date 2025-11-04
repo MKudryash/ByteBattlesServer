@@ -6,6 +6,7 @@ using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Repository;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Models;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
 using MediatR;
 
@@ -17,7 +18,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
     private readonly ICompilationService _compilationService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITestCasesServices _testCasesServices;
-    
+    private readonly IMessageBus _messageBus;
 
     public SubmitSolutionCommandHandler(
         ISolutionRepository solutionRepository,
@@ -30,7 +31,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
         _compilationService = compilationService;
         _unitOfWork = unitOfWork;
         _testCasesServices = testCasesServices;
-       
+        _messageBus = messageBus;
     }
 
     public async Task<SolutionDto> Handle(SubmitSolutionCommand request, CancellationToken cancellationToken)
@@ -112,13 +113,18 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
             attempt.UpdateStatus(finalStatus, averageExecutionTime);
 
             // 8. Update user stats
-            // await _userServiceClient.UpdateUserStatsAsync(
-            //     request.UserId, 
-            //     finalStatus == SolutionStatus.Completed,
-            //     averageExecutionTime,
-            //     task.Difficulty, // Передаем сложность задачи
-            //     request.TaskId);
-
+            var userUpdateStats = new UserStatsIntegrationEvent()
+            {
+                UserId = request.UserId,
+                isSuccessful = finalStatus == SolutionStatus.Completed,
+                difficulty = request.Difficulty,
+                executionTime = averageExecutionTime,
+                taskId = request.TaskId
+            };
+            _messageBus.Publish(
+                userUpdateStats,
+                "user_stats-events",
+                "user.stats.update");
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             
             return MapToDto(solution);

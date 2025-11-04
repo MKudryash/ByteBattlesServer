@@ -21,7 +21,7 @@ builder.Services.Configure<RabbitMQSettings>(
     builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddSingleton(sp => 
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
-builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+//builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 
 
 // Конфигурация JWT
@@ -67,13 +67,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization();
 
 // // Регистрация RabbitMQ с Resilient оберткой
-// builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
-// {
-//     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
-//     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
-//     var messageBus = new RabbitMQMessageBus(settings);
-//     return new ResilientMessageBus(messageBus, logger);
-// });
+builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
+{
+    var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
+    var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
+    var messageBus = new RabbitMQMessageBus(settings);
+    return new ResilientMessageBus(messageBus, logger);
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -99,13 +99,13 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<LanguageMessageHandler>();
 builder.Services.AddSingleton<TaskMessageHandler>();
 
-builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
-{
-    var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
-    var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
-    var messageBus = new RabbitMQMessageBus(settings);
-    return new ResilientMessageBus(messageBus, logger);
-});
+// builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
+// {
+//     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
+//     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
+//     var messageBus = new RabbitMQMessageBus(settings);
+//     return new ResilientMessageBus(messageBus, logger);
+// });
 
 // LanguageMessageHandler регистрируется как Hosted Service
 builder.Services.AddHostedService<LanguageMessageHandler>();

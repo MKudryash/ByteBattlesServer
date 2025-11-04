@@ -99,6 +99,7 @@ builder.Services.AddSwaggerGen(options =>
 
 
 builder.Services.AddHostedService<UserRegisteredEventHandler>();
+builder.Services.AddHostedService<UserStatsEventHandler>();
 
 var app = builder.Build();
 

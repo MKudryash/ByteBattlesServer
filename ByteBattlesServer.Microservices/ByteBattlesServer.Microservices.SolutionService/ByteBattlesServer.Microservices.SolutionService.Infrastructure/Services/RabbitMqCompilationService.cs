@@ -1,5 +1,4 @@
-using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces;
-using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Repository;
+using System.Collections.Concurrent;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
 using ByteBattlesServer.Microservices.SolutionService.Domain.Models;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
@@ -7,17 +6,15 @@ using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Services;
-
-
-public class RabbitMqCompilationService : ICompilationService
+public class RabbitMqCompilationService : ICompilationService, IDisposable
 {
     private readonly IMessageBus _messageBus;
     private readonly IMemoryCache _cache;
     private readonly ILogger<RabbitMqCompilationService> _logger;
-    private readonly Dictionary<string, TaskCompletionSource<CodeTestResultResponseEvent>> _pendingRequests = new();
-    private bool _isSubscribed = false;
-    private readonly object _lockObject = new object();
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<CodeTestResultResponseEvent>> _pendingRequests = new();
+    private readonly string _responseQueueName;
+    private bool _disposed = false;
+
     public RabbitMqCompilationService(
         IMessageBus messageBus,
         IMemoryCache cache,
@@ -27,66 +24,95 @@ public class RabbitMqCompilationService : ICompilationService
         _cache = cache;
         _logger = logger;
         
-        // Подписываемся на ответы при создании сервиса
+        // Создаем уникальное имя очереди для этого экземпляра сервиса
+        _responseQueueName = $"solution.compiler.responses.{Guid.NewGuid():N}";
+        
         SubscribeToResponses();
+    }
+
+    private void SubscribeToResponses()
+    {
+        try
+        {
+           
+            _messageBus.Subscribe<CodeTestResultResponseEvent>(
+                "code_execution.exchange",
+                _responseQueueName, 
+                "compiler.info.response",
+                async (response) =>
+                {
+                    
+
+                    if (_pendingRequests.TryGetValue(response.CorrelationId, out var tcs))
+                    {
+                        
+                        tcs.TrySetResult(response);
+                    }
+                    else
+                    {
+                       
+                    }
+                });
+
+            
+        }
+        catch (Exception ex)
+        {
+           
+            throw;
+        }
     }
 
     public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode,
         List<TestCaseDto> testCasesDto,
         Guid languageId)
     {
-
-
         var request = new CodeSubmissionEvent()
         {
             Code = compiledCode,
             Language = languageId,
-            TestCases = testCasesDto.Select(x=> new TestCaseEvent()
+            TestCases = testCasesDto.Select(x => new TestCaseEvent()
             {
                 Input = x.Input,
                 Output = x.Output
             }).ToList(),
-            ReplyToQueue = "solution.compiler.responses",
+            // Указываем конкретную очередь для ответа
+            ReplyToQueue = _responseQueueName,
             CorrelationId = Guid.NewGuid().ToString()
         };
 
         var tcs = new TaskCompletionSource<CodeTestResultResponseEvent>();
-
-        lock (_lockObject)
-        {
-            _pendingRequests[request.CorrelationId] = tcs;
-        }
+        _pendingRequests[request.CorrelationId] = tcs;
 
         try
         {
-            // Убедимся, что подписка активна
-            EnsureSubscribed();
+           
 
-            // Отправляем запрос
             _messageBus.Publish(
                 request,
                 "code_execution.exchange",
                 "compiler.info.request");
 
+            
 
-            // Ждем ответ с таймаутом
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                throw new TimeoutException("Task info request timeout");
+               
+                throw new TimeoutException("Compiler request timeout");
             }
 
             var response = await tcs.Task;
+            
 
             if (!response.Success)
             {
-                throw new InvalidOperationException($"Failed to compiler info: {response.ErrorMessage}");
+                throw new InvalidOperationException($"Compilation failed: {response.ErrorMessage}");
             }
             
             var results = new List<TestExecutionResult>();
-   
             
             if (response?.Results != null)
             {
@@ -97,65 +123,30 @@ public class RabbitMqCompilationService : ICompilationService
                         resultDto.ActualOutput,
                         resultDto.IsPassed ? null : $"Expected: {resultDto.Output}, Actual: {resultDto.ActualOutput}",
                         resultDto.ExecutionTime,
-                        0 // Memory usage not available
+                        0
                     ));
                 }
             }
 
-            return  results;
+            
+                
+            return results;
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Error executing batch tests for language {LanguageId}", languageId);
-            throw;
-        }
-    }
-
-    private void SubscribeToResponses()
-    {
-        if (_isSubscribed) return;
-
-        try
-        {
-            _messageBus.Subscribe<CodeTestResultResponseEvent>(
-                "compiler.exchange",
-                "solution.compiler.responses", 
-                "code_execution.compiler.response",
-                async (response) =>
-                {
-
-                    TaskCompletionSource<CodeTestResultResponseEvent> tcs;
-                    lock (_lockObject)
-                    {
-                        _pendingRequests.TryGetValue(response.CorrelationId, out tcs);
-                    }
-
-                    if (tcs != null)
-                    {
-                        tcs.TrySetResult(response);
-                    }
-                });
-
-            _isSubscribed = true;
-            _logger.LogInformation("Successfully subscribed to compiler responses");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to subscribe to compiler responses");
+            _pendingRequests.TryRemove(request.CorrelationId, out _);
         }
     }
 
-    private void EnsureSubscribed()
+    public void Dispose()
     {
-        if (!_isSubscribed)
+        if (!_disposed)
         {
-            lock (_lockObject)
-            {
-                if (!_isSubscribed)
-                {
-                    SubscribeToResponses();
-                }
-            }
+            // Очищаем подписку при dispose
+            // Это зависит от реализации вашего IMessageBus
+            // Обычно есть метод Unsubscribe или Dispose
+            _pendingRequests.Clear();
+            _disposed = true;
         }
     }
 }
