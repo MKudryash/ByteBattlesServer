@@ -15,29 +15,22 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
 {
     private readonly ISolutionRepository _solutionRepository;
     private readonly ICompilationService _compilationService;
-    private readonly ITaskServiceClient _taskServiceClient;
-    //private readonly IUserServiceClient _userServiceClient;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITestCasesServices _testCasesServices;
-    private readonly IMessageBus _messageBus;
     
 
     public SubmitSolutionCommandHandler(
         ISolutionRepository solutionRepository,
         ICompilationService compilationService,
-        ITaskServiceClient taskServiceClient,
-        //IUserServiceClient userServiceClient,
         IUnitOfWork unitOfWork,
         ITestCasesServices testCasesServices,
         IMessageBus messageBus)
     {
         _solutionRepository = solutionRepository;
         _compilationService = compilationService;
-        _taskServiceClient = taskServiceClient;
-        //_userServiceClient = userServiceClient;
         _unitOfWork = unitOfWork;
         _testCasesServices = testCasesServices;
-        _messageBus = messageBus;
+       
     }
 
     public async Task<SolutionDto> Handle(SubmitSolutionCommand request, CancellationToken cancellationToken)

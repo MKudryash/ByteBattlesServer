@@ -27,7 +27,7 @@ public static class DependencyInjection
 
         // Services
         services.AddScoped<ICompilationService, RabbitMqCompilationService>();
-        services.AddScoped<ITaskServiceClient, TaskServiceClient>();
+        // services.AddScoped<ITaskServiceClient, TaskServiceClient>();
         
         // HTTP Clients Configuration
         //ConfigureHttpClients(services, configuration);
