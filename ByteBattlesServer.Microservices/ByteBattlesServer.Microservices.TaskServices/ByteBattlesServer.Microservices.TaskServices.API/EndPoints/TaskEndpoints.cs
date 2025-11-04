@@ -226,11 +226,11 @@ public static class TaskEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
         
         // Обновление тестового случая
-        group.MapPut("/testCases", async (UpdateTestCaseDto dto, IMediator mediator) =>
+        group.MapPut("/testCases/{testCaseId:guid}", async (Guid testCaseId, UpdateTestCaseDto dto, IMediator mediator) =>
         {
             try
             {
-                var command = new UpdateTestsCaseCommand(dto.Id, dto.Input, dto.Output, dto.IsExample);
+                var command = new UpdateTestsCaseCommand(testCaseId, dto.Input, dto.Output, dto.IsExample);
                 var result = await mediator.Send(command);
                 return Results.Ok(result);
             }
