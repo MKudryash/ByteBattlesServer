@@ -14,6 +14,10 @@ public class RabbitMQLanguageService : ILanguageService
     private readonly Dictionary<string, TaskCompletionSource<LanguageInfoResponse>> _pendingRequests = new();
     private readonly Dictionary<string, TaskCompletionSource<AllLanguagesResponse>> _pendingBatchRequests = new();
     private bool _isSubscribed = false;
+    private readonly string _responseQueueName;
+    private bool _disposed = false;
+
+
     private readonly object _lockObject = new object();
 
     public RabbitMQLanguageService(
@@ -25,6 +29,8 @@ public class RabbitMQLanguageService : ILanguageService
         _cache = cache;
         _logger = logger;
         
+        // Создаем уникальное имя очереди для этого экземпляра сервиса
+        _responseQueueName = $"language.testcases.responses.{Guid.NewGuid():N}";
         // Подписываемся на ответы при создании сервиса
         SubscribeToResponses();
     }
@@ -42,7 +48,7 @@ public class RabbitMQLanguageService : ILanguageService
         var request = new LanguageInfoRequest
         {
             LanguageId = languageId,
-            ReplyToQueue = "code_execution.language.responses",
+            ReplyToQueue = _responseQueueName,
             CorrelationId = Guid.NewGuid().ToString()
         };
 
@@ -173,7 +179,7 @@ public class RabbitMQLanguageService : ILanguageService
             // Подписываемся на ответы для отдельных языков
             _messageBus.Subscribe<LanguageInfoResponse>(
                 "language.exchange",
-                "code_execution.language.responses",
+                _responseQueueName,
                 "language.info.response",
                 async (response) =>
                 {

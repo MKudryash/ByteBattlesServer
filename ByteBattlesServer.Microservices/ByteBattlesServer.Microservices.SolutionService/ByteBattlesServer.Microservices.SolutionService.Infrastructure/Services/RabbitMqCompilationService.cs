@@ -14,6 +14,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
     private readonly ConcurrentDictionary<string, TaskCompletionSource<CodeTestResultResponseEvent>> _pendingRequests = new();
     private readonly string _responseQueueName;
     private bool _disposed = false;
+    private bool _isSubscribed = false;
 
     public RabbitMqCompilationService(
         IMessageBus messageBus,
@@ -53,7 +54,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
                        
                     }
                 });
-
+            _isSubscribed = true;
             
         }
         catch (Exception ex)
