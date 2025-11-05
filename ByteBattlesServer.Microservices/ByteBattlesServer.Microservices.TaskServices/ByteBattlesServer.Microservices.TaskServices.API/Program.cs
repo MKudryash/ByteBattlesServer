@@ -70,8 +70,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
 {
     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
+    var logger1 = serviceProvider.GetRequiredService<ILogger<RabbitMQMessageBus>>();
     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
-    var messageBus = new RabbitMQMessageBus(settings);
+    var messageBus = new RabbitMQMessageBus(settings,logger1);
     return new ResilientMessageBus(messageBus, logger);
 });
 
