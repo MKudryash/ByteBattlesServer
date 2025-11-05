@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.AuthService.Domain.Exceptions;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -38,6 +39,18 @@ public class ExceptionHandlingMiddleware
             _logger.LogWarning(ex, "User exception occurred");
             await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
                 new { message = ex.Message, code = ex.ErrorCode });
+        } 
+        catch (TaskException ex)
+        {
+            _logger.LogWarning(ex, "Task exception occurred");
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
+                new {essage = ex.Message, code = ex.ErrorCode });
+        } 
+        catch (LanguageException ex)
+        {
+            _logger.LogWarning(ex, "Language exception occurred");
+            await HandleExceptionAsync(context, StatusCodes.Status400BadRequest,
+                new {essage = ex.Message, code = ex.ErrorCode });
         }
         catch (ErrorRequest ex)
         {

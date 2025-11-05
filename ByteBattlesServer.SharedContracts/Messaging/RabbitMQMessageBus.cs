@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ByteBattlesServer.SharedContracts.Messaging;
 
 using System.Text;
@@ -11,10 +13,12 @@ public class RabbitMQMessageBus : IMessageBus, IDisposable
     private readonly IConnection _connection;
     private readonly IModel _channel;
     private readonly RabbitMQSettings _settings;
+    private readonly ILogger<RabbitMQMessageBus> _logger;
 
-    public RabbitMQMessageBus(RabbitMQSettings settings)
+    public RabbitMQMessageBus(RabbitMQSettings settings, ILogger<RabbitMQMessageBus> logger)
     {
         _settings = settings;
+        _logger = logger;
         
         var factory = new ConnectionFactory
         {
@@ -24,7 +28,8 @@ public class RabbitMQMessageBus : IMessageBus, IDisposable
             Password = settings.Password,
             VirtualHost = settings.VirtualHost
         };
-
+        _logger.LogInformation("Creating RabbitMQ connection");
+        _logger.LogInformation($"{factory.HostName}:{factory.Port}");
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
     }
@@ -76,6 +81,7 @@ public class RabbitMQMessageBus : IMessageBus, IDisposable
 
         _channel.BasicConsume(queueName, autoAck: false, consumer);
     }
+
 
     public void Dispose()
     {

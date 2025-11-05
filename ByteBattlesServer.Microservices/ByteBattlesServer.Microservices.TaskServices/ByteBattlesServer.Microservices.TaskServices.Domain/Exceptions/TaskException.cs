@@ -1,4 +1,4 @@
-namespace ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
+namespace ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 
 public class TaskException : Exception
 {

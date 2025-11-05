@@ -1,48 +1,69 @@
 using Microsoft.Extensions.Logging;
-
-namespace ByteBattlesServer.SharedContracts.Messaging;
-
 using Polly;
 using RabbitMQ.Client.Exceptions;
 
+namespace ByteBattlesServer.SharedContracts.Messaging;
 
 public class ResilientMessageBus : IMessageBus
 {
-    private readonly IMessageBus _messageBus;
+    private readonly Lazy<IMessageBus> _lazyMessageBus;
     private readonly ILogger<ResilientMessageBus> _logger;
+    private const int MaxRetries = 5;
+    private readonly TimeSpan _initialDelay = TimeSpan.FromSeconds(2);
 
-    public ResilientMessageBus(IMessageBus messageBus, ILogger<ResilientMessageBus> logger)
+    public ResilientMessageBus(RabbitMQSettings settings, ILogger<RabbitMQMessageBus> rabbitMqLogger, ILogger<ResilientMessageBus> logger)
     {
-        _messageBus = messageBus;
         _logger = logger;
+        _lazyMessageBus = new Lazy<IMessageBus>(() => 
+            new RabbitMQMessageBus(settings, rabbitMqLogger));
     }
 
-    public void Publish<T>(T message, string exchangeName, string routingKey) where T : class
+    public void Publish<T>(T message, string exchange, string routingKey) where T : class
     {
-        var retryPolicy = Policy
-            .Handle<BrokerUnreachableException>()
-            .Or<OperationInterruptedException>()
-            .WaitAndRetry(
-                retryCount: 3,
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                onRetry: (exception, timeSpan, retryCount, context) =>
+        ExecuteWithRetry(() => _lazyMessageBus.Value.Publish(message, exchange, routingKey));
+    }
+
+    public void Subscribe<T>(string exchange, string queue, string routingKey, Func<T, Task> handler) where T : class
+    {
+        ExecuteWithRetry(() => _lazyMessageBus.Value.Subscribe(exchange, queue, routingKey, handler));
+    }
+
+    private void ExecuteWithRetry(Action action)
+    {
+        var retryCount = 0;
+        var delay = _initialDelay;
+
+        while (retryCount < MaxRetries)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (BrokerUnreachableException ex)
+            {
+                retryCount++;
+                _logger.LogWarning(ex,
+                    "Failed to connect to RabbitMQ. Attempt {RetryCount}/{MaxRetries}. Retrying in {Delay} seconds...",
+                    retryCount, MaxRetries, delay.TotalSeconds);
+
+                if (retryCount >= MaxRetries)
                 {
-                    _logger.LogWarning(exception, 
-                        "Failed to publish message to {Exchange}. Retry {RetryCount} in {TimeSpan}s", 
-                        exchangeName, retryCount, timeSpan.TotalSeconds);
-                });
+                    _logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts.", MaxRetries);
+                    throw;
+                }
 
-        retryPolicy.Execute(() => 
-            _messageBus.Publish(message, exchangeName, routingKey));
-    }
-
-    public void Subscribe<T>(string exchangeName, string queueName, string routingKey, Func<T, Task> handler) where T : class
-    {
-        _messageBus.Subscribe(exchangeName, queueName, routingKey, handler);
+                Thread.Sleep(delay);
+                delay = TimeSpan.FromSeconds(delay.TotalSeconds * 1.5); // Exponential backoff
+            }
+        }
     }
 
     public void Dispose()
     {
-        _messageBus?.Dispose();
+        if (_lazyMessageBus.IsValueCreated)
+        {
+            _lazyMessageBus.Value.Dispose();
+        }
     }
 }

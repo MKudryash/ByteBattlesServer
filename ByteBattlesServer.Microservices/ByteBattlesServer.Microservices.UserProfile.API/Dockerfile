@@ -1,7 +1,8 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 USER $APP_UID
 WORKDIR /app
-EXPOSE 8090
+EXPOSE 8080
+EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -11,9 +12,10 @@ COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.Middlewar
 COPY ["ByteBattlesServer.Domain/ByteBattlesServer.Domain.csproj", "ByteBattlesServer.Domain/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthService.Domain/ByteBattlesServer.Microservices.AuthService.Domain.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthService.Domain/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Domain/ByteBattlesServer.Microservices.UserProfile.Domain.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Domain/"]
+COPY ["ByteBattlesServer.SharedContracts/ByteBattlesServer.SharedContracts.csproj", "ByteBattlesServer.SharedContracts/"]
+COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Domain/ByteBattlesServer.Microservices.TaskServices.Domain.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Domain/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Application/ByteBattlesServer.Microservices.UserProfile.Application.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Application/"]
 COPY ["ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Infrastructure/ByteBattlesServer.Microservices.UserProfile.Infrastructure.csproj", "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.Infrastructure/"]
-COPY ["ByteBattlesServer.SharedContracts/ByteBattlesServer.SharedContracts.csproj", "ByteBattlesServer.SharedContracts/"]
 RUN dotnet restore "ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API/ByteBattlesServer.Microservices.UserProfile.API.csproj"
 COPY . .
 WORKDIR "/src/ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API"

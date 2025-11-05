@@ -22,19 +22,31 @@ public class UserRegisteredEventHandler : BackgroundService
         _logger = logger;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _messageBus.Subscribe<UserRegisteredIntegrationEvent>(
-            "user-events",
-            "user-profile-service-queue",
-            "user.registered",
-            HandleUserRegisteredEvent);
+        _logger.LogInformation("🟣 [UserProfile] Starting UserRegisteredEventHandler...");
 
-        _logger.LogInformation("Subscribed to user.registered events");
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                _messageBus.Subscribe<UserRegisteredIntegrationEvent>(
+                    "user-events",
+                    "user-profile-service-queue",
+                    "user.registered",
+                    HandleUserRegisteredEvent);
 
-        return Task.CompletedTask;
+                _logger.LogInformation("Subscribed to user.registered events");
+            
+                // Ждем отмены вместо бесконечного цикла
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+        }
     }
-
     private async Task HandleUserRegisteredEvent(UserRegisteredIntegrationEvent @event)
     {
         using var scope = _serviceProvider.CreateScope();

@@ -8,7 +8,7 @@ public class Task:Entity
 
     public string? Description { get; set; }
     
-    public Difficulty? Difficulty { get; private set; }
+    public Difficulty Difficulty { get; private set; }
 
     public string? Author { get; private set; }
 
@@ -21,8 +21,15 @@ public class Task:Entity
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
+    
+    public int TotalAttempts { get; private set; }
+    public int SuccessfulAttempts { get; private set; }
+    public double SuccessRate => TotalAttempts > 0 ? (double)SuccessfulAttempts / TotalAttempts * 100 : 0;
+    public double AverageExecutionTime { get; private set; }
+    
 
     public virtual ICollection<TaskLanguage> TaskLanguages { get; private set; } = new List<TaskLanguage>();
+    public virtual ICollection<TestCases> TestCases { get; private set; } = new List<TestCases>();
     private Task() { }
 
     public Task(string title, string description, string difficulty, string author, string functionName,
@@ -42,7 +49,9 @@ public class Task:Entity
         string? description= null,
         string? difficulty = null, 
         string? author = null,
-        string? functionName = null)
+        string? functionName = null,
+        string? inputParameters = null,
+        string? outputParameters = null)
     {
         if (!string.IsNullOrWhiteSpace(title))
             Title =title.Trim();
@@ -58,8 +67,35 @@ public class Task:Entity
         }
         if (!string.IsNullOrWhiteSpace(author))
             Author = author.Trim();
+        
         if (!string.IsNullOrWhiteSpace(functionName))
             FunctionName = functionName.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(inputParameters))
+            InputParameters = inputParameters.Trim();
+        
+        if (!string.IsNullOrWhiteSpace(outputParameters))
+            OutputParameters = outputParameters.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+    
+
+
+
+    public void UpdateDate()
+    {
+        UpdatedAt = DateTime.UtcNow;
+    }
+    
+    public void RecordAttempt(bool isSuccessful, TimeSpan executionTime)
+    {
+        TotalAttempts++;
+        if (isSuccessful)
+        {
+            SuccessfulAttempts++;
+        }
+        
+        AverageExecutionTime = ((AverageExecutionTime * (TotalAttempts - 1)) + executionTime.TotalMilliseconds) / TotalAttempts;
         UpdatedAt = DateTime.UtcNow;
     }
 
