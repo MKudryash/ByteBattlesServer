@@ -101,14 +101,6 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<LanguageMessageHandler>();
 builder.Services.AddSingleton<TaskMessageHandler>();
 
-// builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
-// {
-//     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
-//     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
-//     var messageBus = new RabbitMQMessageBus(settings);
-//     return new ResilientMessageBus(messageBus, logger);
-// });
-
 // LanguageMessageHandler регистрируется как Hosted Service
 builder.Services.AddHostedService<LanguageMessageHandler>();
 builder.Services.AddHostedService<TaskMessageHandler>();
