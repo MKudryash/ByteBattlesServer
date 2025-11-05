@@ -3,8 +3,7 @@
     image: rabbitmq:3-management
     container_name: bytebattles-rabbitmq
     ports:
-      - "50301:15672"  # Web UI
-      - "5672:5672"    # AMQP port
+      - "50301:5672" 
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
