@@ -23,22 +23,26 @@ public class UserStatsEventHandler : BackgroundService
     {
         _logger.LogInformation("🟣 [UserProfile] Starting UserStatsEventHandler...");
 
-        try
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _messageBus.Subscribe<UserStatsIntegrationEvent>(
-                "user_stats-events",
-                "user-profile-stats-service-queue",
-                "user.stats.update",
-                HandleUserStatsEvent);
+            try
+            {
+                _messageBus.Subscribe<UserStatsIntegrationEvent>(
+                    "user_stats-events",
+                    "user-profile-stats-service-queue",
+                    "user.stats.update",
+                    HandleUserStatsEvent);
 
-            _logger.LogInformation("🟢 [UserProfile] Successfully subscribed to user.stats.update events");
-
-            // Ждем отмены вместо немедленного завершения
-            await Task.Delay(Timeout.Infinite, stoppingToken);
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogInformation("UserStatsEventHandler was cancelled");
+                _logger.LogInformation("🟢 [UserProfile] Successfully subscribed to user.stats.update events");
+            
+                // Ждем отмены вместо бесконечного цикла
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "🔴 [UserProfile] Failed to subscribe to RabbitMQ. Retrying in 10 seconds...");
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
         }
     }
 
