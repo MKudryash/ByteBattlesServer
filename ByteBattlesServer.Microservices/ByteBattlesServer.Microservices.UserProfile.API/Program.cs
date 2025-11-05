@@ -23,8 +23,8 @@ builder.Services.Configure<RabbitMQSettings>(
 builder.Services.AddSingleton(sp => 
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
 
-builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
-
+//builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+builder.Services.AddSingleton<IMessageBus, ResilientMessageBus>();
 var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
 if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))

@@ -15,7 +15,8 @@
       test: [ "CMD", "rabbitmqctl", "status" ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 30s
 
   codeexecution:
     build:
@@ -31,8 +32,10 @@
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     networks:
       - bytebattles-network
 
@@ -50,8 +53,10 @@
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     networks:
       - bytebattles-network
   
@@ -101,8 +106,10 @@
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     networks:
       - bytebattles-network
   

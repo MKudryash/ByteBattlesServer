@@ -1,31 +1,31 @@
 using Microsoft.Extensions.Logging;
-
-namespace ByteBattlesServer.SharedContracts.Messaging;
-
 using Polly;
 using RabbitMQ.Client.Exceptions;
 
+namespace ByteBattlesServer.SharedContracts.Messaging;
+
 public class ResilientMessageBus : IMessageBus
 {
-    private readonly IMessageBus _messageBus;
+    private readonly Lazy<IMessageBus> _lazyMessageBus;
     private readonly ILogger<ResilientMessageBus> _logger;
     private const int MaxRetries = 5;
     private readonly TimeSpan _initialDelay = TimeSpan.FromSeconds(2);
 
-    public ResilientMessageBus(IMessageBus messageBus, ILogger<ResilientMessageBus> logger)
+    public ResilientMessageBus(RabbitMQSettings settings, ILogger<RabbitMQMessageBus> rabbitMqLogger, ILogger<ResilientMessageBus> logger)
     {
-        _messageBus = messageBus;
         _logger = logger;
+        _lazyMessageBus = new Lazy<IMessageBus>(() => 
+            new RabbitMQMessageBus(settings, rabbitMqLogger));
     }
 
     public void Publish<T>(T message, string exchange, string routingKey) where T : class
     {
-        ExecuteWithRetry(() => _messageBus.Publish(message, exchange, routingKey));
+        ExecuteWithRetry(() => _lazyMessageBus.Value.Publish(message, exchange, routingKey));
     }
 
     public void Subscribe<T>(string exchange, string queue, string routingKey, Func<T, Task> handler) where T : class
     {
-        ExecuteWithRetry(() => _messageBus.Subscribe(exchange, queue, routingKey, handler));
+        ExecuteWithRetry(() => _lazyMessageBus.Value.Subscribe(exchange, queue, routingKey, handler));
     }
 
     private void ExecuteWithRetry(Action action)
@@ -61,6 +61,9 @@ public class ResilientMessageBus : IMessageBus
 
     public void Dispose()
     {
-        _messageBus?.Dispose();
+        if (_lazyMessageBus.IsValueCreated)
+        {
+            _lazyMessageBus.Value.Dispose();
+        }
     }
 }
