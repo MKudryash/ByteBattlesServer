@@ -62,7 +62,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
         policy.WithOrigins(
-                "http://hobbit1021.ru",
+                "http://hobbit1021.ru:5035",
                 "http://localhost:8080",
                 "http://localhost:50305"// Ваш production домен
             )
