@@ -2,6 +2,7 @@
 
 using System.Text;
 using ByteBattlesServer.Microservices.AuthService.API;
+using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Repositories;
 using ByteBattlesServer.Microservices.AuthService.Infrastructure;
 using ByteBattlesServer.Microservices.AuthService.Infrastructure.Data;
 using ByteBattlesServer.Microservices.AuthServices.Application;
@@ -64,12 +65,13 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://hobbit1021.ru:5035",
                 "http://localhost:8080",
-                "http://localhost:50305"// Ваш production домен
+                "http://localhost:50305" // Ваш production домен
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials(); // Если используете cookies/авторизацию
     });
+});
 
 
 // Регистрация JwtSettings как singleton
@@ -90,6 +92,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
         };
     });
+
 
 var app = builder.Build();
 

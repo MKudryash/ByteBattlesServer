@@ -1,4 +1,4 @@
-namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data;
+namespace ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Repositories;
 
 public interface ISeedService
 {
