@@ -72,12 +72,12 @@ builder.Services.AddCors(options =>
     });
 
     // Альтернативно, для разработки можно разрешить все origins
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
+    // options.AddPolicy("AllowAll", policy =>
+    // {
+    //     policy.AllowAnyOrigin()
+    //         .AllowAnyHeader()
+    //         .AllowAnyMethod();
+    // });
 });
 
 // Регистрация JwtSettings как singleton
@@ -122,10 +122,11 @@ app.UseAuthentication();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
     context.Database.Migrate();
 
     // Seed initial data if needed
-    //await SeedData.InitializeAsync(context);
+    await seedService.SeedRolesAsync();
 }
 
 // Регистрация endpoints
