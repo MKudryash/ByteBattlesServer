@@ -27,7 +27,8 @@ public static class AuthEndpoints
                     registerDto.Email,
                     registerDto.Password,
                     registerDto.FirstName,
-                    registerDto.LastName);
+                    registerDto.LastName,
+                    registerDto.Roles);
 
                 var result = await mediator.Send(command);
                 Console.WriteLine(result);

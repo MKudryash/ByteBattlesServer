@@ -4,5 +4,5 @@ using MediatR;
 namespace ByteBattlesServer.Microservices.AuthServices.Application.Commands;
 
 
-public record RegisterCommand(string Email, string Password, string FirstName, string LastName) 
+public record RegisterCommand(string Email, string Password, string FirstName, string LastName, List<string> Roles) 
     : IRequest<AuthResponseDto>;
