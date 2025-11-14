@@ -32,6 +32,19 @@ public class User:Entity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void AddRole(Role role)
+    {
+        if (role == null)
+            throw new ArgumentNullException(nameof(role));
+        
+        if (!UserRoles.Any(ur => ur.RoleId == role.Id))
+        {
+            var userRole = new UserRole(this.Id,role.Id);
+            UserRoles.Add(userRole);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
     public void Deactivate()
     {
         IsActive = false;

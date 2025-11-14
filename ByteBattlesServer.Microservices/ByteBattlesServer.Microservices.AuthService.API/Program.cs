@@ -57,6 +57,28 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+                "http://hobbit1021.ru:5035",
+                "http://localhost:8080",
+                "http://localhost:50305"// Ваш production домен
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // Если используете cookies/авторизацию
+    });
+
+    // Альтернативно, для разработки можно разрешить все origins
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 // Регистрация JwtSettings как singleton
 builder.Services.AddSingleton(jwtSettings);
@@ -88,9 +110,13 @@ app.UseSwaggerUI(c =>
 });
 app.UseHttpsRedirection();
 
+app.UseCors("AllowSpecificOrigin");
+
 // Глобальная обработка исключений
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// ДОБАВЛЕНО: Аутентификация и авторизация
+app.UseAuthentication();
 
 // Initialize database
 using (var scope = app.Services.CreateScope())

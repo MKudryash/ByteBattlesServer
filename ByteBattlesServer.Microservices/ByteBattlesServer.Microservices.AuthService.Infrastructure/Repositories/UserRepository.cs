@@ -30,6 +30,14 @@ public class UserRepository : IUserRepository
             .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Email.Value == email);
     }
+    
+    public async Task<User?> GetByEmailWithRolesAsync(string email)
+    {
+        return await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role) // Включаем роли
+            .FirstOrDefaultAsync(u => u.Email.Value == email);
+    }
 
     public async Task<bool> ExistsByEmailAsync(string email)
     {

@@ -33,7 +33,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
 
     public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await _userRepository.GetByEmailWithRolesAsync(request.Email);
         
         if (user == null || !user.IsActive)
             throw new ErrorRequest("Invalid credentials");
@@ -73,7 +73,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name)
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
             }
         };
 
