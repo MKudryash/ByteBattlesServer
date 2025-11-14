@@ -71,14 +71,6 @@ builder.Services.AddCors(options =>
             .AllowCredentials(); // Если используете cookies/авторизацию
     });
 
-    // Альтернативно, для разработки можно разрешить все origins
-    // options.AddPolicy("AllowAll", policy =>
-    // {
-    //     policy.AllowAnyOrigin()
-    //         .AllowAnyHeader()
-    //         .AllowAnyMethod();
-    // });
-});
 
 // Регистрация JwtSettings как singleton
 builder.Services.AddSingleton(jwtSettings);
