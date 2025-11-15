@@ -25,7 +25,8 @@ public class CreateLanguageCommandHandler : IRequestHandler<CreateLanguageComman
         if (existingLanguage!= null)
             throw new LanguageNotFoundException(request.LanguageTitle);
 
-        var language = new Language(request.LanguageTitle, request.LanguageShortTitle);
+        var language = new Language(request.LanguageTitle, request.LanguageShortTitle,
+            request.FileExtension, request.CompilerCommand, request.ExecutionCommand, request.SupportsCompilation);
 
         await _languageRepository.AddAsync(language);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

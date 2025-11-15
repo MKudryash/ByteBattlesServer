@@ -15,10 +15,14 @@ public class Language:Entity
     public virtual ICollection<TaskLanguage> TasksLanguage { get; private set; } = new List<TaskLanguage>();
 
     private Language() { }
-    public Language(string title, string shortTitle)
+    public Language(string title, string shortTitle,  string fileExtension, string compilerCommand, string executionCommand, bool supportsCompilation)
     {
         Title = title;
         ShortTitle = shortTitle;
+        FileExtension = fileExtension;
+        CompilerCommand = compilerCommand;
+        ExecutionCommand = executionCommand;
+        SupportsCompilation = supportsCompilation;
     }
 
     public void Update(string? title, string? shortTitle)

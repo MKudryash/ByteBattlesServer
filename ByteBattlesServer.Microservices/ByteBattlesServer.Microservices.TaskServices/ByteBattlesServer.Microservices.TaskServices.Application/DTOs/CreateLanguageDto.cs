@@ -4,8 +4,8 @@ public class CreateLanguageDto{
    public string Title { get; set; }
    public string ShortTitle  { get; set; }
 
-   public string FileExtension { get; set; } = string.Empty;
-   public string CompilerCommand { get; set; } = string.Empty;
-   public string ExecutionCommand { get; set; } = string.Empty;
+   public string FileExtension { get; set; } 
+   public string CompilerCommand { get; set; } 
+   public string ExecutionCommand { get; set; }
    public bool SupportsCompilation { get; set; }
 }
