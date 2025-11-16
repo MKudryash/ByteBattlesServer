@@ -8,4 +8,7 @@ public class CreateLanguageDto{
    public string CompilerCommand { get; set; } 
    public string ExecutionCommand { get; set; }
    public bool SupportsCompilation { get; set; }
+   public string Pattern { get; set; }
+   
+   public List<CreateLibraryDto>  Libraries { get; set; }
 }

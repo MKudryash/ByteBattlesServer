@@ -67,16 +67,6 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization();
 
-// // Регистрация RabbitMQ с Resilient оберткой
-// builder.Services.AddSingleton<IMessageBus>(serviceProvider =>
-// {
-//     var logger = serviceProvider.GetRequiredService<ILogger<ResilientMessageBus>>();
-//     var logger1 = serviceProvider.GetRequiredService<ILogger<RabbitMQMessageBus>>();
-//     var settings = serviceProvider.GetRequiredService<RabbitMQSettings>();
-//     var messageBus = new RabbitMQMessageBus(settings,logger1);
-//     return new ResilientMessageBus(messageBus, logger);
-// });
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -105,6 +95,22 @@ builder.Services.AddSingleton<TaskMessageHandler>();
 builder.Services.AddHostedService<LanguageMessageHandler>();
 builder.Services.AddHostedService<TaskMessageHandler>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+                "http://hobbit1021.ru:50304",
+                "http://localhost:8080",
+                "http://localhost:50304" // Ваш production домен
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // Если используете cookies/авторизацию
+    });
+});
+
+
 var app = builder.Build();
 
 // Конфигурация middleware
@@ -117,7 +123,7 @@ app.UseSwaggerUI(options =>
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-
+app.UseCors("AllowSpecificOrigin");
 
 app.UseRouting();
 app.UseAuthentication(); 

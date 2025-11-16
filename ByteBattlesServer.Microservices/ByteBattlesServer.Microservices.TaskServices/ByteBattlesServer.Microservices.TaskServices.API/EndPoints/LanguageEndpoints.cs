@@ -4,6 +4,7 @@ using System.Security.Claims;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
@@ -53,7 +54,7 @@ public static class LanguageEndpoints
                 try
                 {
                     var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle, dto.FileExtension,
-                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation);
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation,dto.Pattern,dto.Libraries);
                     var result = await mediator.Send(command);
                     return Results.Created($"/api/language/{result.Id}", result);
                 }
@@ -83,7 +84,7 @@ public static class LanguageEndpoints
                 try
                 {
                     var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle, dto.FileExtension,
-                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation);
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation, dto.Pattern);
                     var result = await mediator.Send(command);
                     return Results.Ok(result);
                 }
@@ -188,8 +189,117 @@ public static class LanguageEndpoints
         .WithName("DeleteLanguages")
         .WithSummary("Удаления языка программирования")
         .WithDescription("Удаляет язык программирования по его уникальному идентификатору")
-        .Produces<List<LanguageDto>>(StatusCodes.Status200OK);;
-    
+        .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
+        
+    group.MapPost("/library/{languageId:guid}", async (Guid languageId, CreateLibrariesDto dto, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new CreateLibrariesCommand(languageId, dto.Libraries);
+                var result = await mediator.Send(command);
+                return Results.Created($"/api/language/{languageId}/library", result);
+            }
+            catch (LanguageNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while creating library: {ex.Message}");
+            }
+        })
+        .WithName("CreateLibraries")
+        .WithSummary("Добавление библиотек для языка программирования")
+        .WithDescription("Добавляет набор библиотек для конкретного языка программирования")
+        .Produces<List<LibraryDto>>(StatusCodes.Status201Created)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+        
+        // Обновление тестового случая
+        group.MapPut("/library/{libraryId:guid}", async (Guid libraryId, UpdateLibraryDto dto, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new UpdateLibraryCommand(libraryId, dto.Name, dto.Description, dto.Version);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (LibraryNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while updating library: {ex.Message}");
+            }
+        })
+        .WithName("UpdateLibrary")
+        .WithSummary("Обновление библиотеки")
+        .WithDescription("Обновляет библиотеки для конкретного языка программирования")
+        .Produces<LibraryDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+        
+        // Удаление тестового случая
+        group.MapDelete("/library/{libraryId:guid}", async (Guid libraryId, IMediator mediator) =>
+        {
+            try
+            {
+                var command = new RemoveLibrariesCommand(libraryId);
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            }
+            catch (LibraryNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while deleting test case: {ex.Message}");
+            }
+        })
+        .WithName("DeleteLibrary")
+        .WithSummary("Удаление библиотеки")
+        .WithDescription("Удаляет библиотеку для конкретного языка программирования")
+        .Produces<DeleteResponseDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+       
+        group.MapGet("/library/{languageId:guid}", async (Guid languageId, IMediator mediator) =>
+        {
+            try
+            {
+                var query = new GetLibraryQuery(languageId);
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving test cases: {ex.Message}");
+            }
+        })
+        .WithName("GetLibraryByLanguage")
+        .WithSummary("Получение библиотек для задачи")
+        .WithDescription("Извлекает все библиотеки для конкретного языка программирования")
+        .Produces<List<LibraryDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)

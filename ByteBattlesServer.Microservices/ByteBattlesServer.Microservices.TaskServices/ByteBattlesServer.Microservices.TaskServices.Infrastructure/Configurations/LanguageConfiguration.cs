@@ -31,6 +31,16 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
         builder.Property(l => l.ExecutionCommand)
             .IsRequired()
             .HasMaxLength(50);
+        
+        builder.Property(l=> l.Pattern)
+            .IsRequired()
+            .HasMaxLength(500);
+        
+        builder.Property(tt => tt.CreatedAd)
+            .IsRequired();
+            
+        builder.Property(tt => tt.UpdatedAd)
+            .IsRequired();
     
         builder.Property(l => l.SupportsCompilation)
             .IsRequired()
@@ -46,5 +56,14 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
             
         builder.HasIndex(l => l.ShortTitle)
             .IsUnique();
+        
+        builder.HasMany(l => l.Libraries)
+            .WithOne(l=> l.Language)
+            .HasForeignKey(l => l.LanguageId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        
+        builder.HasIndex(t => t.CreatedAd);
+        
     }
 }

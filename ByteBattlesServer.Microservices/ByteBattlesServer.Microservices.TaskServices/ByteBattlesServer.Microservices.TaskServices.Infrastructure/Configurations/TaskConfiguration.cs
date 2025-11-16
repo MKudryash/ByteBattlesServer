@@ -40,6 +40,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.Property(t => t.OutputParameters)
             .IsRequired()
             .HasMaxLength(500);
+
             
         builder.Property(t => t.CreatedAt)
             .IsRequired();

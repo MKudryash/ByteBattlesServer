@@ -21,7 +21,10 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     FileExtension = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     CompilerCommand = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     ExecutionCommand = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    SupportsCompilation = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    SupportsCompilation = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    Pattern = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -49,6 +52,29 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tasks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Libraries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    NameLibrary = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Version = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CreatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LanguageId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Libraries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Libraries_Languages_LanguageId",
+                        column: x => x.LanguageId,
+                        principalTable: "Languages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -100,6 +126,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Languages_CreatedAd",
+                table: "Languages",
+                column: "CreatedAd");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Languages_ShortTitle",
                 table: "Languages",
                 column: "ShortTitle",
@@ -110,6 +141,16 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 table: "Languages",
                 column: "Title",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Libraries_CreatedAd",
+                table: "Libraries",
+                column: "CreatedAd");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Libraries_LanguageId",
+                table: "Libraries",
+                column: "LanguageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TaskLanguages_IdLanguage",
@@ -146,6 +187,9 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Libraries");
+
             migrationBuilder.DropTable(
                 name: "TaskLanguages");
 

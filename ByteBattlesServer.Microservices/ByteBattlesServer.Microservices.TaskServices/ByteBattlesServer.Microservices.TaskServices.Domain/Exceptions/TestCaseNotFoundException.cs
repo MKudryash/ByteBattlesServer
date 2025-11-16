@@ -8,3 +8,11 @@ public class TestCaseNotFoundException:TestCaseException
     {
     }
 }
+public class LibraryNotFoundException:LibraryException
+
+{
+    public LibraryNotFoundException(Guid libraryId) 
+        : base($"Library not found ID: {libraryId}", "LIBRARY_NOT_FOUND")
+    {
+    }
+}

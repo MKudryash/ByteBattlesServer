@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
@@ -19,16 +20,6 @@ namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
             var language = await _repository.GetByIdAsync(request.LanguageId);
             if (language == null)
                 throw new LanguageNotFoundException(request.LanguageId);
-            return MapToDto(language);
+            return LanguageMappings.MapToDto(language);
         }
-        private LanguageDto MapToDto(Language language) => new()
-        {
-            Id = language.Id,
-            Title = language.Title,
-            ShortTitle = language.ShortTitle,
-            CompilerCommand = language.CompilerCommand,
-            ExecutionCommand = language.ExecutionCommand,
-            FileExtension = language.FileExtension,
-            SupportsCompilation = language.SupportsCompilation,
-        };
     }

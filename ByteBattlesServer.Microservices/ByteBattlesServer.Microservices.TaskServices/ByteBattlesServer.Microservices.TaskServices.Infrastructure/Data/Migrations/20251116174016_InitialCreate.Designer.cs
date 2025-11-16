@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251103193530_InitialCreate")]
+    [Migration("20251116174016_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -36,6 +36,9 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTime>("CreatedAd")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ExecutionCommand")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -45,6 +48,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Pattern")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("ShortTitle")
                         .IsRequired()
@@ -61,7 +69,12 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime>("UpdatedAd")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAd");
 
                     b.HasIndex("ShortTitle")
                         .IsUnique();
@@ -70,6 +83,45 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .IsUnique();
 
                     b.ToTable("Languages", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NameLibrary")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAd");
+
+                    b.HasIndex("LanguageId");
+
+                    b.ToTable("Libraries", (string)null);
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", b =>
@@ -198,6 +250,17 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.ToTable("TestsTasks", (string)null);
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Language", "Language")
+                        .WithMany("Libraries")
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLanguage", b =>
                 {
                     b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Language", "Language")
@@ -230,6 +293,8 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Language", b =>
                 {
+                    b.Navigation("Libraries");
+
                     b.Navigation("TasksLanguage");
                 });
 

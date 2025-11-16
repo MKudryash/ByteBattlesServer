@@ -10,4 +10,5 @@ public record UpdateLanguageCommand(
     string FileExtension ,
     string CompilerCommand,
     string ExecutionCommand,
-    bool SupportsCompilation):IRequest<LanguageDto>;
+    bool SupportsCompilation,
+    string Pattern):IRequest<LanguageDto>;

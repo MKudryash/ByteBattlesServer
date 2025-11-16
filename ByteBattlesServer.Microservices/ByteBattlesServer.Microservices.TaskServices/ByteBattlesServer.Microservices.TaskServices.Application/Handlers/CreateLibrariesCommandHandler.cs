@@ -8,30 +8,38 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 
-public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageCommand, LanguageDto>
+public class CreateLibrariesCommandHandler: IRequestHandler<CreateLibrariesCommand, List<LibraryDto>>
 {
     private readonly ILanguageRepository _languageRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateLanguageCommandHandler(ILanguageRepository languageRepository, IUnitOfWork unitOfWork)
+    public CreateLibrariesCommandHandler( ILanguageRepository languageRepository, IUnitOfWork unitOfWork)
     {
         _languageRepository = languageRepository;
         _unitOfWork = unitOfWork;
     }
-
-    public async Task<LanguageDto> Handle(UpdateLanguageCommand request, CancellationToken cancellationToken)
+    public async Task<List<LibraryDto>> Handle(CreateLibrariesCommand request, CancellationToken cancellationToken)
     {
         var language = await _languageRepository.GetByIdAsync(request.LanguageId);
-        if (language == null)
+        if (language is null)
             throw new LanguageNotFoundException(request.LanguageId);
+        var createdLibraries =  new List<Library>();
+
+        foreach (var libraryDto in request.Libraries)
+        {
+            var library = new Library(
+                libraryDto.NameLibrary,
+                libraryDto.Description,
+                libraryDto.Version,
+                request.LanguageId);
+            await _languageRepository.AddLibraryAsync(library);
+            createdLibraries.Add(library);
+        }
         
-        language.Update(request.LanguageTitle, request.LanguageShortTitle, request.FileExtension,request.CompilerCommand,
-            request.SupportsCompilation, request.Pattern, request.ExecutionCommand);
-        
-        _languageRepository.Update(language);
+        language.UpdatedAd = DateTime.UtcNow;
+        await _languageRepository.Update(language);
         
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return LanguageMappings.MapToDto(language);
+        return createdLibraries.Select(cL=>LibraryMappings.MapToDto(cL)).ToList();
     }
 }

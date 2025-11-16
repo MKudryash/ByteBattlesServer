@@ -9,5 +9,7 @@ public record CreateLanguageCommand(
     string FileExtension ,
     string CompilerCommand,
     string ExecutionCommand,
-    bool SupportsCompilation
+    bool SupportsCompilation,
+    string Pattern,
+    List<CreateLibraryDto> Libraries
     ): IRequest<LanguageDto>;

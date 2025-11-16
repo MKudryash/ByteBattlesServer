@@ -1,5 +1,6 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -19,30 +20,32 @@ public class CreateLanguageCommandHandler : IRequestHandler<CreateLanguageComman
     }
     public async Task<LanguageDto> Handle(CreateLanguageCommand request, CancellationToken cancellationToken)
     {
-       
-        
         var existingLanguage = await _languageRepository.GetByNameAsync(request.LanguageTitle);
         if (existingLanguage!= null)
             throw new LanguageNotFoundException(request.LanguageTitle);
 
         var language = new Language(request.LanguageTitle, request.LanguageShortTitle,
-            request.FileExtension, request.CompilerCommand, request.ExecutionCommand, request.SupportsCompilation);
+            request.FileExtension, request.CompilerCommand, request.ExecutionCommand, request.SupportsCompilation, request.Pattern);
 
         await _languageRepository.AddAsync(language);
+        
+        
+        var createdLibraries =  new List<Library>();
+
+        foreach (var libraryDto in request.Libraries)
+        {
+            var library = new Library(
+                libraryDto.NameLibrary,
+                libraryDto.Description,
+                libraryDto.Version,
+                language.Id);
+            await _languageRepository.AddLibraryAsync(library);
+            createdLibraries.Add(library);
+        }
+        
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         
-        return MapToDto(language);
+        return LanguageMappings.MapToDto(language);
 
     }
-
-    private LanguageDto MapToDto(Language language) => new()
-    {
-        Id = language.Id,
-        Title = language.Title,
-        ShortTitle = language.ShortTitle,
-        CompilerCommand = language.CompilerCommand,
-        ExecutionCommand = language.ExecutionCommand,
-        FileExtension = language.FileExtension,
-        SupportsCompilation = language.SupportsCompilation,
-    };
 }

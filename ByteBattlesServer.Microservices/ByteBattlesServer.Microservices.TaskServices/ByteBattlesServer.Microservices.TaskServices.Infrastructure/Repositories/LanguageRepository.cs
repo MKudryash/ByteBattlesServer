@@ -96,4 +96,91 @@ public class LanguageRepository:ILanguageRepository
 
         return query;
     }
+     public async Task<Library> GetLibraryByIdAsync(Guid libraryId)
+    {
+        return await _dbContext.Libraries
+            .Include(l => l.Language)
+            .FirstOrDefaultAsync(l => l.Id == libraryId);
+    }
+
+    public async Task<List<Library>> GetLibrariesByLanguageIdAsync(Guid languageId)
+    {
+        return await _dbContext.Libraries
+            .Where(l => l.LanguageId == languageId)
+            .Include(l => l.Language)
+            .ToListAsync();
+    }
+
+    public async Task<List<Library>> GetLibrariesByLanguageNameAsync(string languageName)
+    {
+        return await _dbContext.Libraries
+            .Where(l => l.Language.Title == languageName)
+            .Include(l => l.Language)
+            .ToListAsync();
+    }
+
+    public async Task<List<Library>> GetAllLibrariesAsync()
+    {
+        return await _dbContext.Libraries
+            .Include(l => l.Language)
+            .ToListAsync();
+    }
+
+    public async Task<List<Library>> SearchLibrariesAsync(string? searchTerm)
+    {
+        var query = BuildLibrarySearchQuery(searchTerm);
+        return await query
+            .Include(l => l.Language)
+            .ToListAsync();
+    }
+
+    public async Task<List<Library>> SearchLibrariesPagedAsync(string? searchTerm, int page, int pageSize)
+    {
+        var query = BuildLibrarySearchQuery(searchTerm);
+        return await query
+            .Include(l => l.Language)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task AddLibraryAsync(Library library)
+    {
+        await _dbContext.Libraries.AddAsync(library);
+    }
+
+    public async Task UpdateLibraryAsync(Library library)
+    {
+        
+        _dbContext.Libraries.Update(library);
+    }
+
+    public async Task DeleteLibraryAsync(Library library)
+    {
+        _dbContext.Libraries.Remove(library);
+    }
+
+    public async Task<bool> LibraryExistsAsync(string libraryName, string version, Guid languageId)
+    {
+        return await _dbContext.Libraries
+            .AnyAsync(l => l.NameLibrary == libraryName && 
+                          l.Version == version && 
+                          l.LanguageId == languageId);
+    }
+
+    private IQueryable<Library> BuildLibrarySearchQuery(string? searchTerm)
+    {
+        var query = _dbContext.Libraries.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(l => 
+                l.NameLibrary.Contains(searchTerm) ||
+                l.Description.Contains(searchTerm) ||
+                l.Version.Contains(searchTerm) ||
+                l.Language.Title.Contains(searchTerm));
+        }
+
+        return query;
+    }
 }

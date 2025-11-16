@@ -19,4 +19,16 @@ public interface ILanguageRepository
     
     System.Threading.Tasks.Task<List<Language>> SearchLanguagesPagedAsync(
         string? searchTerm, int page, int pageSize);
+    
+    // Methods for working with Library
+    Task<Library> GetLibraryByIdAsync(Guid libraryId);
+    Task<List<Library>> GetLibrariesByLanguageIdAsync(Guid languageId);
+    Task<List<Library>> GetLibrariesByLanguageNameAsync(string languageName);
+    Task<List<Library>> GetAllLibrariesAsync();
+    Task<List<Library>> SearchLibrariesAsync(string? searchTerm);
+    Task<List<Library>> SearchLibrariesPagedAsync(string? searchTerm, int page, int pageSize);
+    Task AddLibraryAsync(Library library);
+    Task UpdateLibraryAsync(Library library);
+    Task DeleteLibraryAsync(Library library);
+    Task<bool> LibraryExistsAsync(string libraryName, string version, Guid languageId);
 }
