@@ -69,7 +69,21 @@ builder.Services.AddInfrastructure();
 // builder.Services.AddAuthentication() // Add this line
 //     .AddCookie(); // Or your preferred authentication scheme
 
-//builder.Services.AddAuthorization();
+builder.Services.AddAuthentication();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+                "http://hobbit1021.ru:50302",
+                "http://localhost:50302" 
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -100,6 +114,8 @@ app.UseSwaggerUI(options =>
 });
 app.UseHttpsRedirection();
 
+app.UseCors("AllowSpecificOrigin");
+app.UseAuthentication();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

@@ -68,9 +68,20 @@ builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// // Add authentication and authorization services
-// builder.Services.AddAuthentication() // Add this line
-//     .AddCookie(); // Or your preferred authentication scheme
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+                "http://hobbit1021.ru:50303",
+                "http://localhost:8080",
+                "http://localhost:50303" 
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 builder.Services.AddAuthorization();
 
@@ -118,7 +129,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRouting();
 app.UseAuthentication(); // Add this line
 app.UseAuthorization();
-
+app.UseCors("AllowSpecificOrigin");
 // Initialize database
 using (var scope = app.Services.CreateScope())
 {

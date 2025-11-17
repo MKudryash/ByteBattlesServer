@@ -62,7 +62,20 @@ builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 // Регистрация JWT настроек
 //builder.Services.AddSingleton(jwtSettings);
 
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+                "http://hobbit1021.ru:50306",
+                "http://localhost:8080",
+                "http://localhost:50306" 
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 // Добавление сервисов
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -83,6 +96,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Solution Management Service"
     });
 });
+builder.Services.AddAuthentication();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ITestCasesServices, RabbitMQTestCasesService>();
@@ -129,21 +143,19 @@ app.UseSwaggerUI(options =>
 });
 app.UseHttpsRedirection();
 
+
+app.UseCors("AllowSpecificOrigin");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SolutionDbContext>();
     context.Database.Migrate();
-
-    // Seed initial data if needed
-    //await SeedData.InitializeAsync(context);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 
 app.UseRouting();
-//app.UseAuthentication(); 
-//app.UseAuthorization();
+app.UseAuthentication();
 
 
 
