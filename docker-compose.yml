@@ -3,7 +3,7 @@
     image: rabbitmq:3-management
     container_name: bytebattles-rabbitmq
     ports:
-      - "50301:15672" 
+      - "50301:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -141,6 +141,7 @@
       - "50310:443"  # Основной порт для внешнего доступа
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:443
     depends_on:
       - authservices
       - taskservices
@@ -149,7 +150,7 @@
       - codeexecution
     networks:
       - bytebattles-network
-        
+  
   frontend:
     build:
       context: ./ByteBattlesApp
@@ -176,4 +177,3 @@ networks:
 volumes:
   rabbitmq_data:
   postgres_data: 
-
