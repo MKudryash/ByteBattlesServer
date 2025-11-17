@@ -80,11 +80,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// // Add authentication and authorization services
-// builder.Services.AddAuthentication() // Add this line
-//     .AddCookie(); // Or your preferred authentication scheme
 
-//builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -108,30 +104,6 @@ services.Configure<CompilerServiceOptions>(options =>
 {
     builder.Configuration.GetSection("CompilerService").Bind(options);
 });
-
-// services.AddHttpClient<ICompilerClient, CompilerClient>((serviceProvider, client) =>
-// {
-//     var options = serviceProvider.GetRequiredService<IOptions<CompilerServiceOptions>>().Value;
-//     client.BaseAddress = new Uri(options.BaseUrl);
-//     //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-//     client.DefaultRequestHeaders.Add("Accept", "application/json");
-// });
-
-// Task Service Client Configuration
-// services.Configure<TaskServiceOptions>(options =>
-// {
-//     builder.Configuration.GetSection("TaskService").Bind(options);
-// });
-
-// services.AddHttpClient<ITaskServiceClient, TaskServiceClient>((serviceProvider, client) =>
-// {
-//     var options = serviceProvider.GetRequiredService<IOptions<TaskServiceOptions>>().Value;
-//     client.BaseAddress = new Uri(options.BaseUrl);
-//     //client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-//     client.DefaultRequestHeaders.Add("Accept", "application/json");
-// });
-
-//builder.Services.AddHostedService();
 
 var app = builder.Build();
 

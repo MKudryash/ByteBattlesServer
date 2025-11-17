@@ -61,11 +61,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization();
+
 // Регистрация сервисов
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -85,6 +86,21 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // Регистрируем LanguageMessageHandler как Singleton, если он не зависит от scoped сервисов
@@ -102,11 +118,10 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://hobbit1021.ru:50304",
                 "http://localhost:8080",
-                "http://localhost:50304" // Ваш production домен
+                "http://localhost:50304"
             )
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // Если используете cookies/авторизацию
+            .AllowAnyMethod();
     });
 });
 

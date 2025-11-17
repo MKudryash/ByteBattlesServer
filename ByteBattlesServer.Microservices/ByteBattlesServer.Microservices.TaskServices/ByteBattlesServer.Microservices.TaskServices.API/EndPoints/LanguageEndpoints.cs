@@ -2,13 +2,15 @@ using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ByteBattlesServer.Domain.Results;
+using ByteBattlesServer.Microservices.Middleware.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
-using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using MediatR;
+using UnauthorizedAccessException = ByteBattlesServer.Microservices.Middleware.Exceptions.UnauthorizedAccessException;
+
 
 namespace ByteBattlesServer.Microservices.TaskServices.API.EndPoints;
 
@@ -16,14 +18,19 @@ public static class LanguageEndpoints
 {
     public static void MapLanguageEndpoints(this IEndpointRouteBuilder routes)
     {
+
         var group = routes.MapGroup("/api/language")
             .WithTags("Language");
 
         // Получение языка по ID
-        group.MapGet("/{languageId:guid}", async (Guid languageId, IMediator mediator) =>
+        group.MapGet("/{languageId:guid}", async (Guid languageId, IMediator mediator, HttpContext http) =>
             {
                 try
                 {
+                    if (!http.User.Identity?.IsAuthenticated ?? true)
+                    {
+                        throw new UnauthorizedAccessException("Authentication required to access this resource");
+                    }
                     var query = new GetLanguageByIdQuery(languageId);
                     var result = await mediator.Send(query);
                     return Results.Ok(result);
@@ -53,6 +60,8 @@ public static class LanguageEndpoints
             {
                 try
                 {
+                    ValidateAdminOrTeacherAccess(http);
+
                     var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle, dto.FileExtension,
                         dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation,dto.Pattern,dto.Libraries);
                     var result = await mediator.Send(command);
@@ -66,6 +75,18 @@ public static class LanguageEndpoints
                 {
                     return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return Results.Json(
+                        new ErrorResponse(ex.Message, "UNAUTHORIZED"),
+                        statusCode: StatusCodes.Status401Unauthorized);
+                }
+                catch (ForbiddenAccessException ex)
+                {
+                    return Results.Json(
+                        new ErrorResponse(ex.Message, "FORBIDDEN"),
+                        statusCode: StatusCodes.Status403Forbidden);
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem($"An error occurred while creating language: {ex.Message}");
@@ -76,13 +97,16 @@ public static class LanguageEndpoints
             .WithDescription("Создание новый язык программирования с названием и кратким заголовком")
             .Produces<LanguageDto>(StatusCodes.Status201Created)
             .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
             .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
         // Обновление языка
         group.MapPut("/", async (UpdateLanguageDto dto, IMediator mediator, HttpContext http) =>
             {
                 try
-                {
+                {  
+                    ValidateAdminOrTeacherAccess(http);
                     var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle, dto.FileExtension,
                         dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation, dto.Pattern);
                     var result = await mediator.Send(command);
@@ -102,6 +126,7 @@ public static class LanguageEndpoints
                 }
             })
             .WithName("UpdateLanguage")
+            .RequireAuthorization("AdminOnly")
             .WithSummary("Обновление языка программирования")
             .WithDescription("Обновляет название существующего языка программирования и краткое название")
             .Produces<LanguageDto>(StatusCodes.Status200OK)
@@ -110,10 +135,11 @@ public static class LanguageEndpoints
 
 
         group.MapGet("/search-paged",
-                async (IMediator mediator, [AsParameters] TaskLanguageFilterPagedDto taskTaskFilter) =>
+                async (IMediator mediator, [AsParameters] TaskLanguageFilterPagedDto taskTaskFilter, HttpContext http) =>
                 {
                     try
                     {
+                       
                         var query = new SearchLanguagesPagedQuery(taskTaskFilter.SearchTerm,
                             taskTaskFilter.Page, taskTaskFilter.PageSize);
                         var result = await mediator.Send(query);
@@ -161,10 +187,11 @@ public static class LanguageEndpoints
             .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
 
 
-        group.MapDelete("/{languageId:guid}", async (Guid languageId, IMediator mediator) =>
+        group.MapDelete("/{languageId:guid}", async (Guid languageId, IMediator mediator, HttpContext http) =>
         {
             try
             {
+                ValidateAdminOrTeacherAccess(http);
                 var command = new RemoveLanguageCommand(languageId);
                 var result = await mediator.Send(command);
                 return Results.Ok(result);
@@ -191,10 +218,12 @@ public static class LanguageEndpoints
         .WithDescription("Удаляет язык программирования по его уникальному идентификатору")
         .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
         
-    group.MapPost("/library/{languageId:guid}", async (Guid languageId, CreateLibrariesDto dto, IMediator mediator) =>
+    group.MapPost("/library/{languageId:guid}", async (Guid languageId, CreateLibrariesDto dto, IMediator mediator,
+            HttpContext http) =>
         {
             try
             {
+                ValidateAdminOrTeacherAccess(http);
                 var command = new CreateLibrariesCommand(languageId, dto.Libraries);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/language/{languageId}/library", result);
@@ -219,11 +248,13 @@ public static class LanguageEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
         
-        // Обновление тестового случая
-        group.MapPut("/library/{libraryId:guid}", async (Guid libraryId, UpdateLibraryDto dto, IMediator mediator) =>
+        // Обновление библиотеки
+        group.MapPut("/library/{libraryId:guid}", async (Guid libraryId, UpdateLibraryDto dto, IMediator mediator,
+                HttpContext http) =>
         {
             try
             {
+                ValidateAdminOrTeacherAccess(http);
                 var command = new UpdateLibraryCommand(libraryId, dto.Name, dto.Description, dto.Version);
                 var result = await mediator.Send(command);
                 return Results.Ok(result);
@@ -248,11 +279,13 @@ public static class LanguageEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
         
-        // Удаление тестового случая
-        group.MapDelete("/library/{libraryId:guid}", async (Guid libraryId, IMediator mediator) =>
+        // Удаление библиотеки случая
+        group.MapDelete("/library/{libraryId:guid}", async (Guid libraryId, IMediator mediator,
+                HttpContext http) =>
         {
             try
             {
+                ValidateAdminOrTeacherAccess(http);
                 var command = new RemoveLibrariesCommand(libraryId);
                 var result = await mediator.Send(command);
                 return Results.Ok(result);
@@ -278,10 +311,12 @@ public static class LanguageEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
        
-        group.MapGet("/library/{languageId:guid}", async (Guid languageId, IMediator mediator) =>
+        group.MapGet("/library/{languageId:guid}", async (Guid languageId, IMediator mediator, HttpContext http) =>
         {
             try
             {
+                var userId = GetUserIdFromClaims(http);
+                var userName = GetUserNameFromClaims(http);
                 var query = new GetLibraryQuery(languageId);
                 var result = await mediator.Send(query);
                 return Results.Ok(result);
@@ -317,5 +352,48 @@ public static class LanguageEndpoints
         }
 
         return Guid.Parse(userIdClaim);
+    }
+    private static string GetUserNameFromClaims(HttpContext context)
+    {
+        return context.User.FindFirst(ClaimTypes.Email)?.Value 
+               ?? context.User.FindFirst(ClaimTypes.Name)?.Value 
+               ?? "Unknown";
+    }
+    private static void ValidateAdminAccess(HttpContext context)
+    {
+        if (!context.User.Identity?.IsAuthenticated ?? true)
+        {
+            
+            throw new UnauthorizedAccessException("Authentication required to perform this action");
+        }
+
+        if (!context.User.IsInRole("admin"))
+        {
+            var userRoles = context.User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value);
+                    
+            throw new ForbiddenAccessException(
+                $"Required role: Admin. User roles: {string.Join(", ", userRoles)}");
+        }
+    }
+    
+    private static void ValidateAdminOrTeacherAccess(HttpContext context)
+    {
+
+        if (!context.User.Identity?.IsAuthenticated ?? true)
+        {
+            throw new UnauthorizedAccessException("Authentication required to perform this action");
+        }
+
+        if (!context.User.IsInRole("admin")&& !context.User.IsInRole("teacher"))
+        {
+            var userRoles = context.User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value);
+                    
+            throw new ForbiddenAccessException(
+                $"Required role: Admin or Teacher. User roles: {string.Join(", ", userRoles)}");
+        }
     }
 }

@@ -16,6 +16,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.AuthService.Domain\ByteBattlesServer.Microservices.AuthService.Domain.csproj" />
+      <ProjectReference Include="..\ByteBattlesServer.Microservices.SolutionService\ByteBattlesServer.Microservices.SolutionService.Domain\ByteBattlesServer.Microservices.SolutionService.Domain.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.Domain\ByteBattlesServer.Microservices.TaskServices.Domain.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.UserProfile.Domain\ByteBattlesServer.Microservices.UserProfile.Domain.csproj" />
     </ItemGroup>
