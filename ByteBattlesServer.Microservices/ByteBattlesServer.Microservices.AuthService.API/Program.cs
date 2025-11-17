@@ -100,8 +100,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Byte API V1");
-    c.RoutePrefix = string.Empty;
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service API V1");
+    c.RoutePrefix = "swagger"; // Это позволит API Gateway получать спецификацию
 });
 app.UseHttpsRedirection();
 
