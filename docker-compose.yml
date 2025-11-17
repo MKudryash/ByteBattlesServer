@@ -131,6 +131,23 @@
       - postgres
     networks:
       - bytebattles-network
+  frontend:
+    build:
+      context: ./ByteBattlesApp
+      dockerfile: Dockerfile
+    container_name: bytebattles-frontend
+    ports:
+      - "50311:50311"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - authservices
+      - taskservices
+      - solutionservices
+      - userprofileservices
+      - codeexecution
+    networks:
+      - bytebattles-network
 
 
 networks:
