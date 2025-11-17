@@ -141,7 +141,7 @@
       - "50310:443"  # Основной порт для внешнего доступа
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_URLS=http://+:443
     depends_on:
       - authservices
       - taskservices
