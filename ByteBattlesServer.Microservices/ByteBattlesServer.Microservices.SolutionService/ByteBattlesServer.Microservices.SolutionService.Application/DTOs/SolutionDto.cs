@@ -17,9 +17,3 @@ public record SolutionDto
     public List<TestResultDto> TestResults { get; init; } = new();
     public List<SolutionAttemptDto> Attempts { get; init; } = new();
 }
-
-public record SolutionTaskAndUserDto
-{
-    public Guid UserId { get; init; }
-    public Guid TaskId { get; init; }
-}

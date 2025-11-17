@@ -130,7 +130,9 @@ public static class LanguageEndpoints
             .WithSummary("Обновление языка программирования")
             .WithDescription("Обновляет название существующего языка программирования и краткое название")
             .Produces<LanguageDto>(StatusCodes.Status200OK)
-            .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
             .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
 
@@ -139,7 +141,10 @@ public static class LanguageEndpoints
                 {
                     try
                     {
-                       
+                        if (!http.User.Identity?.IsAuthenticated ?? true)
+                        {
+                            throw new UnauthorizedAccessException("Authentication required to access this resource");
+                        }
                         var query = new SearchLanguagesPagedQuery(taskTaskFilter.SearchTerm,
                             taskTaskFilter.Page, taskTaskFilter.PageSize);
                         var result = await mediator.Send(query);
@@ -160,10 +165,14 @@ public static class LanguageEndpoints
                 "Извлекает все языки программирования с дополнительной фильтрацией и разбивкой по страницам")
             .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
 
-        group.MapGet("/search", async (IMediator mediator, [AsParameters] LanguageFilerDto taskFilter) =>
+        group.MapGet("/search", async (IMediator mediator, [AsParameters] LanguageFilerDto taskFilter, HttpContext http) =>
             {
                 try
                 {
+                    if (!http.User.Identity?.IsAuthenticated ?? true)
+                    {
+                        throw new UnauthorizedAccessException("Authentication required to access this resource");
+                    }
                     var query = new SearchLanguagesQuery(taskFilter.SearchTerm);
                     var result = await mediator.Send(query);
                     return Results.Ok(result);
@@ -184,7 +193,11 @@ public static class LanguageEndpoints
             .WithName("GetAllLanguages")
             .WithSummary("Получение списка языков программирования")
             .WithDescription("Извлекает все языки программирования с дополнительной фильтрацией")
-            .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
+            .Produces<List<LanguageDto>>(StatusCodes.Status200OK)
+            .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+            .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
+            .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);;
 
 
         group.MapDelete("/{languageId:guid}", async (Guid languageId, IMediator mediator, HttpContext http) =>
@@ -216,7 +229,12 @@ public static class LanguageEndpoints
         .WithName("DeleteLanguages")
         .WithSummary("Удаления языка программирования")
         .WithDescription("Удаляет язык программирования по его уникальному идентификатору")
-        .Produces<List<LanguageDto>>(StatusCodes.Status200OK);
+        .Produces<List<LanguageDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+        
         
     group.MapPost("/library/{languageId:guid}", async (Guid languageId, CreateLibrariesDto dto, IMediator mediator,
             HttpContext http) =>
@@ -245,7 +263,9 @@ public static class LanguageEndpoints
         .WithSummary("Добавление библиотек для языка программирования")
         .WithDescription("Добавляет набор библиотек для конкретного языка программирования")
         .Produces<List<LibraryDto>>(StatusCodes.Status201Created)
-        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
         
         // Обновление библиотеки
@@ -276,7 +296,9 @@ public static class LanguageEndpoints
         .WithSummary("Обновление библиотеки")
         .WithDescription("Обновляет библиотеки для конкретного языка программирования")
         .Produces<LibraryDto>(StatusCodes.Status200OK)
-        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
         
         // Удаление библиотеки случая
@@ -307,7 +329,9 @@ public static class LanguageEndpoints
         .WithSummary("Удаление библиотеки")
         .WithDescription("Удаляет библиотеку для конкретного языка программирования")
         .Produces<DeleteResponseDto>(StatusCodes.Status200OK)
-        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
         .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
 
        
@@ -315,8 +339,10 @@ public static class LanguageEndpoints
         {
             try
             {
-                var userId = GetUserIdFromClaims(http);
-                var userName = GetUserNameFromClaims(http);
+                if (!http.User.Identity?.IsAuthenticated ?? true)
+                {
+                    throw new UnauthorizedAccessException("Authentication required to access this resource");
+                }
                 var query = new GetLibraryQuery(languageId);
                 var result = await mediator.Send(query);
                 return Results.Ok(result);
@@ -334,7 +360,10 @@ public static class LanguageEndpoints
         .WithSummary("Получение библиотек для задачи")
         .WithDescription("Извлекает все библиотеки для конкретного языка программирования")
         .Produces<List<LibraryDto>>(StatusCodes.Status200OK)
-        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
     }
 
     private static Guid GetUserIdFromClaims(HttpContext context)
@@ -368,6 +397,24 @@ public static class LanguageEndpoints
         }
 
         if (!context.User.IsInRole("admin"))
+        {
+            var userRoles = context.User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value);
+                    
+            throw new ForbiddenAccessException(
+                $"Required role: Admin. User roles: {string.Join(", ", userRoles)}");
+        }
+    } 
+    private static void ValidateUserOrAdminOrTeacherAccess(HttpContext context)
+    {
+        if (!context.User.Identity?.IsAuthenticated ?? true)
+        {
+            
+            throw new UnauthorizedAccessException("Authentication required to perform this action");
+        }
+
+        if (!context.User.IsInRole("admin")&& !context.User.IsInRole("teacher")&& !context.User.IsInRole("user"))
         {
             var userRoles = context.User.Claims
                 .Where(c => c.Type == ClaimTypes.Role)
