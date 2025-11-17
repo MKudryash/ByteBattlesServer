@@ -1,6 +1,13 @@
-bin/
-obj/
-/packages/
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# NuGet packages
+packages/
+
+# Rider IDE
 riderModule.iml
-/_ReSharper.Caches/
+_ReSharper.Caches/
+
+# Visual Studio
 .vs/
