@@ -1,26 +1,22 @@
-# Use official Node.js image
-FROM node:16-alpine
+# Этап 1: сборка фронтенда
+FROM node:18-alpine as builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Install serve to serve static files
-RUN npm install -g serve
+# Этап 2: развёртывание через Nginx
+FROM nginx:alpine
 
-# Expose port
-EXPOSE 50311
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Start the application
-CMD ["serve", "-s", "dist", "-l", "50311"]
+# Заменяем дефолтный конфиг Nginx
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

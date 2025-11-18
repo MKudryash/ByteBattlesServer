@@ -102,7 +102,7 @@ builder.Services.AddHostedService<CodeExecutionMessageHandler>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ILanguageService, RabbitMQLanguageService>();
-//builder.Services.AddHostedService();
+
 
 var app = builder.Build();
 
@@ -110,7 +110,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Compiler Service API V1");
-    c.RoutePrefix = "swagger"; // Это позволит API Gateway получать спецификацию
+    c.RoutePrefix = String.Empty; // Это позволит API Gateway получать спецификацию
 });
 app.UseHttpsRedirection();
 
