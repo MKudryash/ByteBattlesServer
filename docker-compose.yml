@@ -149,11 +149,13 @@
       context: ./ByteBattlesApp
       dockerfile: Dockerfile
     ports:
-      - "50311:80"
+      - "50311:8080"
+    depends_on:
+      - api-geteway
     restart: unless-stopped
     networks:
       - bytebattles-network
-  
+
 
 
 networks:

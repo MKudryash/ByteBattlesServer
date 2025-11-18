@@ -158,7 +158,7 @@
           </ul>
           <div class="navigation__actions">
             <div v-if="user" class="user-menu">
-              <button class="navigation__action-btn btn-outline btn">
+              <button @click="profile" class="navigation__action-btn btn-outline btn">
                 {{ user.firstName }} {{ user.lastName }}
               </button>
               <button @click="logout" class="navigation__action-btn btn-outline btn">
@@ -281,6 +281,11 @@ export default {
       }
     },
 
+    profile() {
+      this.isMenuOpen = false
+      document.body.style.overflow = ''
+      this.$router.push('/me')
+    },
     navigateToAuth() {
       this.isMenuOpen = false
       document.body.style.overflow = ''
