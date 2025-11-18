@@ -3,7 +3,7 @@
     image: rabbitmq:3-management
     container_name: bytebattles-rabbitmq
     ports:
-      - "50301:15672" 
+      - "50301:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
@@ -24,10 +24,9 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.CodeExecution/ByteBattlesServer.Microservices.CodeExecution.API/Dockerfile
     container_name: bytebattles-codeexecution
     ports:
-      - "50302:50302"
+      - "50302:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:50302
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=bytebattles_tasks;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -45,10 +44,9 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.API/Dockerfile
     container_name: bytebattles-taskservices
     ports:
-      - "50304:50304"
+      - "50304:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:50304
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=task_service;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -79,10 +77,9 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.AuthService.API/Dockerfile
     container_name: bytebattles-authservices
     ports:
-      - "50305:50305"
+      - "50305:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:50305
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=auth_service;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -98,10 +95,9 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.UserProfile.API/Dockerfile
     container_name: bytebattles-userprofileservices
     ports:
-      - "50303:50303"
+      - "50303:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:50303
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=user_profile_service;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -119,10 +115,9 @@
       dockerfile: ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.SolutionService/ByteBattlesServer.Microservices.SolutionService.API/Dockerfile
     container_name: bytebattles-solutionservices
     ports:
-      - "50306:50306"
+      - "50306:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:50306
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=solution_service;Username=postgres;Password=1;Port=5432
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
@@ -132,13 +127,13 @@
     networks:
       - bytebattles-network
 
-  api-gateway:
+  api-geteway:
     build:
       context: .
       dockerfile: ByteBattles.ApiGetaway/Dockerfile
-    container_name: bytebattles-api-gateway
+    container_name: bytebattles-api-geteway
     ports:
-      - "50310:443"  # Основной порт для внешнего доступа
+      - "50310:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
@@ -149,24 +144,18 @@
       - codeexecution
     networks:
       - bytebattles-network
-        
-  frontend:
+  vue-app:
     build:
       context: ./ByteBattlesApp
       dockerfile: Dockerfile
-    container_name: bytebattles-frontend
     ports:
-      - "50311:50311"
-    environment:
-      - NODE_ENV=production
+      - "50311:80"
     depends_on:
-      - authservices
-      - taskservices
-      - solutionservices
-      - userprofileservices
-      - codeexecution
+      - api-geteway
+    restart: unless-stopped
     networks:
       - bytebattles-network
+
 
 
 networks:
@@ -176,4 +165,3 @@ networks:
 volumes:
   rabbitmq_data:
   postgres_data: 
-

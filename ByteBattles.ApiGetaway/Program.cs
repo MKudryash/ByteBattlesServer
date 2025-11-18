@@ -88,16 +88,14 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Middleware pipeline
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(c => 
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ByteBattles API v1");
         c.RoutePrefix = string.Empty;
     });
-}
+
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();

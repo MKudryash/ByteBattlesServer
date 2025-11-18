@@ -1,4 +1,3 @@
-
 using System.Text;
 using ByteBattlesServer.Microservices.Middleware;
 using ByteBattlesServer.Microservices.SolutionService.API;
@@ -18,22 +17,23 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Конфигурация
 builder.Services.Configure<RabbitMQSettings>(
     builder.Configuration.GetSection("RabbitMQ"));
 
-// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
 builder.Services.AddSingleton(sp => 
-    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
-
+    sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value);
 
 builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 
+// JWT Authentication
 var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
 if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
 {
     throw new InvalidOperationException("JWT configuration is invalid.");
 }
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -47,26 +47,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
         };
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("Token successfully validated");
-                return Task.CompletedTask;
-            }
-        };
     });
+
 builder.Services.AddAuthorization();
-
-
-
 builder.Services.AddSingleton(jwtSettings);
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
@@ -81,12 +67,12 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
-// Добавление сервисов
+
+// Сервисы приложения
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-
-
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -127,7 +113,6 @@ builder.Services.AddScoped<ITestCasesServices, RabbitMQTestCasesService>();
 builder.Services.AddScoped<ICompilationService, RabbitMqCompilationService>();
 
 var services = builder.Services;
-
 services.Configure<CompilerServiceOptions>(options =>
 {
     builder.Configuration.GetSection("CompilerService").Bind(options);
@@ -135,16 +120,20 @@ services.Configure<CompilerServiceOptions>(options =>
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// Middleware pipeline
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/solution/swagger/v1/swagger.json", "Solution Service API V1");
-    c.RoutePrefix = "swagger"; // Это позволит API Gateway получать спецификацию
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Solution Service API V1");
+        c.RoutePrefix = String.Empty;
+    });
+}
+
 app.UseHttpsRedirection();
-
-
 app.UseCors("AllowSpecificOrigin");
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SolutionDbContext>();
@@ -152,15 +141,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-
-
- app.MapSolutionEndpoints();
+app.MapSolutionEndpoints();
 
 app.Run();

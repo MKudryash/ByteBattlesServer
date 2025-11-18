@@ -18,13 +18,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<RabbitMQSettings>(
     builder.Configuration.GetSection("RabbitMQ"));
-
-// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
 builder.Services.AddSingleton(sp => 
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
 
-//builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
+
 builder.Services.AddSingleton<IMessageBus, ResilientMessageBus>();
+
+
+
 var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
 var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
 if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
@@ -59,6 +60,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization();
 
 // Регистрация JWT настроек
 builder.Services.AddSingleton(jwtSettings);
@@ -83,7 +85,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -104,8 +105,20 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer"
     });
 
-    // Регистрируем фильтр
-    options.OperationFilter<AuthResponsesOperationFilter>();
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 
@@ -117,12 +130,10 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "User Service API V1");
-    c.RoutePrefix = "swagger"; // Это позволит API Gateway получать спецификацию
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Task Service API V1");
+    c.RoutePrefix = String.Empty; // Это позволит API Gateway получать спецификацию
 });
 app.UseHttpsRedirection();
-
-// Глобальная обработка исключений
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Add routing, authentication, and authorization middleware
