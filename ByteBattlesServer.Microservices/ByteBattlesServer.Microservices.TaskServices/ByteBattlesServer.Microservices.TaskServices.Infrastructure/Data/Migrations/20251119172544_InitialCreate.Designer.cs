@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251116174016_InitialCreate")]
+    [Migration("20251119172544_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -49,7 +49,12 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<string>("Pattern")
+                    b.Property<string>("PatternFunction")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PatternMain")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -156,12 +161,12 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("InputParameters")
+                    b.Property<string>("PatternFunction")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<string>("OutputParameters")
+                    b.Property<string>("PatternMain")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

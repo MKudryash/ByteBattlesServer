@@ -241,7 +241,6 @@ export default {
   mounted() {
     this.checkAuth()
     this.setupMediaQueryListener()
-    this.getLanguages()
   },
   methods: {
     checkAuth() {

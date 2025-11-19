@@ -11,4 +11,6 @@ public record UpdateLanguageCommand(
     string CompilerCommand,
     string ExecutionCommand,
     bool SupportsCompilation,
-    string Pattern):IRequest<LanguageDto>;
+    string PatternFunction,
+    string PatternMain
+    ):IRequest<LanguageDto>;

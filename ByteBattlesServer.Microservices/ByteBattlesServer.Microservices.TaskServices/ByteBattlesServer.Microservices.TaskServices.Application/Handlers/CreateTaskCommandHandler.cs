@@ -38,7 +38,7 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
         
         
         var task = new Domain.Entities.Task(request.Title, request.Description,
-            request.Difficulty, request.Author,request.FunctionName,request.InputParameters,request.OutputParameters);
+            request.Difficulty, request.Author,request.FunctionName,request.PatternMain,request.PatternFunction);
        
         
         
@@ -66,8 +66,8 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
         Difficulty = task.Difficulty.ToString(),
         Author = task.Author,
         FunctionName = task.FunctionName,
-        InputParameters = task.InputParameters,
-        OutputParameters = task.OutputParameters,
+        PatternMain = task.PatternMain,
+        PatternFuction = task.PatternFunction,
         TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
             {
                 LanguageId = tl.Id,

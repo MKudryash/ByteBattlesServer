@@ -8,8 +8,8 @@ public class TaskDto
   public  string Difficulty { get; set; }
   public  string Author { get; set; }
   public  string FunctionName { get; set; }
-  public  string InputParameters { get; set; }
-  public  string OutputParameters { get; set; }
+  public  string PatternMain { get; set; }
+  public  string PatternFuction { get; set; }
   public  DateTime CreatedAt { get; set; }
   public  DateTime? UpdatedAt { get; set; }
   public  List<TaskLanguageDto> TaskLanguages { get; set; }

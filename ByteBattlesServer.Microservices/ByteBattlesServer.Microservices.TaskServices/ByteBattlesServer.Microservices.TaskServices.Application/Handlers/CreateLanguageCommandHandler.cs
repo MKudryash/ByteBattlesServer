@@ -25,7 +25,8 @@ public class CreateLanguageCommandHandler : IRequestHandler<CreateLanguageComman
             throw new LanguageNotFoundException(request.LanguageTitle);
 
         var language = new Language(request.LanguageTitle, request.LanguageShortTitle,
-            request.FileExtension, request.CompilerCommand, request.ExecutionCommand, request.SupportsCompilation, request.Pattern);
+            request.FileExtension, request.CompilerCommand, request.ExecutionCommand, request.SupportsCompilation, request.PatternFunction,
+            request.PatternMain);
 
         await _languageRepository.AddAsync(language);
         

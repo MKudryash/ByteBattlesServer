@@ -69,7 +69,9 @@ public class LanguageRepository:ILanguageRepository
 
         var query = BuildSearchQuery(searchTerm);
         
-        return await query.ToListAsync();
+        return await query
+            .Include(l => l.Libraries)
+            .ToListAsync();
     }
 
     public async Task<List<Language>> SearchLanguagesPagedAsync(string? searchTerm, int page, int pageSize)
@@ -78,6 +80,7 @@ public class LanguageRepository:ILanguageRepository
 
         
         return await query
+            .Include(l=>l.Libraries)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

@@ -19,7 +19,8 @@ public static class LanguageMappings
             ExecutionCommand = language.ExecutionCommand,
             FileExtension = language.FileExtension,
             SupportsCompilation = language.SupportsCompilation,
-            Pattern = language.Pattern,
+            PatternFunction = language.PatternFunction,
+            PatternMain = language.PatternMain,
             Libraries = language.Libraries.Select(x=> new LibraryDto()
             {
                 Id = x.Id,
@@ -40,7 +41,8 @@ public static class LanguageMappings
             command.CompilerCommand,
             command.ExecutionCommand,
             command.SupportsCompilation,
-            command.Pattern
+            command.PatternFunction,
+            command.PatternMain
         );
     }
 }

@@ -63,7 +63,8 @@ public static class LanguageEndpoints
                     ValidateAdminOrTeacherAccess(http);
 
                     var command = new CreateLanguageCommand(dto.Title, dto.ShortTitle, dto.FileExtension,
-                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation,dto.Pattern,dto.Libraries);
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation,dto.PatternMain,dto.PatternFunction,
+                        dto.Libraries);
                     var result = await mediator.Send(command);
                     return Results.Created($"/api/language/{result.Id}", result);
                 }
@@ -108,7 +109,7 @@ public static class LanguageEndpoints
                 {  
                     ValidateAdminOrTeacherAccess(http);
                     var command = new UpdateLanguageCommand(dto.Id, dto.Title, dto.ShortTitle, dto.FileExtension,
-                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation, dto.Pattern);
+                        dto.CompilerCommand, dto.ExecutionCommand,dto.SupportsCompilation, dto.PatternFunction,dto.PatternMain);
                     var result = await mediator.Send(command);
                     return Results.Ok(result);
                 }

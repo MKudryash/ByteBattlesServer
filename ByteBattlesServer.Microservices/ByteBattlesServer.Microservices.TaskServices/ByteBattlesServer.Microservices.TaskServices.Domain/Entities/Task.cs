@@ -14,9 +14,9 @@ public class Task:Entity
 
     public string? FunctionName { get; private set; }
 
-    public string? InputParameters { get; private set; }
+    public string? PatternFunction { get; private set; }
 
-    public string? OutputParameters { get; private set; }
+    public string? PatternMain { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
 
@@ -33,15 +33,15 @@ public class Task:Entity
     private Task() { }
 
     public Task(string title, string description, string difficulty, string author, string functionName,
-        string inputParameters, string outputParameters)
+        string patternMain, string patternFunction)
     {
         Title = title;
         Description = description;
         Difficulty = Enums.Difficulty.Easy;
         Author = author;
         FunctionName = functionName;
-        InputParameters = inputParameters;
-        OutputParameters = outputParameters;
+        PatternFunction = patternFunction;
+        PatternMain = patternMain;
         CreatedAt = DateTime.UtcNow;
     }
 
@@ -50,8 +50,8 @@ public class Task:Entity
         string? difficulty = null, 
         string? author = null,
         string? functionName = null,
-        string? inputParameters = null,
-        string? outputParameters = null)
+        string? patternMain = null,
+        string? patternFunction = null)
     {
         if (!string.IsNullOrWhiteSpace(title))
             Title =title.Trim();
@@ -71,11 +71,11 @@ public class Task:Entity
         if (!string.IsNullOrWhiteSpace(functionName))
             FunctionName = functionName.Trim();
         
-        if (!string.IsNullOrWhiteSpace(inputParameters))
-            InputParameters = inputParameters.Trim();
+        if (!string.IsNullOrWhiteSpace(patternMain))
+            PatternMain = patternMain.Trim();
         
-        if (!string.IsNullOrWhiteSpace(outputParameters))
-            OutputParameters = outputParameters.Trim();
+        if (!string.IsNullOrWhiteSpace(patternFunction))
+            PatternFunction = patternFunction.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
     

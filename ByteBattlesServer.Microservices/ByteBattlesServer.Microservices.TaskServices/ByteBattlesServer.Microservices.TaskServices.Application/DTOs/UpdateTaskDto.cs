@@ -8,7 +8,7 @@ public class UpdateTaskDto
     public string? Difficulty { get; set; }  = null;
     public string? Author { get; set; }  = null;
     public string? FunctionName { get; set; }  = null;
-    public string? InputParameters { get; set; }  = null;
-    public string? OutputParameters { get; set; }  = null;
+    public string? PatternMain { get; set; }  = null;
+    public string? PatternFuction { get; set; }  = null;
     public List<Guid>? LanguageIds { get; set; }  = null;
 }

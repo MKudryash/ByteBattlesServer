@@ -39,8 +39,8 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
             request.Difficulty,
             request.Author, 
             request.FunctionName,
-            request.InputParameters, 
-            request.OutputParameters);
+            request.PatternMain, 
+            request.PatternFunction);
         
         // Обновляем языки если переданы
         if (request.LanguageIds != null && request.LanguageIds.Any())
@@ -105,8 +105,8 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         Difficulty = task.Difficulty.ToString(),
         Author = task.Author,
         FunctionName = task.FunctionName,
-        InputParameters = task.InputParameters,
-        OutputParameters = task.OutputParameters,
+        PatternMain = task.PatternMain,
+        PatternFuction = task.PatternFunction,
         TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
         {
             LanguageId = tl.Language.Id, // Исправлено: должно быть tl.Language.Id

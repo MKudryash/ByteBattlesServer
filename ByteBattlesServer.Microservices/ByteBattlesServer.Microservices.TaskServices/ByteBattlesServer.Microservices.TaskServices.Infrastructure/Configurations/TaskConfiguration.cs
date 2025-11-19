@@ -33,11 +33,11 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             .IsRequired()
             .HasMaxLength(100);
             
-        builder.Property(t => t.InputParameters)
+        builder.Property(t => t.PatternFunction)
             .IsRequired()
             .HasMaxLength(500);
             
-        builder.Property(t => t.OutputParameters)
+        builder.Property(t => t.PatternMain)
             .IsRequired()
             .HasMaxLength(500);
 

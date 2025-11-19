@@ -28,8 +28,8 @@ public class SearchTasksPagedQueryHandler: IRequestHandler<SearchTasksPagedQuery
         Difficulty = task.Difficulty.ToString(),
         Author = task.Author,
         FunctionName = task.FunctionName,
-        InputParameters = task.InputParameters,
-        OutputParameters = task.OutputParameters,
+        PatternMain = task.PatternMain,
+        PatternFuction = task.PatternFunction,
         TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
         {
             LanguageId = tl.Id,
