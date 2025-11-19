@@ -1,3 +1,4 @@
+
 <template>
   <div class="auth-container1">
     <div class="auth-container2">
@@ -484,8 +485,8 @@
 </template>
 
 <script>
-import DangerousHTML from 'dangerous-html/vue'
-
+import DangerousHTML from 'dangerous-html/vue';
+import { authAPI } from '../api/auth.js'
 export default {
   name: 'Auth',
   components: {
@@ -525,15 +526,7 @@ export default {
       password: this.loginForm.password,
     }
 
-    const response = await fetch("http://localhost:50310/api/auth/login", {
-    //const response = await fetch("http://localhost:50307/api/auth/login", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', // ИСПРАВЛЕНА ОПЕЧАТКА
-        'accept': '*/*'
-      },
-      body: JSON.stringify(userData)
-    })
+    const response = await authAPI.login(userData)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -579,14 +572,7 @@ export default {
           role: ["admin"]
         }
 
-        const response = await fetch("http://localhost:50310/api/auth/register", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'accept': '*/*'
-          },
-          body: JSON.stringify(userData)
-        })
+        const response = await authAPI.register(userData)
 
         const data = await response.json()
 
