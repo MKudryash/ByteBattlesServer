@@ -39,7 +39,7 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
         
         
         var task = new Domain.Entities.Task(request.Title, request.Description,
-            request.Difficulty, request.Author,request.FunctionName,request.PatternMain,request.PatternFunction);
+            request.Difficulty, request.Author,request.FunctionName,request.PatternMain,request.PatternFunction, request.Parameters,request.ReturnType);
        
         
         

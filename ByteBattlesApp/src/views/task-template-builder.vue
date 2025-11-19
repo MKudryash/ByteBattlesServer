@@ -1182,6 +1182,8 @@ export default {
         difficulty: this.taskData.difficulty,
         author: currentUser,
         functionName: this.taskData.functionName,
+        parameters: this.formatInputParameters(),
+        returnType: this.taskData.returnType,
         patternMain: this.taskData.mainTemplate,
         patternFunction: this.taskData.codeTemplate,
         languageId: this.formatLanguageIds()

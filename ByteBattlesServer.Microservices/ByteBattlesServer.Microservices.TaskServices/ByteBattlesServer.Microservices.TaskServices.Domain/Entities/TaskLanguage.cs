@@ -12,3 +12,4 @@ public class TaskLanguage:Entity
         IdLanguage = idLanguage;
     }
 }
+

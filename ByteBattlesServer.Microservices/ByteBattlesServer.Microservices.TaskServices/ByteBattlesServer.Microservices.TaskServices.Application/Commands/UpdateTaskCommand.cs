@@ -13,4 +13,6 @@ public record UpdateTaskCommand
     string FunctionName,
     string PatternMain,
     string PatternFunction ,
+    string Parameters,
+    string ReturnType,
     List<Guid> LanguageIds): IRequest<TaskDto>;

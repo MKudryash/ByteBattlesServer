@@ -41,7 +41,9 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
             request.Author, 
             request.FunctionName,
             request.PatternMain, 
-            request.PatternFunction);
+            request.PatternFunction,
+            request.Parameters,
+            request.ReturnType);
         
         // Обновляем языки если переданы
         if (request.LanguageIds != null && request.LanguageIds.Any())

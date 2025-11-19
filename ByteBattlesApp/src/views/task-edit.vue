@@ -122,7 +122,14 @@
             </div>
           </div>
 
-          <div class="edit-layout">
+          <!-- Индикатор загрузки -->
+          <div class="loading-state retro-card" v-if="isLoading">
+            <div class="loading-icon">⏳</div>
+            <h3>Загрузка задачи...</h3>
+            <p>Пожалуйста, подождите</p>
+          </div>
+
+          <div class="edit-layout" v-else>
             <!-- Боковая панель -->
             <aside class="edit-sidebar" role="complementary" aria-label="Быстрая навигация">
               <!-- Навигация по разделам -->
@@ -178,13 +185,17 @@
                 <h3 class="actions-title">Действия</h3>
                 <div class="actions-list">
                   <button @click="saveTask" class="btn-primary full-width" :disabled="isSaving">
-                    {{ isSaving ? 'Сохранение...' : 'Сохранить задачу' }}
+                    {{ isSaving ? 'Сохранение...' : (isEditMode ? 'Обновить задачу' : 'Создать задачу') }}
                   </button>
                   <button @click="saveDraft" class="btn-outline full-width" :disabled="isSaving">
                     Сохранить черновик
                   </button>
                   <button @click="previewTask" class="btn-text full-width">
                     Предпросмотр
+                  </button>
+                  <button @click="duplicateTask" class="btn-text full-width" v-if="isEditMode">
+                    <span class="btn-icon">📋</span>
+                    Дублировать задачу
                   </button>
                   <button @click="deleteTask" class="btn-text full-width delete-btn" v-if="isEditMode">
                     <span class="btn-icon">🗑️</span>
@@ -480,6 +491,7 @@
                               v-model="taskData.language"
                               :value="lang.id"
                               hidden
+                              @change="onLanguageChange"
                           >
                           <div class="lang-icon">{{ lang.icon }}</div>
                           <div class="lang-info">
@@ -493,7 +505,7 @@
 
                     <div class="form-group" v-if="taskData.language">
                       <label for="code-template">
-                        Шаблон кода
+                        Шаблон функции
                       </label>
                       <div class="input-container vintage-border">
                         <textarea
@@ -505,6 +517,23 @@
                       </div>
                       <div class="hint">
                         Используйте <code>{{ function_signature }}</code> для автоматической вставки сигнатуры функции
+                      </div>
+                    </div>
+
+                    <div class="form-group" v-if="taskData.language">
+                      <label for="main-template">
+                        Шаблон main функции
+                      </label>
+                      <div class="input-container vintage-border">
+                        <textarea
+                            id="main-template"
+                            v-model="taskData.mainTemplate"
+                            rows="8"
+                            placeholder="Код, который будет выполняться при запуске программы..."
+                        ></textarea>
+                      </div>
+                      <div class="hint">
+                        Используйте <code>{{ function_call }}</code> для вызова студенческой функции
                       </div>
                     </div>
                   </div>
@@ -574,6 +603,10 @@
                   <div class="tests-header">
                     <h3>Тестовые случаи</h3>
                     <div class="tests-actions">
+                      <button @click="addTest" class="btn-outline btn-sm">
+                        <span class="btn-icon">+</span>
+                        Добавить тест
+                      </button>
                     </div>
                   </div>
 
@@ -590,16 +623,13 @@
                             <span class="test-visibility">
                               {{ test.isPublic ? 'Публичный' : 'Скрытый' }}
                             </span>
-                            <span class="test-weight">
-                              Вес: {{ test.weight }}
-                            </span>
                           </div>
                         </div>
                         <div class="test-actions">
                           <button @click="toggleTestVisibility(index)" class="btn-sm btn-outline">
                             {{ test.isPublic ? 'Скрыть' : 'Показать' }}
                           </button>
-                          <button @click="removeTest(index)" class="btn-remove">
+                          <button @click="removeTest(index)" class="btn-remove" :disabled="taskData.tests.length === 1">
                             Удалить
                           </button>
                         </div>
@@ -630,141 +660,6 @@
                             </div>
                           </div>
                         </div>
-
-                        <div class="test-settings">
-
-                          <div class="form-group" v-if="test.checkType === 'custom'">
-                            <label>Код проверки</label>
-                            <div class="input-container vintage-border">
-                              <textarea
-                                  v-model="test.customCheck"
-                                  rows="3"
-                                  placeholder="Код для пользовательской проверки"
-                              ></textarea>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button @click="addTest" class="btn-outline_left">
-                      <span class="btn-icon">+</span>
-                      Добавить пример
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Раздел: Дополнительно -->
-              <div v-if="activeSection === 'advanced'" class="edit-section">
-                <div class="section-header">
-                  <h2>
-                    <span class="section-icon">🔧</span>
-                    Дополнительные настройки
-                  </h2>
-                  <p>Расширенные параметры задачи и системы проверки</p>
-                </div>
-
-                <div class="form-grid">
-                  <div class="form-section retro-card">
-                    <h3>Настройки выполнения</h3>
-
-                    <div class="form-group">
-                      <label for="time-limit">
-                        Лимит времени (секунды)
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="number"
-                            id="time-limit"
-                            v-model.number="taskData.timeLimit"
-                            min="1"
-                            max="30"
-                        >
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="memory-limit">
-                        Лимит памяти (МБ)
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="number"
-                            id="memory-limit"
-                            v-model.number="taskData.memoryLimit"
-                            min="16"
-                            max="1024"
-                        >
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="output-limit">
-                        Лимит вывода (КБ)
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="number"
-                            id="output-limit"
-                            v-model.number="taskData.outputLimit"
-                            min="1"
-                            max="1024"
-                        >
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="form-section retro-card">
-                    <h3>Настройки проверки</h3>
-
-                    <div class="settings-grid">
-                      <div class="setting-item">
-                        <label class="setting-label">Автопроверка</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="taskData.autoGrade"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Автоматически проверять решения студентов
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Детальные ошибки</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="taskData.showDetailedErrors"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Показывать подробные сообщения об ошибках
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Свои тесты</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="taskData.allowCustomTests"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Разрешить студентам добавлять свои тесты
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -796,6 +691,7 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
+import { languageAPI, taskAPI } from '../api/task.js'
 
 export default {
   name: 'TaskEdit',
@@ -814,26 +710,27 @@ export default {
     return {
       activeSection: 'basic',
       isSaving: false,
+      isLoading: false,
       saveStatus: null,
       showDeleteDialog: false,
       paramSubmitted: false,
       testSubmitted: false,
       librarySearch: '',
       newTag: '',
+      error: null,
 
       editSections: [
         { id: 'basic', name: 'Основная информация', icon: '📝', hasErrors: true },
         { id: 'signature', name: 'Сигнатура функции', icon: '🔧', hasErrors: true },
         { id: 'environment', name: 'Окружение', icon: '⚙️', hasErrors: true },
-        { id: 'testing', name: 'Тестирование', icon: '✅', hasErrors: true },
-        { id: 'advanced', name: 'Дополнительно', icon: '🔧', hasErrors: false }
+        { id: 'testing', name: 'Тестирование', icon: '✅', hasErrors: true }
       ],
 
       taskData: {
         title: '',
         description: '',
         category: '',
-        difficulty: 'medium',
+        difficulty: 'Medium',
         tags: [],
         timeEstimate: 30,
 
@@ -843,6 +740,7 @@ export default {
 
         language: '',
         codeTemplate: '',
+        mainTemplate: '',
         libraries: [],
         timeLimit: 10,
         memoryLimit: 256,
@@ -852,38 +750,19 @@ export default {
           input: '',
           expectedOutput: '',
           isPublic: true,
-          weight: 5,
-          checkType: 'exact',
-          customCheck: ''
-        }],
-
-        autoGrade: true,
-        showDetailedErrors: false,
-        allowCustomTests: false
+        }]
       },
 
       errors: {},
 
       difficultyLevels: [
-        { value: 'easy', label: 'Начинающий', icon: '🌱' },
-        { value: 'medium', label: 'Средний', icon: '🎯' },
-        { value: 'hard', label: 'Продвинутый', icon: '🚀' },
-        { value: 'expert', label: 'Эксперт', icon: '🏆' }
+        { value: 'Easy', label: 'Начинающий', icon: '🌱' },
+        { value: 'Medium', label: 'Средний', icon: '🎯' },
+        { value: 'Hard', label: 'Продвинутый', icon: '🚀' }
       ],
 
-      availableLanguages: [
-        { id: 'python', name: 'Python', version: '3.9', icon: '🐍' },
-        { id: 'java', name: 'Java', version: '17', icon: '☕' },
-        { id: 'javascript', name: 'JavaScript', version: 'ES6', icon: '📜' },
-        { id: 'cpp', name: 'C++', version: '20', icon: '⚡' }
-      ],
-
-      availableLibraries: [
-        { id: 'numpy', name: 'NumPy', version: '1.23.0', description: 'Библиотека для научных вычислений', compatibility: 'full' },
-        { id: 'pandas', name: 'Pandas', version: '1.5.3', description: 'Инструменты для анализа данных', compatibility: 'full' },
-        { id: 'matplotlib', name: 'Matplotlib', version: '3.7.1', description: 'Библиотека для визуализации', compatibility: 'full' },
-        { id: 'junit', name: 'JUnit', version: '5.9.0', description: 'Фреймворк для тестирования', compatibility: 'full' }
-      ]
+      availableLanguages: [],
+      availableLibraries: []
     }
   },
   computed: {
@@ -900,77 +779,364 @@ export default {
     }
   },
   async mounted() {
+    await this.loadLanguages();
     if (this.isEditMode) {
-      await this.loadTask()
+      await this.loadTask();
     } else {
-      this.setDefaultTemplates()
+      this.setDefaultTemplates();
     }
-    this.validateAllSections()
+    if (this.taskData.language) {
+      this.$nextTick(() => {
+        this.updateCodeTemplates();
+      });
+    }
+
+    this.validateAllSections();
   },
   watch: {
     taskData: {
       deep: true,
       handler() {
+        // Убедимся что parameters всегда массив
+        if (!Array.isArray(this.taskData.parameters)) {
+          this.taskData.parameters = [{ name: '', type: 'int', defaultValue: '', description: '' }]
+        }
         this.validateAllSections()
+      }
+    },
+
+    // Добавьте вотчер для языка
+    'taskData.language': {
+      handler(newLangId) {
+        if (newLangId) {
+          console.log('Language changed in edit mode:', newLangId);
+          this.onLanguageChange();
+        }
+      },
+      immediate: true
+    },
+
+    // Следим за изменениями в сигнатуре
+    'taskData.functionName': function() {
+      if (this.taskData.language) {
+        this.$nextTick(() => {
+          this.updateCodeTemplates();
+        });
+      }
+    },
+
+    'taskData.parameters': {
+      handler() {
+        if (this.taskData.language) {
+          this.$nextTick(() => {
+            this.updateCodeTemplates();
+          });
+        }
+      },
+      deep: true
+    },
+
+    'taskData.returnType': function() {
+      if (this.taskData.language) {
+        this.$nextTick(() => {
+          this.updateCodeTemplates();
+        });
       }
     }
   },
   methods: {
-    async loadTask() {
+    async loadLanguages() {
+      this.isLoading = true
       try {
-        // Имитация загрузки задачи
-        const mockTask = {
-          title: 'Сумма элементов массива',
-          description: 'Напишите функцию для вычисления суммы всех элементов массива целых чисел.',
-          category: 'algorithms',
-          difficulty: 'easy',
-          tags: ['массивы', 'сумма', 'базовые'],
-          timeEstimate: 15,
-          functionName: 'calculateSum',
-          parameters: [
-            { name: 'arr', type: 'list', defaultValue: '', description: 'Массив чисел' }
-          ],
-          returnType: 'int',
-          language: 'python',
-          codeTemplate: 'def {{function_signature}}:\n    # Ваша реализация здесь\n    pass',
-          libraries: ['numpy'],
-          tests: [
-            {
-              input: '[1, 2, 3, 4, 5]',
-              expectedOutput: '15',
-              isPublic: true,
-              weight: 5,
-              checkType: 'exact',
-              customCheck: ''
-            }
-          ]
+        const languages = await languageAPI.getAll()
+        this.availableLanguages = languages.map(lang => ({
+          id: lang.id,
+          name: lang.title || 'Unknown Language',
+          version: lang.version || '1.0',
+          icon: this.getLanguageIcon(lang.title),
+          patternFunction: lang.patternFunction,
+          patternMain: lang.patternMain,
+          libraries: lang.libraries || []
+        }))
+      } catch (error) {
+        console.error('Ошибка при загрузке языков:', error)
+        this.showSaveStatus('error', 'Не удалось загрузить список языков')
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async loadTask() {
+      this.isLoading = true
+      try {
+        const task = await taskAPI.getById(this.taskId)
+
+        // Получаем languageId из taskLanguages, если он не приходит напрямую
+        let languageId = task.languageId;
+        if (!languageId && task.taskLanguages && task.taskLanguages.length > 0) {
+          languageId = task.taskLanguages[0].languageId;
+          console.log('Language ID from taskLanguages:', languageId);
         }
 
-        this.taskData = { ...this.taskData, ...mockTask }
+        // Преобразуем параметры из строки в массив объектов
+        let parameters = []
+        if (task.parameters && typeof task.parameters === 'string') {
+          // Парсим строку параметров вида "t: int, t: int"
+          parameters = this.parseParameters(task.parameters)
+        } else if (Array.isArray(task.parameters)) {
+          parameters = task.parameters
+        } else {
+          parameters = [{ name: '', type: 'int', defaultValue: '', description: '' }]
+        }
+
+        this.taskData = {
+          title: task.title,
+          description: task.description,
+          difficulty: task.difficulty,
+          category: task.category || '',
+          tags: task.tags || [],
+          timeEstimate: task.timeEstimate || 30,
+
+          functionName: task.functionName,
+          parameters: parameters,
+          returnType: task.returnType || 'void',
+
+          language: languageId || '', // Используем languageId из taskLanguages
+          codeTemplate: task.patternFunction || '',
+          mainTemplate: task.patternMain || '',
+          libraries: task.libraries || [],
+
+          tests: task.tests || [{
+            input: '',
+            expectedOutput: '',
+            isPublic: true
+          }]
+        }
+
+        console.log('Loaded task data:', this.taskData);
+
+        // Загружаем тестовые случаи
+        if (this.isEditMode) {
+          const testCases = await taskAPI.getTestCases(this.taskId)
+          if (testCases && testCases.length > 0) {
+            this.taskData.tests = testCases.map(test => ({
+              input: test.input,
+              expectedOutput: test.output,
+              isPublic: test.isPublic || false,
+            }))
+          }
+        }
+
       } catch (error) {
         console.error('Ошибка загрузки задачи:', error)
         this.showSaveStatus('error', 'Ошибка загрузки задачи')
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+// Добавьте метод для парсинга параметров
+    parseParameters(parametersString) {
+      if (!parametersString || typeof parametersString !== 'string') {
+        return [{ name: '', type: 'int', defaultValue: '', description: '' }]
+      }
+
+      try {
+        // Разделяем параметры по запятой
+        const paramStrings = parametersString.split(',').map(p => p.trim()).filter(p => p)
+
+        return paramStrings.map(paramStr => {
+          // Парсим параметры вида "name: type" или "name: type = defaultValue"
+          const parts = paramStr.split(':').map(p => p.trim())
+          if (parts.length < 2) {
+            return { name: parts[0] || '', type: 'int', defaultValue: '', description: '' }
+          }
+
+          const name = parts[0]
+          let typeAndDefault = parts[1]
+
+          // Проверяем есть ли значение по умолчанию
+          let type = typeAndDefault
+          let defaultValue = ''
+
+          if (typeAndDefault.includes('=')) {
+            const typeDefaultParts = typeAndDefault.split('=').map(p => p.trim())
+            type = typeDefaultParts[0]
+            defaultValue = typeDefaultParts[1] || ''
+          }
+
+          return {
+            name: name,
+            type: type || 'int',
+            defaultValue: defaultValue,
+            description: ''
+          }
+        })
+      } catch (error) {
+        console.error('Ошибка парсинга параметров:', error)
+        return [{ name: '', type: 'int', defaultValue: '', description: '' }]
       }
     },
 
     setDefaultTemplates() {
-      this.taskData.codeTemplate = `def {{function_signature}}:
-    \"\"\"
-    {{function_description}}
-    \"\"\"
-    # Ваша реализация здесь
-    pass`
+      // Установим базовые шаблоны при создании новой задачи
+      this.taskData.codeTemplate = `// Ваша реализация здесь\n// Используйте готовую сигнатуру функции`
+      this.taskData.mainTemplate = `// Точка входа программы\n// Здесь можно протестировать вашу функцию`
+    },
+    getCurrentUser() {
+      // Замените на ваш способ получения текущего пользователя
+      // Например, из Vuex store, localStorage, или другого места
+      return JSON.parse(localStorage.getItem("user")).firstName || 'default_user';
+    },
+    async saveTask() {
+      this.paramSubmitted = true
+      this.testSubmitted = true
+      this.validateAllSections()
 
-      this.taskData.mainTemplate = `if __name__ == \"__main__\":
-    # Пример использования
-    {{function_call}}
-    print(\"Результат:\", result)`
+      if (Object.keys(this.errors).length > 0) {
+        this.showSaveStatus('error', 'Исправьте ошибки перед сохранением')
+        const errorSection = this.editSections.find(s => s.hasErrors)
+        if (errorSection) this.activeSection = errorSection.id
+        return
+      }
+
+      this.isSaving = true
+      try {
+        console.log('Отправляемые данные:', this.taskData)
+        const currentUser = this.getCurrentUser();
+        // Подготавливаем данные для отправки
+        const taskToSave = {
+          title: this.taskData.title,
+          description: this.taskData.description,
+          difficulty: this.taskData.difficulty,
+          // category: this.taskData.category,
+          author: currentUser,
+          functionName: this.taskData.functionName,
+           parameters: this.formatInputParameters(),
+           returnType: this.taskData.returnType,
+
+          languageId: this.formatLanguageIds(),
+          patternFunction: this.taskData.codeTemplate,
+          patternMain: this.taskData.mainTemplate
+        }
+
+        console.log('Данные для сохранения:', taskToSave)
+
+        let response
+        if (this.isEditMode) {
+          // Обновление существующей задачи
+          response = await taskAPI.update({
+            ...taskToSave,
+            id: this.taskId
+          })
+          console.log('Задача обновлена:', response)
+          this.showSaveStatus('success', 'Задача успешно обновлена')
+        } else {
+          // Создание новой задачи
+          response = await taskAPI.create(taskToSave)
+          console.log('Задача создана:', response)
+          this.showSaveStatus('success', 'Задача успешно создана')
+
+          // Сохраняем тестовые случаи для новой задачи
+          if (response && response.id) {
+            await this.saveTestCases(response.id)
+          }
+
+          // Перенаправляем на страницу задачи
+          setTimeout(() => {
+            this.$router.push(`/tasks/${response.id}`)
+          }, 1500)
+        }
+
+      } catch (error) {
+        console.error('Полная ошибка сохранения:', error)
+        console.error('Детали ошибки:', error.response?.data)
+        console.error('Статус ошибки:', error.response?.status)
+
+        let errorMessage = 'Ошибка при сохранении задачи'
+        if (error.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        } else if (error.response?.data?.title) {
+          errorMessage = error.response.data.title
+        }
+
+        this.showSaveStatus('error', errorMessage)
+      } finally {
+        this.isSaving = false
+      }
     },
 
+    async saveTestCases(taskId) {
+      try {
+        const testCasesDto = {
+          testCases: this.taskData.tests
+              .filter(test => test.input.trim() && test.expectedOutput.trim())
+              .map(test => ({
+                input: test.input.trim(),
+                output: test.expectedOutput.trim(),
+                isPublic: test.isPublic || false
+              }))
+        }
+
+        if (testCasesDto.testCases.length > 0) {
+          await taskAPI.createTestCases(taskId, testCasesDto)
+          console.log('Тестовые случаи успешно сохранены')
+        }
+      } catch (error) {
+        console.error('Ошибка при сохранении тестовых случаев:', error)
+        throw error
+      }
+    },
+
+    async saveDraft() {
+      this.isSaving = true
+      try {
+        // Здесь можно сохранить черновик в localStorage или отправить на сервер
+        localStorage.setItem('taskDraft', JSON.stringify(this.taskData))
+        this.showSaveStatus('success', 'Черновик сохранен')
+      } catch (error) {
+        this.showSaveStatus('error', 'Ошибка сохранения черновика')
+      } finally {
+        this.isSaving = false
+      }
+    },
+
+    previewTask() {
+      const previewData = {
+        ...this.taskData,
+        id: this.isEditMode ? this.taskId : 'preview'
+      }
+      localStorage.setItem('taskPreview', JSON.stringify(previewData))
+      window.open('/task-preview', '_blank')
+    },
+
+    duplicateTask() {
+      this.taskData.title = `${this.taskData.title} (копия)`
+      this.taskId = null
+      this.showSaveStatus('info', 'Создается копия задачи')
+    },
+
+    deleteTask() {
+      this.showDeleteDialog = true
+    },
+
+    async confirmDelete() {
+      try {
+        await taskAPI.delete(this.taskId)
+        this.showDeleteDialog = false
+        this.showSaveStatus('success', 'Задача удалена')
+        setTimeout(() => {
+          this.$router.push('/tasks')
+        }, 1000)
+      } catch (error) {
+        this.showSaveStatus('error', 'Ошибка при удалении задачи')
+      }
+    },
+
+    // Валидация
     validateAllSections() {
       this.errors = {}
 
-      // Основная информация
       if (!this.taskData.title?.trim()) {
         this.errors.title = 'Название задачи обязательно'
       }
@@ -980,21 +1146,16 @@ export default {
       if (!this.taskData.difficulty) {
         this.errors.difficulty = 'Укажите сложность задачи'
       }
-
-      // Сигнатура функции
       if (!this.taskData.functionName?.trim()) {
         this.errors.functionName = 'Имя функции обязательно'
       }
       if (this.taskData.parameters.some(p => !p.name.trim())) {
         this.errors.parameters = 'Все параметры должны иметь имя'
       }
-
-      // Окружение
       if (!this.taskData.language) {
         this.errors.language = 'Выберите язык программирования'
       }
 
-      // Обновляем индикаторы ошибок в навигации
       this.updateSectionErrors()
     },
 
@@ -1034,97 +1195,7 @@ export default {
       }
     },
 
-    getActiveSectionName() {
-      const section = this.editSections.find(s => s.id === this.activeSection)
-      return section ? section.name : ''
-    },
-
-    async saveTask() {
-      this.paramSubmitted = true
-      this.testSubmitted = true
-      this.validateAllSections()
-
-      if (Object.keys(this.errors).length > 0) {
-        this.showSaveStatus('error', 'Исправьте ошибки перед сохранением')
-        // Переходим к первому разделу с ошибками
-        const errorSection = this.editSections.find(s => s.hasErrors)
-        if (errorSection) this.activeSection = errorSection.id
-        return
-      }
-
-      this.isSaving = true
-      try {
-        // Имитация сохранения
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        if (this.isEditMode) {
-          console.log('Задача обновлена:', this.taskData)
-          this.showSaveStatus('success', 'Задача успешно обновлена')
-        } else {
-          console.log('Задача создана:', this.taskData)
-          this.showSaveStatus('success', 'Задача успешно создана')
-          // Перенаправляем на страницу задачи
-          setTimeout(() => {
-            this.$router.push('/tasks/123') // Замените на реальный ID
-          }, 1500)
-        }
-      } catch (error) {
-        console.error('Ошибка сохранения:', error)
-        this.showSaveStatus('error', 'Ошибка при сохранении задачи')
-      } finally {
-        this.isSaving = false
-      }
-    },
-
-    async saveDraft() {
-      this.isSaving = true
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500))
-        console.log('Черновик сохранен:', this.taskData)
-        this.showSaveStatus('success', 'Черновик сохранен')
-      } catch (error) {
-        this.showSaveStatus('error', 'Ошибка сохранения черновика')
-      } finally {
-        this.isSaving = false
-      }
-    },
-
-    previewTask() {
-      // Открываем предпросмотр в новом окне
-      const previewData = {
-        ...this.taskData,
-        id: this.isEditMode ? this.taskId : 'preview'
-      }
-      localStorage.setItem('taskPreview', JSON.stringify(previewData))
-      window.open('/task-preview', '_blank')
-    },
-
-    duplicateTask() {
-      this.taskData.title = `${this.taskData.title} (копия)`
-      this.taskData.id = null
-      this.isEditMode = false
-      this.showSaveStatus('info', 'Создается копия задачи')
-    },
-
-    deleteTask() {
-      this.showDeleteDialog = true
-    },
-
-    async confirmDelete() {
-      try {
-        // Имитация удаления
-        await new Promise(resolve => setTimeout(resolve, 500))
-        console.log('Задача удалена:', this.taskId)
-        this.showDeleteDialog = false
-        this.showSaveStatus('success', 'Задача удалена')
-        setTimeout(() => {
-          this.$router.push('/tasks')
-        }, 1000)
-      } catch (error) {
-        this.showSaveStatus('error', 'Ошибка при удалении задачи')
-      }
-    },
-
+    // Вспомогательные методы
     showSaveStatus(type, message) {
       const icons = {
         success: '✅',
@@ -1144,7 +1215,35 @@ export default {
       }, 5000)
     },
 
-    // Методы из конструктора задач
+    getActiveSectionName() {
+      const section = this.editSections.find(s => s.id === this.activeSection)
+      return section ? section.name : ''
+    },
+
+    getLanguageName(langId) {
+      const lang = this.availableLanguages.find(l => l.id === langId);
+      return lang ? lang.name : (langId || 'Не выбран');
+    },
+
+    getDifficultyLabel(difficulty) {
+      const diff = this.difficultyLevels.find(d => d.value === difficulty)
+      return diff ? diff.label : difficulty
+    },
+
+    getLanguageIcon(languageName) {
+      const iconMap = {
+        'python': '🐍',
+        'java': '☕',
+        'javascript': '📜',
+        'typescript': '🔷',
+        'cpp': '⚡',
+        'csharp': '🎵'
+      }
+      const lowerName = (languageName || '').toLowerCase()
+      return iconMap[lowerName] || '💻'
+    },
+
+    // Методы для работы с параметрами
     addParameter() {
       this.taskData.parameters.push({
         name: '',
@@ -1160,6 +1259,27 @@ export default {
       }
     },
 
+    formatInputParameters() {
+      return this.taskData.parameters
+          .filter(param => param.name.trim())
+          .map(param => {
+            let paramStr = `${param.name}: ${param.type}`
+            if (param.defaultValue) {
+              paramStr += ` = ${param.defaultValue}`
+            }
+            if (param.description) {
+              paramStr += ` // ${param.description}`
+            }
+            return paramStr
+          })
+          .join(', ')
+    },
+
+    formatLanguageIds() {
+      return this.taskData.language ? [this.taskData.language] : []
+    },
+
+    // Методы для работы с тегами
     addTag() {
       if (this.newTag.trim() && !this.taskData.tags.includes(this.newTag.trim())) {
         this.taskData.tags.push(this.newTag.trim())
@@ -1171,6 +1291,7 @@ export default {
       this.taskData.tags.splice(index, 1)
     },
 
+    // Методы для работы с библиотеками
     toggleLibrary(libId) {
       const index = this.taskData.libraries.indexOf(libId)
       if (index > -1) {
@@ -1189,14 +1310,263 @@ export default {
       return lib ? lib.name : libId
     },
 
+    onLanguageChange() {
+      console.log('Language changed to:', this.taskData.language);
+
+      // Загружаем библиотеки для выбранного языка
+      this.loadLibrariesForLanguage(this.taskData.language);
+
+      // Обновляем шаблоны кода с правильной сигнатурой
+      this.updateCodeTemplates();
+
+      // Очищаем выбранные библиотеки при смене языка
+      this.taskData.libraries = [];
+    },
+
+    async loadLibrariesForLanguage(languageId) {
+      if (!languageId) {
+        this.availableLibraries = []
+        return
+      }
+
+      try {
+        const language = this.availableLanguages.find(lang => lang.id === languageId)
+        if (language && language.libraries) {
+          this.availableLibraries = language.libraries.map(lib => ({
+            id: lib.id,
+            name: lib.name,
+            version: lib.version,
+            description: lib.description,
+            compatibility: 'full'
+          }))
+        }
+      } catch (error) {
+        console.error('Error loading libraries:', error)
+      }
+    },
+
+    updateCodeTemplates() {
+      if (!this.taskData.language) return;
+
+      const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+      if (!language) return;
+
+      console.log('Updating templates for language:', language.name);
+
+      // Генерируем правильную сигнатуру для выбранного языка
+      const functionSignature = this.generateLanguageSpecificSignature();
+
+      // ВСЕГДА обновляем шаблон функции при смене языка
+      if (language.patternFunction) {
+        this.taskData.codeTemplate = language.patternFunction.replace('{{function_signature}}', functionSignature);
+        console.log('Updated code template with language pattern');
+      } else {
+        // Базовый шаблон, если нет готового
+        console.log('Updated code template with generated template');
+      }
+
+      // ВСЕГДА обновляем шаблон main при смене языка
+      if (language.patternMain) {
+        this.taskData.mainTemplate = language.patternMain;
+        console.log('Updated main template with language pattern');
+      } else {
+        console.log('Updated main template with default template');
+      }
+    },
+    generateLanguageSpecificSignature() {
+      if (!this.taskData.functionName || !this.taskData.language) {
+        return this.generateFunctionSignature(); // fallback
+      }
+
+      const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+      if (!language) return this.generateFunctionSignature();
+
+      const params = this.taskData.parameters
+          .filter(p => p.name && p.name.trim())
+          .map(p => {
+            let paramStr = p.name;
+
+            // Добавляем типы для языков, которые их поддерживают
+            if (p.type && this.supportsTypeAnnotations(this.taskData.language)) {
+              paramStr = this.formatParameterWithType(p.name, p.type, this.taskData.language);
+            }
+
+            if (p.defaultValue && p.defaultValue.trim()) {
+              paramStr += this.formatDefaultValue(p.defaultValue, this.taskData.language);
+            }
+
+            return paramStr;
+          })
+          .join(', ');
+
+      return this.formatFunctionSignature(this.taskData.functionName, params, this.taskData.returnType, this.taskData.language);
+    },
+    // Проверка поддержки аннотаций типов для языка
+    supportsTypeAnnotations(languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      if (!language) return false;
+
+      const typedLanguages = ['cs', 'cpp', 'java']; // C#, C++, Java
+      const languageName = language.name?.toLowerCase() || '';
+
+      return typedLanguages.some(lang => languageName.includes(lang));
+    },
+
+// Форматирование параметра с типом
+    formatParameterWithType(paramName, paramType, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const languageName = language?.name?.toLowerCase() || '';
+
+      if (languageName.includes('csharp') || languageName.includes('c#')) {
+        return `${this.mapTypeToLanguage(paramType, languageId)} ${paramName}`;
+      } else if (languageName.includes('cpp') || languageName.includes('c++')) {
+        return `${this.mapTypeToLanguage(paramType, languageId)} ${paramName}`;
+      } else if (languageName.includes('java')) {
+        return `${this.mapTypeToLanguage(paramType, languageId)} ${paramName}`;
+      } else if (languageName.includes('python')) {
+        return `${paramName}: ${this.mapTypeToLanguage(paramType, languageId)}`;
+      }
+
+      return paramName;
+    },
+
+// Форматирование значения по умолчанию
+    formatDefaultValue(defaultValue, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const languageName = language?.name?.toLowerCase() || '';
+
+      if (languageName.includes('python')) {
+        return ` = ${defaultValue}`;
+      } else {
+        return ` = ${defaultValue}`;
+      }
+    },
+
+// Форматирование полной сигнатуры функции
+    formatFunctionSignature(functionName, params, returnType, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const languageName = language?.name?.toLowerCase() || '';
+
+      let signature = `${functionName}(${params})`;
+
+      // Добавляем возвращаемый тип
+      if (returnType && returnType !== 'void') {
+        if (languageName.includes('python')) {
+          signature += ` -> ${this.mapTypeToLanguage(returnType, languageId)}`;
+        } else if (languageName.includes('csharp') || languageName.includes('c#')) {
+          signature = `public static ${this.mapTypeToLanguage(returnType, languageId)} ${signature}`;
+        } else if (languageName.includes('cpp') || languageName.includes('c++')) {
+          signature = `${this.mapTypeToLanguage(returnType, languageId)} ${signature}`;
+        } else if (languageName.includes('java')) {
+          signature = `public static ${this.mapTypeToLanguage(returnType, languageId)} ${signature}`;
+        }
+      } else if (returnType === 'void') {
+        if (languageName.includes('csharp') || languageName.includes('c#')) {
+          signature = `public static void ${signature}`;
+        } else if (languageName.includes('java')) {
+          signature = `public static void ${signature}`;
+        } else if (languageName.includes('cpp') || languageName.includes('c++')) {
+          signature = `void ${signature}`;
+        }
+      }
+
+      return signature;
+    },
+
+// Маппинг типов на конкретный язык
+    mapTypeToLanguage(type, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const languageName = language?.name?.toLowerCase() || '';
+
+      const typeMap = {
+        python: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'float',
+          'string': 'str',
+          'boolean': 'bool',
+          'char': 'str',
+          'byte': 'bytes',
+          'array': 'list',
+          'list': 'list',
+          'vector': 'list',
+          'map': 'dict',
+          'dictionary': 'dict',
+          'set': 'set',
+          'void': 'None'
+        },
+        java: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'String',
+          'boolean': 'boolean',
+          'char': 'char',
+          'byte': 'byte',
+          'array': 'array',
+          'list': 'List',
+          'vector': 'Vector',
+          'map': 'Map',
+          'dictionary': 'Dictionary',
+          'set': 'Set',
+          'void': 'void'
+        },
+        cpp: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'std::string',
+          'boolean': 'bool',
+          'char': 'char',
+          'byte': 'unsigned char',
+          'array': 'std::array',
+          'list': 'std::list',
+          'vector': 'std::vector',
+          'map': 'std::map',
+          'dictionary': 'std::map',
+          'set': 'std::set',
+          'void': 'void'
+        },
+        csharp: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'string',
+          'boolean': 'bool',
+          'char': 'char',
+          'byte': 'byte',
+          'array': 'array',
+          'list': 'List',
+          'vector': 'List',
+          'map': 'Dictionary',
+          'dictionary': 'Dictionary',
+          'set': 'HashSet',
+          'void': 'void'
+        }
+      };
+
+      // Определяем, какую карту типов использовать
+      let langMap;
+      if (languageName.includes('python')) {
+        langMap = typeMap.python;
+      } else if (languageName.includes('java')) {
+        langMap = typeMap.java;
+      } else if (languageName.includes('cpp') || languageName.includes('c++')) {
+        langMap = typeMap.cpp;
+      } else if (languageName.includes('csharp') || languageName.includes('c#')) {
+        langMap = typeMap.csharp;
+      } else {
+        langMap = typeMap.python; // fallback
+      }
+
+      return langMap[type] || type;
+    },
+    // Методы для работы с тестами
     addTest() {
       this.taskData.tests.push({
         input: '',
         expectedOutput: '',
-        isPublic: false,
-        weight: 5,
-        checkType: 'exact',
-        customCheck: ''
+        isPublic: false
       })
     },
 
@@ -1210,14 +1580,7 @@ export default {
       this.taskData.tests[index].isPublic = !this.taskData.tests[index].isPublic
     },
 
-    importTests() {
-      console.log('Импорт тестов')
-    },
-
-    generateTests() {
-      console.log('Генерация тестов')
-    },
-
+    // Генерация сигнатуры функции
     getAvailableTypes() {
       const baseTypes = ['int', 'float', 'double', 'string', 'boolean', 'char', 'byte']
       const collectionTypes = ['array', 'list', 'vector', 'map', 'dictionary', 'set']
@@ -1253,22 +1616,37 @@ export default {
       }
 
       return signature
-    },
-
-    getLanguageName(langId) {
-      const lang = this.availableLanguages.find(l => l.id === langId)
-      return lang ? lang.name : langId
-    },
-
-    getDifficultyLabel(difficulty) {
-      const diff = this.difficultyLevels.find(d => d.value === difficulty)
-      return diff ? diff.label : difficulty
     }
   }
 }
 </script>
 
 <style scoped>
+/* Добавьте стили из предыдущего компонента редактирования */
+/* Они остаются без изменений */
+
+.loading-state {
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.loading-icon {
+  font-size: var(--font-size-hero);
+  margin-bottom: var(--spacing-lg);
+}
+
+.loading-state h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xl);
+  color: var(--color-on-surface);
+  font-family: var(--font-family-heading);
+}
+
+.loading-state p {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--color-on-surface-secondary);
+  font-size: var(--font-size-base);
+}
 /* Стили из конструктора задач + дополнительные для редактирования */
 
 .task-edit-container {

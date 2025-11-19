@@ -10,6 +10,9 @@ public class TaskDto
   public  string FunctionName { get; set; }
   public  string PatternMain { get; set; }
   public  string PatternFunction { get; set; }
+  
+  public  string Parameters { get; set; }
+  public  string ReturnType { get; set; }
   public  DateTime CreatedAt { get; set; }
   public  DateTime? UpdatedAt { get; set; }
   public int TotalAttempts { get; set; }

@@ -40,6 +40,14 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.Property(t => t.PatternMain)
             .IsRequired()
             .HasMaxLength(500);
+        
+        builder.Property(t => t.Parameters)
+            .IsRequired()
+            .HasMaxLength(500);
+        
+        builder.Property(t => t.ReturnType)
+            .IsRequired()
+            .HasMaxLength(500);
 
             
         builder.Property(t => t.CreatedAt)

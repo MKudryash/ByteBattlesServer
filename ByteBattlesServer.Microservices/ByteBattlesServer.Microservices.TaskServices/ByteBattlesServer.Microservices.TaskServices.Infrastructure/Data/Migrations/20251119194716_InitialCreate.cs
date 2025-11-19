@@ -44,6 +44,8 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     FunctionName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     PatternFunction = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     PatternMain = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Parameters = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    ReturnType = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     TotalAttempts = table.Column<int>(type: "integer", nullable: false),

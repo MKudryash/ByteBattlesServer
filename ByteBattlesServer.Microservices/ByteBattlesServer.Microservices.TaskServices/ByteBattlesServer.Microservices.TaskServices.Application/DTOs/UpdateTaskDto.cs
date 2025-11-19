@@ -9,6 +9,8 @@ public class UpdateTaskDto
     public string? Author { get; set; }  = null;
     public string? FunctionName { get; set; }  = null;
     public string? PatternMain { get; set; }  = null;
-    public string? PatternFuction { get; set; }  = null;
+    public string? PatternFunction { get; set; }  = null;
+    public string? Parameters { get; set; }  = null;
+    public string? ReturnType { get; set; }  = null;
     public List<Guid>? LanguageIds { get; set; }  = null;
 }

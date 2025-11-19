@@ -17,6 +17,9 @@ public class Task:Entity
     public string? PatternFunction { get; private set; }
 
     public string? PatternMain { get; private set; }
+    
+    public string? Parameters { get; private set; }
+    public string? ReturnType { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
 
@@ -33,16 +36,29 @@ public class Task:Entity
     private Task() { }
 
     public Task(string title, string description, string difficulty, string author, string functionName,
-        string patternMain, string patternFunction)
+        string patternMain, string patternFunction, string parameters,  string returnType)
     {
         Title = title;
         Description = description;
-        Difficulty = Enums.Difficulty.Easy;
+        if (!string.IsNullOrWhiteSpace(difficulty))
+        {
+            if (Enum.TryParse<Difficulty>(difficulty.Trim(), true, out var parsedDifficulty))
+            {
+                Difficulty = parsedDifficulty;
+            }
+            else
+            {
+                Difficulty = Difficulty.Easy;
+            }
+        }
         Author = author;
         FunctionName = functionName;
         PatternFunction = patternFunction;
         PatternMain = patternMain;
+        Parameters = parameters;
+        ReturnType = returnType;
         CreatedAt = DateTime.UtcNow;
+        
     }
 
     public void UpdateTask(string? title= null,
@@ -51,7 +67,9 @@ public class Task:Entity
         string? author = null,
         string? functionName = null,
         string? patternMain = null,
-        string? patternFunction = null)
+        string? patternFunction = null,
+        string? patternParameters = null,
+        string? returnType = null)
     {
         if (!string.IsNullOrWhiteSpace(title))
             Title =title.Trim();
@@ -63,7 +81,10 @@ public class Task:Entity
             {
                 Difficulty = parsedDifficulty;
             }
-           throw new ArgumentException($"Invalid difficulty {difficulty}");
+            else
+            {
+                throw new ArgumentException($"Invalid difficulty {difficulty}");
+            }
         }
         if (!string.IsNullOrWhiteSpace(author))
             Author = author.Trim();
@@ -76,6 +97,10 @@ public class Task:Entity
         
         if (!string.IsNullOrWhiteSpace(patternFunction))
             PatternFunction = patternFunction.Trim();
+        if (!string.IsNullOrWhiteSpace(patternParameters))
+            Parameters = patternParameters.Trim();
+        if (!string.IsNullOrWhiteSpace(returnType))
+            ReturnType = returnType.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
     

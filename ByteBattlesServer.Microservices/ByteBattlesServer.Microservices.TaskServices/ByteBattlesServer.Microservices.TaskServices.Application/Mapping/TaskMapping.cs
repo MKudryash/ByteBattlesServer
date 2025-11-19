@@ -23,6 +23,10 @@ public class TaskMapping
             AverageExecutionTime = task.AverageExecutionTime,
             SuccessfulAttempts = task.SuccessfulAttempts,
             TotalAttempts = task.TotalAttempts,
+            Parameters =  task.Parameters,
+            ReturnType = task.ReturnType,
+            CreatedAt = task.CreatedAt,
+            UpdatedAt = task.UpdatedAt,
             TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
             {
                 LanguageId = tl.Id,
@@ -54,6 +58,10 @@ public class TaskMapping
             AverageExecutionTime = task.AverageExecutionTime,
             SuccessfulAttempts = task.SuccessfulAttempts,
             TotalAttempts = task.TotalAttempts,
+            Parameters =  task.Parameters,
+            ReturnType = task.ReturnType,
+            CreatedAt = task.CreatedAt,
+            UpdatedAt = task.UpdatedAt,
             TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
             {
                 LanguageId = tl.Id,
