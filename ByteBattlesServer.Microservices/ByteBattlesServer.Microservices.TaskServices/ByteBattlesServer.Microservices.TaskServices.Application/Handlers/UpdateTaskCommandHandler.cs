@@ -1,5 +1,6 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -55,7 +56,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
 
         // Перезагружаем задачу с актуальными данными
         var updatedTask = await _repository.GetByIdAsync(request.TaskId);
-        return MapToDto(updatedTask);
+        return TaskMapping.MapToDto(updatedTask);
     }
     
     private async Task UpdateTaskLanguagesAsync(Domain.Entities.Task task, List<Guid> newLanguageIds)
@@ -97,21 +98,5 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         }
     }
     
-    private TaskDto MapToDto(Domain.Entities.Task task) => new()
-    {
-        Id = task.Id,
-        Title = task.Title,
-        Description = task.Description,
-        Difficulty = task.Difficulty.ToString(),
-        Author = task.Author,
-        FunctionName = task.FunctionName,
-        PatternMain = task.PatternMain,
-        PatternFuction = task.PatternFunction,
-        TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
-        {
-            LanguageId = tl.Language.Id, // Исправлено: должно быть tl.Language.Id
-            LanguageTitle = tl.Language.Title,
-            LanguageShortTitle = tl.Language.ShortTitle,
-        }).ToList()
-    };
+   
 }

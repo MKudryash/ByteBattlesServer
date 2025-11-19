@@ -4,6 +4,8 @@ using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 
+
+
 public static class LanguageMappings
 {
     public static LanguageDto MapToDto(Language language)

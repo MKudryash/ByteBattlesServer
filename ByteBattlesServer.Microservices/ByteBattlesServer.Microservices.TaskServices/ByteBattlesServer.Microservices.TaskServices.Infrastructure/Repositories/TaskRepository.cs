@@ -99,6 +99,7 @@ public class TaskRepository : ITaskRepository
         var query = _dbContext.Tasks
             .Include(t => t.TaskLanguages)
             .ThenInclude(tl => tl.Language)
+            .Include(t => t.TestCases)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))

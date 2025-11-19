@@ -594,21 +594,6 @@
                       >
                     </div>
                   </div>
-
-                  <div class="form-group">
-                    <label for="output-limit">
-                      Лимит вывода (КБ)
-                    </label>
-                    <div class="input-container vintage-border">
-                      <input
-                          type="number"
-                          id="output-limit"
-                          v-model.number="taskData.outputLimit"
-                          min="1"
-                          max="1024"
-                      >
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1212,7 +1197,7 @@ export default {
     getCurrentUser() {
       // Замените на ваш способ получения текущего пользователя
       // Например, из Vuex store, localStorage, или другого места
-      return localStorage.getItem('currentUser') || 'default_user';
+      return JSON.parse(localStorage.getItem("user")).firstName || 'default_user';
     },
 
 // Вспомогательные методы для форматирования данных

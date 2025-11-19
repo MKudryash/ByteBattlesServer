@@ -1,5 +1,6 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -54,25 +55,7 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
 
     
         var createdTask = await _taskRepository.GetByIdAsync(task.Id);
-        return MapToDto(createdTask);
+        return TaskMapping.MapToDto(createdTask);
 
     }
-
-    private TaskDto MapToDto(Task task) => new()
-    {
-        Id = task.Id,
-        Title = task.Title,
-        Description = task.Description,
-        Difficulty = task.Difficulty.ToString(),
-        Author = task.Author,
-        FunctionName = task.FunctionName,
-        PatternMain = task.PatternMain,
-        PatternFuction = task.PatternFunction,
-        TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
-            {
-                LanguageId = tl.Id,
-                LanguageTitle = tl.Language.Title,
-                LanguageShortTitle = tl.Language.ShortTitle,
-            }).ToList()
-    };
 }

@@ -9,9 +9,13 @@ public class TaskDto
   public  string Author { get; set; }
   public  string FunctionName { get; set; }
   public  string PatternMain { get; set; }
-  public  string PatternFuction { get; set; }
+  public  string PatternFunction { get; set; }
   public  DateTime CreatedAt { get; set; }
   public  DateTime? UpdatedAt { get; set; }
+  public int TotalAttempts { get; set; }
+  public int SuccessfulAttempts { get; set; }
+  public double SuccessRate { get; set; }
+  public double AverageExecutionTime { get; set; }
   public  List<TaskLanguageDto> TaskLanguages { get; set; }
   public List<TestCaseDto> TestCases { get; set; }
 }

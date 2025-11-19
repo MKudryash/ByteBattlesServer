@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -16,30 +17,6 @@ public class GetTaskByIdQueryHandler: IRequestHandler<GetTaskByIdQuery, TaskDto?
         var task = await _repository.GetByIdAsync(request.TaskId);
         if (task ==null) 
             throw new TaskNotFoundException(request.TaskId);
-        return MapToDto(task);
+        return TaskMapping.MapToDto(task);
     }
-    private TaskDto MapToDto(Domain.Entities.Task task) => new()
-    {
-        Id = task.Id,
-        Title = task.Title,
-        Description = task.Description,
-        Difficulty = task.Difficulty.ToString(),
-        Author = task.Author,
-        FunctionName = task.FunctionName,
-        PatternMain = task.PatternMain,
-        PatternFuction = task.PatternFunction,
-        TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
-        {
-            LanguageId = tl.Id,
-            LanguageTitle = tl.Language.Title,
-            LanguageShortTitle = tl.Language.ShortTitle,
-        }).ToList(),
-        TestCases = task.TestCases.Select(t => new TestCaseDto()
-        {
-            Id = t.Id,
-            Input = t.Input,
-            Output = t.ExpectedOutput,
-            IsExample = t.IsExample,
-        }).ToList()
-    };
 }
