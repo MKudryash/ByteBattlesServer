@@ -525,7 +525,7 @@ export default {
       password: this.loginForm.password,
     }
 
-    const response = await fetch("http://hobbit1021.ru:50305/api/auth/login", {
+    const response = await fetch("http://localhost:50310/api/auth/login", {
     //const response = await fetch("http://localhost:50307/api/auth/login", {
       method: 'POST',
       headers: {
@@ -567,9 +567,9 @@ export default {
         alert('Пароли не совпадают')
         return
       }
-      
+
       this.loading = true
-      
+
       try {
         const userData = {
           firstName: this.registerForm.firstName,
@@ -578,7 +578,8 @@ export default {
           password: this.registerForm.password,
           role: ["admin"]
         }
-        const response = await fetch("http://hobbit1021.ru:50305/api/auth/register", {
+
+        const response = await fetch("http://localhost:50310/api/auth/register", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -588,22 +589,74 @@ export default {
         })
 
         const data = await response.json()
+
+        // Обработка различных статусов ответа
+        if (!response.ok) {
+          await this.handleErrorResponse(response.status, data)
+          return
+        }
+
         console.log("Success: ", data)
-        
-        localStorage.setItem('user', JSON.stringify(response))
+
+        // Сохраняем данные пользователя
+        localStorage.setItem('user', JSON.stringify(data.user || data))
         localStorage.setItem('accessToken', data.accessToken)
         console.log(localStorage.getItem('accessToken'))
         localStorage.setItem('refreshToken', data.refreshToken)
 
-        
+        // Показываем сообщение об успехе
+        alert('Регистрация прошла успешно!')
+
         // Перенаправляем на главную страницу
         this.$router.push('/')
-        
+
       } catch (error) {
         console.error('Registration error:', error)
-        // Здесь можно добавить обработку ошибок
+        this.handleNetworkError(error)
       } finally {
         this.loading = false
+      }
+    },
+
+// Метод для обработки ошибок HTTP
+    async handleErrorResponse(statusCode, errorData) {
+      const errorMessages = {
+        400: 'Неверный запрос. Проверьте введенные данные.',
+        409: 'Пользователь с таким email уже существует.',
+        422: 'Ошибка валидации данных.',
+        500: 'Внутренняя ошибка сервера. Попробуйте позже.',
+        503: 'Сервис временно недоступен.'
+      }
+
+      // Получаем сообщение об ошибке из ответа сервера или используем стандартное
+      const serverMessage = errorData?.message || errorData?.title
+      const defaultMessage = errorMessages[statusCode] || `Ошибка регистрации (код: ${statusCode})`
+
+      const finalMessage = serverMessage ? `${defaultMessage}\nДетали: ${serverMessage}` : defaultMessage
+
+      alert(finalMessage)
+
+      // Дополнительные действия для определенных ошибок
+      switch (statusCode) {
+        case 409:
+          // Очищаем поле email при конфликте
+          this.registerForm.email = ''
+          break
+        case 422:
+          // Можно добавить подсветку полей с ошибками
+          console.warn('Validation errors:', errorData.errors)
+          break
+      }
+    },
+
+// Метод для обработки сетевых ошибок
+    handleNetworkError(error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        alert('Ошибка сети. Проверьте подключение к интернету.')
+      } else if (error.name === 'SyntaxError') {
+        alert('Ошибка обработки ответа сервера.')
+      } else {
+        alert('Произошла непредвиденная ошибка. Попробуйте еще раз.')
       }
     },
 
