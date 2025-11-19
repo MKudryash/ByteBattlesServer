@@ -13,4 +13,5 @@ public class CreateTaskDto
     public string Parameters { get; set; }
     public string ReturnType { get; set; }
     public List<Guid> LanguageId { get; set; }
+    public List<Guid> LibraryId { get; set; }
 }

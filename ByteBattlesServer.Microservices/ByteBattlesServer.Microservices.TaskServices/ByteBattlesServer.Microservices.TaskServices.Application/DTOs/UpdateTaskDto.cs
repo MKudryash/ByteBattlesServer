@@ -13,4 +13,5 @@ public class UpdateTaskDto
     public string? Parameters { get; set; }  = null;
     public string? ReturnType { get; set; }  = null;
     public List<Guid>? LanguageIds { get; set; }  = null;
+    public List<Guid> LibrariesIds { get; set; } = null;
 }

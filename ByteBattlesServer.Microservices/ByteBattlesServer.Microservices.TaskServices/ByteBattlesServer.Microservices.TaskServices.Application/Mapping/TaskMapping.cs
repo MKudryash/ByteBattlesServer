@@ -27,9 +27,17 @@ public class TaskMapping
             ReturnType = task.ReturnType,
             CreatedAt = task.CreatedAt,
             UpdatedAt = task.UpdatedAt,
+            Libraries = task.Libraries.Select(l=>new LibraryDto()
+            {
+                Id = l.IdLibrary,
+                Name = l.Library.NameLibrary,
+                Version = l.Library.Version,
+                Description = l.Library.Description,
+                languageId = l.Library.LanguageId
+            }).ToList(),
             TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
             {
-                LanguageId = tl.Id,
+                LanguageId = tl.IdLanguage,
                 LanguageTitle = tl.Language.Title,
                 LanguageShortTitle = tl.Language.ShortTitle,
             }).ToList(),
@@ -62,9 +70,18 @@ public class TaskMapping
             ReturnType = task.ReturnType,
             CreatedAt = task.CreatedAt,
             UpdatedAt = task.UpdatedAt,
+            
+            Libraries = task.Libraries.Select(l=>new LibraryDto()
+            {
+                Id = l.IdLibrary,
+                Name = l.Library.NameLibrary,
+                Version = l.Library.Version,
+                Description = l.Library.Description,
+                languageId = l.Library.LanguageId
+            }).ToList(),
             TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
             {
-                LanguageId = tl.Id,
+                LanguageId = tl.IdLanguage,
                 LanguageTitle = tl.Language.Title,
                 LanguageShortTitle = tl.Language.ShortTitle,
             }).ToList()

@@ -13,4 +13,5 @@ string PatternMain,
 string PatternFunction ,
 string Parameters,
 string ReturnType,
-List<Guid> LanguageIds):IRequest<TaskDto>;
+List<Guid> LanguageIds,
+List<Guid> LibrariesIds):IRequest<TaskDto>;

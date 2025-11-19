@@ -65,6 +65,11 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.HasMany(t => t.TestCases)
             .WithOne(tt => tt.Task)
             .HasForeignKey(tt => tt.TaskId)
+            .OnDelete(DeleteBehavior.Cascade); 
+        
+        builder.HasMany(t => t.Libraries)
+            .WithOne(tt => tt.Task)
+            .HasForeignKey(tt => tt.IdTask)
             .OnDelete(DeleteBehavior.Cascade);
       
         builder.HasIndex(t => t.Difficulty);

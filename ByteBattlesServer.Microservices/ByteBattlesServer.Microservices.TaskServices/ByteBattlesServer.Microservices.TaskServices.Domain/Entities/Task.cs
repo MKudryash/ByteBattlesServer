@@ -33,6 +33,7 @@ public class Task:Entity
 
     public virtual ICollection<TaskLanguage> TaskLanguages { get; private set; } = new List<TaskLanguage>();
     public virtual ICollection<TestCases> TestCases { get; private set; } = new List<TestCases>();
+    public virtual ICollection<TaskLibrary> Libraries { get; private set; } = new List<TaskLibrary>();
     private Task() { }
 
     public Task(string title, string description, string difficulty, string author, string functionName,

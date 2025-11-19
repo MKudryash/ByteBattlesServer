@@ -538,56 +538,74 @@
                     </div>
                   </div>
 
-                  <div class="form-section retro-card">
-                    <h3>Библиотеки и зависимости</h3>
 
-                    <div class="form-group">
-                      <label>Доступные библиотеки</label>
-                      <div class="libraries-panel vintage-border">
-                        <div class="libraries-search">
-                          <input
-                              type="text"
-                              v-model="librarySearch"
-                              placeholder="Поиск библиотек..."
-                              class="vintage-border"
-                          >
-                        </div>
-                        <div class="libraries-list">
-                          <div
-                              v-for="lib in filteredLibraries"
-                              :key="lib.id"
-                              :class="['library-item vintage-border', { 'selected': isLibrarySelected(lib.id) }]"
-                              @click="toggleLibrary(lib.id)"
-                          >
-                            <div class="lib-info">
-                              <strong>{{ lib.name }}</strong>
-                              <span>{{ lib.version }}</span>
-                              <p class="lib-description">{{ lib.description }}</p>
-                            </div>
-                            <div class="lib-compatibility" :class="lib.compatibility">
-                              {{ lib.compatibility === 'full' ? '✓ Совместима' : '⚠ Ограниченно' }}
+                    <div class="form-section retro-card">
+                      <h3>Библиотеки и зависимости</h3>
+
+                      <div class="form-group">
+                        <label>Доступные библиотеки</label>
+                        <div class="libraries-panel vintage-border">
+                          <div class="libraries-search">
+                            <input
+                                type="text"
+                                v-model="librarySearch"
+                                placeholder="Поиск библиотек..."
+                                class="vintage-border"
+                            >
+                          </div>
+                          <div class="libraries-list">
+                            <div
+                                v-for="lib in filteredLibraries"
+                                :key="lib.id"
+                                :class="['library-item vintage-border', { 'selected': isLibrarySelected(lib.id) }]"
+                                @click="toggleLibrary(lib.id)"
+                            >
+                              <div class="lib-info">
+                                <strong>{{ lib.name }}</strong>
+                                <span>v{{ lib.version }}</span>
+                                <p class="lib-description">{{ lib.description }}</p>
+                              </div>
+                              <div class="lib-compatibility" :class="lib.compatibility">
+                                {{ lib.compatibility === 'full' ? '✓ Совместима' : '⚠ Ограниченно' }}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div class="form-group" v-if="taskData.libraries.length > 0">
-                      <label>Выбранные библиотеки</label>
-                      <div class="selected-libraries">
-                        <div
-                            v-for="libId in taskData.libraries"
-                            :key="libId"
-                            class="selected-library vintage-border"
-                        >
-                          <span>{{ getLibraryName(libId) }}</span>
-                          <button @click="toggleLibrary(libId)" class="btn-remove">×</button>
+                      <div class="form-group" v-if="taskData.libraries.length > 0">
+                        <label>Выбранные библиотеки ({{ taskData.libraries.length }})</label>
+                        <div class="selected-libraries">
+                          <div
+                              v-for="libId in taskData.libraries"
+                              :key="libId"
+                              class="selected-library vintage-border"
+                          >
+                            <div class="lib-details">
+                              <strong>{{ getLibraryName(libId) }}</strong>
+                              <span class="lib-version" v-if="getLibraryInfo(libId)">
+              v{{ getLibraryInfo(libId).version }}
+            </span>
+                            </div>
+                            <button @click="toggleLibrary(libId)" class="btn-remove" title="Удалить библиотеку">×</button>
+                          </div>
+                        </div>
+                        <div class="hint" v-if="taskData.libraries.length > 0">
+                          <span class="hint-icon">💡</span>
+                          Эти библиотеки будут доступны студентам при решении задачи
+                        </div>
+                      </div>
+
+                      <div class="form-group" v-else>
+                        <div class="no-libraries-message">
+                          <span class="hint-icon">📚</span>
+                          Библиотеки не выбраны. Выберите нужные библиотеки из списка выше.
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+
 
               <!-- Раздел: Тестирование -->
               <div v-if="activeSection === 'testing'" class="edit-section">
@@ -784,11 +802,11 @@ export default {
       await this.loadTask();
     } else {
       this.setDefaultTemplates();
-    }
-    if (this.taskData.language) {
-      this.$nextTick(() => {
-        this.updateCodeTemplates();
-      });
+      // Автоматически выбираем первый язык при создании новой задачи
+      if (this.availableLanguages.length > 0) {
+        this.taskData.language = this.availableLanguages[0].id;
+        await this.loadLibrariesForLanguage(this.taskData.language);
+      }
     }
 
     this.validateAllSections();
@@ -805,12 +823,13 @@ export default {
       }
     },
 
-    // Добавьте вотчер для языка
+    // Исправленный вотчер для языка
     'taskData.language': {
       handler(newLangId) {
         if (newLangId) {
           console.log('Language changed in edit mode:', newLangId);
           this.onLanguageChange();
+          this.loadLibrariesForLanguage(newLangId); // Исправлено: newLangId вместо newLanguageId
         }
       },
       immediate: true
@@ -881,12 +900,24 @@ export default {
         // Преобразуем параметры из строки в массив объектов
         let parameters = []
         if (task.parameters && typeof task.parameters === 'string') {
-          // Парсим строку параметров вида "t: int, t: int"
           parameters = this.parseParameters(task.parameters)
         } else if (Array.isArray(task.parameters)) {
           parameters = task.parameters
         } else {
           parameters = [{ name: '', type: 'int', defaultValue: '', description: '' }]
+        }
+
+        // Преобразуем библиотеки из задачи в правильный формат
+        let taskLibraries = [];
+        if (task.libraries && Array.isArray(task.libraries)) {
+          // Если библиотеки приходят как объекты, извлекаем только ID
+          taskLibraries = task.libraries.map(lib => {
+            if (typeof lib === 'object' && lib.id) {
+              return lib.id;
+            }
+            return lib; // если это уже строка (ID)
+          });
+          console.log('Task libraries:', taskLibraries);
         }
 
         this.taskData = {
@@ -901,10 +932,10 @@ export default {
           parameters: parameters,
           returnType: task.returnType || 'void',
 
-          language: languageId || '', // Используем languageId из taskLanguages
+          language: languageId || '',
           codeTemplate: task.patternFunction || '',
           mainTemplate: task.patternMain || '',
-          libraries: task.libraries || [],
+          libraries: taskLibraries, // Используем преобразованные библиотеки
 
           tests: task.tests || [{
             input: '',
@@ -913,7 +944,14 @@ export default {
           }]
         }
 
-        console.log('Loaded task data:', this.taskData);
+        console.log('Loaded task data with language:', this.taskData.language);
+        console.log('Loaded task libraries:', this.taskData.libraries);
+
+        // Загружаем библиотеки для выбранного языка СРАЗУ после установки языка
+        if (this.taskData.language) {
+          console.log('Loading libraries for existing task language:', this.taskData.language);
+          await this.loadLibrariesForLanguage(this.taskData.language);
+        }
 
         // Загружаем тестовые случаи
         if (this.isEditMode) {
@@ -1292,56 +1330,143 @@ export default {
     },
 
     // Методы для работы с библиотеками
+    // Методы для работы с библиотеками
     toggleLibrary(libId) {
       const index = this.taskData.libraries.indexOf(libId)
       if (index > -1) {
         this.taskData.libraries.splice(index, 1)
+        console.log('Library removed:', libId);
       } else {
         this.taskData.libraries.push(libId)
+        console.log('Library added:', libId);
       }
+      console.log('Current selected libraries:', this.taskData.libraries);
     },
 
     isLibrarySelected(libId) {
-      return this.taskData.libraries.includes(libId)
+      const isSelected = this.taskData.libraries.includes(libId);
+      console.log(`Library ${libId} is selected:`, isSelected);
+      return isSelected;
     },
 
     getLibraryName(libId) {
       const lib = this.availableLibraries.find(l => l.id === libId)
-      return lib ? lib.name : libId
+      const name = lib ? lib.name : libId;
+      console.log(`Getting name for library ${libId}:`, name);
+      return name;
     },
 
-    onLanguageChange() {
+    getLibraryInfo(libId) {
+      const lib = this.availableLibraries.find(l => l.id === libId);
+      return lib ? {
+        name: lib.name,
+        version: lib.version,
+        description: lib.description
+      } : null;
+    },
+
+    async onLanguageChange() {
       console.log('Language changed to:', this.taskData.language);
 
-      // Загружаем библиотеки для выбранного языка
-      this.loadLibrariesForLanguage(this.taskData.language);
+      if (this.taskData.language) {
+        // Сохраняем текущие выбранные библиотеки перед загрузкой новых
+        const currentLibraries = [...this.taskData.libraries];
 
-      // Обновляем шаблоны кода с правильной сигнатурой
-      this.updateCodeTemplates();
+        // Загружаем библиотеки для выбранного языка
+        await this.loadLibrariesForLanguage(this.taskData.language);
 
-      // Очищаем выбранные библиотеки при смене языка
-      this.taskData.libraries = [];
+        // Обновляем шаблоны кода
+        this.updateCodeTemplates();
+
+        // Сбрасываем выбранные библиотеки ТОЛЬКО если это действие пользователя, а не загрузка
+        // Проверяем, была ли это инициализация или изменение пользователем
+        if (currentLibraries.length === 0) {
+          // Если библиотек не было, оставляем пустым
+          this.taskData.libraries = [];
+        } else {
+          // Если были библиотеки, проверяем их совместимость с новым языком
+          const validLibraries = currentLibraries.filter(libId =>
+              this.availableLibraries.some(lib => lib.id === libId)
+          );
+          this.taskData.libraries = validLibraries;
+          if (validLibraries.length !== currentLibraries.length) {
+            console.log('Some libraries were removed due to incompatibility with new language');
+          }
+        }
+      }
     },
+    // Методы для работы с библиотеками
 
     async loadLibrariesForLanguage(languageId) {
       if (!languageId) {
+        console.log('No language ID provided for loading libraries');
         this.availableLibraries = []
         return
       }
 
       try {
-        const language = this.availableLanguages.find(lang => lang.id === languageId)
-        if (language && language.libraries) {
-          this.availableLibraries = language.libraries.map(lib => ({
-            id: lib.id,
-            name: lib.name,
-            version: lib.version,
-            description: lib.description,
-            compatibility: 'full'
-          }))
+        console.log('Loading libraries for language:', languageId);
+
+        // Ищем выбранный язык в availableLanguages
+        const selectedLanguage = this.availableLanguages.find(lang => lang.id === languageId);
+
+        if (selectedLanguage) {
+          console.log('Found language:', selectedLanguage.name);
+
+          if (selectedLanguage.libraries && selectedLanguage.libraries.length > 0) {
+            // Используем библиотеки из загруженных данных языка
+            this.availableLibraries = selectedLanguage.libraries.map(lib => ({
+              id: lib.id,
+              name: lib.name || 'Unknown Library',
+              version: lib.version || '1.0.0',
+              description: lib.description || 'No description available',
+              compatibility: 'full'
+            }));
+            console.log(`Loaded ${this.availableLibraries.length} libraries for ${selectedLanguage.name}`);
+          } else {
+            console.log('No libraries found for selected language, trying to load from API');
+            // Если библиотеки не пришли с языком, загружаем их отдельно
+            try {
+              const libraries = await languageAPI.getLibraries(languageId);
+              this.availableLibraries = libraries.map(lib => ({
+                id: lib.id,
+                name: lib.name,
+                version: lib.version,
+                description: lib.description,
+                compatibility: lib.compatibility || 'full'
+              }));
+              console.log(`Loaded ${this.availableLibraries.length} libraries from API`);
+            } catch (apiError) {
+              console.log('Could not load libraries from API, using empty list');
+              this.availableLibraries = [];
+            }
+          }
+        } else {
+          console.log('Selected language not found in available languages');
+          this.availableLibraries = [];
         }
+
+        // ВАЖНО: Не сбрасываем выбранные библиотеки при загрузке для существующей задачи
+        // Проверяем совместимость только если это не первоначальная загрузка задачи
+        if (this.taskData.libraries && this.taskData.libraries.length > 0) {
+          const validLibraries = this.taskData.libraries.filter(libId =>
+              this.availableLibraries.some(lib => lib.id === libId)
+          );
+
+          if (validLibraries.length !== this.taskData.libraries.length) {
+            console.log('Removing incompatible libraries');
+            this.taskData.libraries = validLibraries;
+          } else {
+            console.log('All task libraries are compatible with current language');
+          }
+        }
+
+        console.log('Final available libraries:', this.availableLibraries);
+        console.log('Final selected libraries:', this.taskData.libraries);
+
       } catch (error) {
-        console.error('Error loading libraries:', error)
+        console.error('Error loading libraries:', error);
+        this.availableLibraries = [];
       }
     },
 

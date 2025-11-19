@@ -50,6 +50,10 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         {
             await UpdateTaskLanguagesAsync(task, request.LanguageIds);
         }
+        if (request.LibrariesIds != null && request.LibrariesIds.Any())
+        {
+            await UpdateTaskLibrariesAsync(task, request.LibrariesIds);
+        }
         
         // Явно отмечаем задачу как измененную
         _repository.Update(task);
@@ -97,6 +101,44 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
             var taskLanguage = new TaskLanguage(task.Id, languageId);
             // Явно добавляем связь через репозиторий
             await _repository.AddTaskLanguageAsync(taskLanguage);
+        }
+    }  
+    
+    private async Task UpdateTaskLibrariesAsync(Domain.Entities.Task task, List<Guid> newLibrariesIds)
+    {
+        // Валидируем новые языки
+        var validLibraries = new List<Library>();
+        foreach (var libraryId in newLibrariesIds)
+        {
+            var library = await _languageRepository.GetLibraryByIdAsync(libraryId);
+            if (library == null)
+                throw new LibraryNotFoundException(libraryId);
+            validLibraries.Add(library);
+        }
+
+        // Получаем текущие языки
+        var currentLibrariesIds = task.Libraries.Select(tl => tl.IdLibrary).ToList();
+        
+        // Находим изменения
+        var librariesToAdd = newLibrariesIds.Except(currentLibrariesIds).ToList();
+        var librariesToRemove = currentLibrariesIds.Except(newLibrariesIds).ToList();
+        
+        // Удаляем старые связи
+        foreach (var libraryId in librariesToRemove)
+        {
+            var library = task.Libraries.FirstOrDefault(tl => tl.IdLibrary == libraryId);
+            if (library != null)
+            {
+                _repository.RemoveTaskLibrary(library);
+            }
+        }
+        
+        // Добавляем новые связи
+        foreach (var libraryId in librariesToAdd)
+        {
+            var library = new TaskLibrary(task.Id, libraryId);
+            // Явно добавляем связь через репозиторий
+            await _repository.AddTaskLibraryAsync(library);
         }
     }
     

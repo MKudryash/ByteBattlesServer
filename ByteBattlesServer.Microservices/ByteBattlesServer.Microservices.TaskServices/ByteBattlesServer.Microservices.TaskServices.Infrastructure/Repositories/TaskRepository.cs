@@ -21,6 +21,8 @@ public class TaskRepository : ITaskRepository
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
             .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Id == id);
     }
@@ -28,11 +30,19 @@ public class TaskRepository : ITaskRepository
     {
         _dbContext.TaskLanguages.Remove(taskLanguage);
     }
+
+    public void RemoveTaskLibrary(TaskLibrary taskLibrary)
+    {
+        _dbContext.TaskLibraries.Remove(taskLibrary);
+    }
+
     public async Task<Task> GetByTitleAsync(string title)
     {
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
             .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Title == title);
     }
@@ -67,10 +77,25 @@ public class TaskRepository : ITaskRepository
             .Include(tl => tl.Language)
             .ToListAsync();
     }
+
+    public async Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId)
+    {
+        return await _dbContext.TaskLibraries
+            .Where(tl => tl.IdTask == taskId)
+            .Include(tl => tl.Library)
+            .ToListAsync();
+    }
+
     public async System.Threading.Tasks.Task AddTaskLanguageAsync(TaskLanguage taskLanguage)
     {
         await _dbContext.TaskLanguages.AddAsync(taskLanguage);
     }
+
+    public async System.Threading.Tasks.Task AddTaskLibraryAsync(TaskLibrary taskLibrary)
+    {
+        await _dbContext.TaskLibraries.AddAsync(taskLibrary);
+    }
+    
 
     public async Task<List<Task>> SearchTask(Difficulty? difficulty, Guid? languageId, string? searchTerm)
     {
@@ -99,6 +124,8 @@ public class TaskRepository : ITaskRepository
         var query = _dbContext.Tasks
             .Include(t => t.TaskLanguages)
             .ThenInclude(tl => tl.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
             .Include(t => t.TestCases)
             .AsQueryable();
 

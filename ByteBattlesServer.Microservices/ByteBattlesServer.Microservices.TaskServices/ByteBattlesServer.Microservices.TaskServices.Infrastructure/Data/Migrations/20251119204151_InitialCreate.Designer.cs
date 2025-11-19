@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251119194716_InitialCreate")]
+    [Migration("20251119204151_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -228,6 +228,27 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.ToTable("TaskLanguages", (string)null);
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLibrary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdLibrary")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdTask")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdLibrary");
+
+                    b.HasIndex("IdTask");
+
+                    b.ToTable("TaskLibraries");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
                 {
                     b.Property<Guid>("Id")
@@ -295,6 +316,25 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLibrary", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", "Library")
+                        .WithMany("Libraries")
+                        .HasForeignKey("IdLibrary")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", "Task")
+                        .WithMany("Libraries")
+                        .HasForeignKey("IdTask")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Library");
+
+                    b.Navigation("Task");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
                 {
                     b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", "Task")
@@ -313,8 +353,15 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.Navigation("TasksLanguage");
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", b =>
+                {
+                    b.Navigation("Libraries");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", b =>
                 {
+                    b.Navigation("Libraries");
+
                     b.Navigation("TaskLanguages");
 
                     b.Navigation("TestCases");

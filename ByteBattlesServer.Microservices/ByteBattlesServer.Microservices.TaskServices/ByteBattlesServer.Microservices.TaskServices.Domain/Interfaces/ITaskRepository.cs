@@ -16,8 +16,11 @@ public interface ITaskRepository
     
     
     Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId);
+    Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId);
     void RemoveTaskLanguage(TaskLanguage taskLanguage);
+    void RemoveTaskLibrary(TaskLibrary taskLibrary);
     System.Threading.Tasks.Task AddTaskLanguageAsync(TaskLanguage taskLanguage);
+    System.Threading.Tasks.Task AddTaskLibraryAsync(TaskLibrary taskLibrary);
 
     
     Task<List<TestCases>> GetTestCasesAsync(Guid taskId);

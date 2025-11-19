@@ -1186,7 +1186,8 @@ export default {
         returnType: this.taskData.returnType,
         patternMain: this.taskData.mainTemplate,
         patternFunction: this.taskData.codeTemplate,
-        languageId: this.formatLanguageIds()
+        languageId: this.formatLanguageIds(),
+        libraryId: this.formatLibrariesIds()
       };
 
       console.log('Подготовленные данные для сохранения:', taskToSave);
@@ -1224,6 +1225,10 @@ export default {
       // Преобразуем выбранный язык в массив UUID
       // Если поддерживается только один язык, возвращаем массив с одним элементом
       return this.taskData.language ? [this.taskData.language] : [];
+    },
+
+    formatLibrariesIds(){
+      return this.taskData.libraries ? this.taskData.libraries : [];
     },
 
 // Метод для отправки на сервер

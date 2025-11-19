@@ -68,7 +68,8 @@ public static class TaskEndpoints
                     dto.PatternFunction, 
                     dto.Parameters,
                     dto.ReturnType,
-                    dto.LanguageId);
+                    dto.LanguageId,
+                    dto.LibraryId);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/task/{result.Id}", result);
             }
@@ -116,7 +117,8 @@ public static class TaskEndpoints
                     dto.PatternFunction, 
                     dto.Parameters,
                     dto.ReturnType,
-                    dto.LanguageIds);
+                    dto.LanguageIds,
+                    dto.LibrariesIds);
                 
                 var result = await mediator.Send(command);
                 return Results.Ok(result);

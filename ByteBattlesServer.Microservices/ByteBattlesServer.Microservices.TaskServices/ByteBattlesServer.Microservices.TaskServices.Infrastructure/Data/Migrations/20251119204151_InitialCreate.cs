@@ -128,6 +128,31 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TaskLibraries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    IdTask = table.Column<Guid>(type: "uuid", nullable: false),
+                    IdLibrary = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TaskLibraries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TaskLibraries_Libraries_IdLibrary",
+                        column: x => x.IdLibrary,
+                        principalTable: "Libraries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TaskLibraries_Tasks_IdTask",
+                        column: x => x.IdTask,
+                        principalTable: "Tasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Languages_CreatedAd",
                 table: "Languages",
@@ -167,6 +192,16 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_TaskLibraries_IdLibrary",
+                table: "TaskLibraries",
+                column: "IdLibrary");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TaskLibraries_IdTask",
+                table: "TaskLibraries",
+                column: "IdTask");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tasks_Author",
                 table: "Tasks",
                 column: "Author");
@@ -191,19 +226,22 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Libraries");
+                name: "TaskLanguages");
 
             migrationBuilder.DropTable(
-                name: "TaskLanguages");
+                name: "TaskLibraries");
 
             migrationBuilder.DropTable(
                 name: "TestsTasks");
 
             migrationBuilder.DropTable(
-                name: "Languages");
+                name: "Libraries");
 
             migrationBuilder.DropTable(
                 name: "Tasks");
+
+            migrationBuilder.DropTable(
+                name: "Languages");
         }
     }
 }

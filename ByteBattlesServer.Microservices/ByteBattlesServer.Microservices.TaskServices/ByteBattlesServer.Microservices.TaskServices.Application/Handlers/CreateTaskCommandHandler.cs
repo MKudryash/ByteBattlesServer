@@ -37,6 +37,16 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
             languages.Add(language);
         }
         
+        var libraries = new List<Library>();
+
+        foreach (var librariesId in request.LibrariesIds)
+        {
+            var library = await _languageRepository.GetLibraryByIdAsync(librariesId);
+            if (library == null)
+                throw new LibraryNotFoundException(librariesId);
+            libraries.Add(library);
+        }
+        
         
         var task = new Domain.Entities.Task(request.Title, request.Description,
             request.Difficulty, request.Author,request.FunctionName,request.PatternMain,request.PatternFunction, request.Parameters,request.ReturnType);
@@ -49,7 +59,13 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
             task.TaskLanguages.Add(taskLanguage);
         }
 
-        
+        foreach (var library in libraries)
+        {
+            var taskLibrary = new TaskLibrary(task.Id, library.Id);
+            task.Libraries.Add(taskLibrary);
+        }
+
+
         await _taskRepository.AddAsync(task);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -29,6 +29,12 @@ public class RemoveTaskCommandHandler : IRequestHandler<RemoveTaskCommand, Delet
         foreach (var language in taskLanguage)
         {
             _repository.RemoveTaskLanguage(language);
+        }  
+        
+        var taskLibrary = await _repository.GetTaskLibraryAsync(task.Id);
+        foreach (var library in taskLibrary)
+        {
+            _repository.RemoveTaskLibrary(library);
         }
 
         _repository.Delete(task);
