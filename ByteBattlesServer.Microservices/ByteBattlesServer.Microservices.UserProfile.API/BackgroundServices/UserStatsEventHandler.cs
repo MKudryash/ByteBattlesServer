@@ -49,7 +49,7 @@ public class UserStatsEventHandler : BackgroundService
     private async Task HandleUserStatsEvent(UserStatsIntegrationEvent arg)
     {
         _logger.LogInformation("🟣 [UserProfile] Received user stats update for user: {UserId}, successful: {IsSuccessful}", 
-            arg.UserId, arg.isSuccessful);
+            arg.UserId, arg.IsSuccessful);
 
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -57,11 +57,13 @@ public class UserStatsEventHandler : BackgroundService
         try
         {
             var command = new UpdateUserStatsCommand(
-                arg.UserId, 
-                arg.isSuccessful, 
-                arg.difficulty, 
-                arg.executionTime, 
-                arg.taskId);
+                arg.UserId,
+                arg.IsSuccessful,
+                arg.Difficulty,
+                arg.ExecutionTime,
+                arg.TaskId,
+                arg.ProblemTitle,
+                arg.Language);
 
             var result = await mediator.Send(command);
 

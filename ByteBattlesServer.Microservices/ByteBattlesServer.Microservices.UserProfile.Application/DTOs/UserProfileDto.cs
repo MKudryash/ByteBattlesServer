@@ -17,5 +17,7 @@ public class UserProfileDto
     public bool IsPublic { get; set; }
     public List<UserAchievementDto> Achievements { get; set; } = new();
     public List<BattleResultDto> RecentBattles { get; set; } = new();
+    public List<RecentActivityDto> RecentActivities { get; set; } = new();
+    public List<RecentProblemDto> RecentProblems { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 }

@@ -116,10 +116,10 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
             var userUpdateStats = new UserStatsIntegrationEvent()
             {
                 UserId = request.UserId,
-                isSuccessful = finalStatus == SolutionStatus.Completed,
-                difficulty = request.Difficulty,
-                executionTime = averageExecutionTime,
-                taskId = request.TaskId
+                IsSuccessful = finalStatus == SolutionStatus.Completed,
+                Difficulty = request.Difficulty,
+                ExecutionTime = averageExecutionTime,
+                TaskId = request.TaskId
             };
             _messageBus.Publish(
                 userUpdateStats,

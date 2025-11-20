@@ -10,5 +10,7 @@ public record UpdateUserStatsCommand(
     bool isSuccessful,
     TaskDifficulty difficulty,
     TimeSpan executionTime,
-    Guid taskId
+    Guid taskId,
+    string problemTitle,
+    string language
 ) : IRequest<UserProfileDto>;

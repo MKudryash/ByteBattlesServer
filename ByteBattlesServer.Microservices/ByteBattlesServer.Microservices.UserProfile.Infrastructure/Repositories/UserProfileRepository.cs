@@ -17,8 +17,10 @@ public class UserProfileRepository : IUserProfileRepository
     {
         return await _context.UserProfiles
             .Include(up => up.Achievements)
-            .ThenInclude(ua => ua.Achievement)
+                .ThenInclude(ua => ua.Achievement)
             .Include(up => up.BattleHistory)
+            .Include(up => up.RecentActivities)
+            .Include(up => up.RecentProblems)
             .FirstOrDefaultAsync(up => up.Id == id);
     }
 
@@ -26,8 +28,10 @@ public class UserProfileRepository : IUserProfileRepository
     {
         return await _context.UserProfiles
             .Include(up => up.Achievements)
-            .ThenInclude(ua => ua.Achievement)
+                .ThenInclude(ua => ua.Achievement)
             .Include(up => up.BattleHistory)
+            .Include(up => up.RecentActivities)
+            .Include(up => up.RecentProblems)
             .FirstOrDefaultAsync(up => up.UserId == userId);
     }
 
@@ -44,7 +48,8 @@ public class UserProfileRepository : IUserProfileRepository
     {
         return await _context.UserProfiles
             .Where(up => up.IsPublic && 
-                (up.UserName.Contains(searchTerm) || up.Bio.Contains(searchTerm)))
+                (up.UserName.Contains(searchTerm) || 
+                 (up.Bio != null && up.Bio.Contains(searchTerm))))
             .OrderByDescending(up => up.Stats.TotalExperience)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -59,6 +64,67 @@ public class UserProfileRepository : IUserProfileRepository
     public void Update(Domain.Entities.UserProfile userProfile)
     {
         _context.UserProfiles.Update(userProfile);
+    }
+    
+
+    public async Task AddRecentActivityAsync(Domain.Entities.RecentActivity activity)
+    {
+        await _context.RecentActivities.AddAsync(activity);
+    }
+
+    public async Task AddRecentProblemAsync(Domain.Entities.RecentProblem problem)
+    {
+        await _context.RecentProblems.AddAsync(problem);
+    }
+
+    public async Task<List<Domain.Entities.RecentActivity>> GetRecentActivitiesAsync(Guid userProfileId, int count = 50)
+    {
+        return await _context.RecentActivities
+            .Where(ra => ra.UserProfileId == userProfileId)
+            .OrderByDescending(ra => ra.Timestamp)
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<List<Domain.Entities.RecentProblem>> GetRecentProblemsAsync(Guid userProfileId, int count = 20)
+    {
+        return await _context.RecentProblems
+            .Where(rp => rp.UserProfileId == userProfileId)
+            .OrderByDescending(rp => rp.SolvedAt)
+            .Take(count)
+            .ToListAsync();
+    }
+    
+
+    // Метод для получения пользователя с недавней активностью (оптимизированная загрузка)
+    public async Task<Domain.Entities.UserProfile> GetUserWithRecentActivityAsync(Guid userId)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.RecentActivities.OrderByDescending(ra => ra.Timestamp).Take(10))
+            .Include(up => up.RecentProblems.OrderByDescending(rp => rp.SolvedAt).Take(10))
+            .Include(up => up.Achievements.OrderByDescending(a => a.AchievedAt).Take(5))
+                .ThenInclude(ua => ua.Achievement)
+            .FirstOrDefaultAsync(up => up.UserId == userId);
+    }
+
+    // Метод для проверки существования проблемы в истории пользователя
+    public async Task<bool> HasUserSolvedProblemAsync(Guid userProfileId, Guid problemId)
+    {
+        return await _context.RecentProblems
+            .AnyAsync(rp => rp.UserProfileId == userProfileId && rp.ProblemId == problemId);
+    }
+
+    // Метод для получения статистики по активностям
+    public async Task<(int TotalActivities, int TodayActivities)> GetActivityStatsAsync(Guid userProfileId)
+    {
+        var today = DateTime.UtcNow.Date;
         
+        var totalActivities = await _context.RecentActivities
+            .CountAsync(ra => ra.UserProfileId == userProfileId);
+            
+        var todayActivities = await _context.RecentActivities
+            .CountAsync(ra => ra.UserProfileId == userProfileId && ra.Timestamp.Date == today);
+
+        return (totalActivities, todayActivities);
     }
 }

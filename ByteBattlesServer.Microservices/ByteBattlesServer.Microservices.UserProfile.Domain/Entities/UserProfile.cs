@@ -25,6 +25,12 @@ public class UserProfile : Entity
 
     private readonly List<BattleResult> _battleHistory = new();
     public IReadOnlyCollection<BattleResult> BattleHistory => _battleHistory.AsReadOnly();
+    
+    private readonly List<RecentActivity> _recentActivities = new();
+    public IReadOnlyCollection<RecentActivity> RecentActivities => _recentActivities.AsReadOnly();
+
+    private readonly List<RecentProblem> _recentProblems = new();
+    public IReadOnlyCollection<RecentProblem> RecentProblems => _recentProblems.AsReadOnly();
 
     private UserProfile() { }
 
@@ -72,6 +78,32 @@ public class UserProfile : Entity
         AvatarUrl = avatarUrl;
         UpdateTimestamps();
     }
+    public void AddRecentActivity(ActivityType type, string title, string description, int experienceGained = 0)
+    {
+        var activity = new RecentActivity(Id, type, title, description, experienceGained);
+        _recentActivities.Add(activity);
+        
+        if (_recentActivities.Count > 50)
+        {
+            _recentActivities.RemoveAt(0);
+        }
+        
+        UpdateTimestamps();
+    }
+
+    public void AddRecentProblem(Guid problemId, string title, TaskDifficulty difficulty, string language)
+    {
+        var recentProblem = new RecentProblem(Id, problemId, title, difficulty, language);
+        _recentProblems.Add(recentProblem);
+        
+        if (_recentProblems.Count > 20)
+        {
+            _recentProblems.RemoveAt(0);
+        }
+        
+        UpdateTimestamps();
+    }
+
     public void UpdateSettings(
         string? preferredLanguage = null,
         string? theme = null,
@@ -97,7 +129,8 @@ public class UserProfile : Entity
         UpdateTimestamps();
     }
 
-    public void UpdateProblemStats(bool isSuccessful, TaskDifficulty difficulty, TimeSpan executionTime, Guid taskId)
+    public void UpdateProblemStats(bool isSuccessful, TaskDifficulty difficulty, 
+        TimeSpan executionTime, Guid taskId, string problemTitle, string language)
     {
         if (Stats == null)
         {
@@ -105,7 +138,44 @@ public class UserProfile : Entity
         }
         
         Stats.UpdateProblemStats(isSuccessful, difficulty, executionTime, taskId);
-        //CheckAndUnlockAchievements();
+        
+        if (isSuccessful)
+        {
+            AddRecentProblem(taskId, problemTitle, difficulty, language);
+            
+            var expGained = difficulty switch
+            {
+                TaskDifficulty.Easy => 10,
+                TaskDifficulty.Medium => 25,
+                TaskDifficulty.Hard => 50,
+                _ => 0
+            };
+            
+            AddRecentActivity(ActivityType.ProblemSolved, 
+                $"Решена задача: {problemTitle}", 
+                $"Сложность: {difficulty}, Язык: {language}",
+                expGained);
+        }
+        
+        UpdateLevel();
+        UpdateTimestamps();
+    }
+
+
+
+
+    public void AddBattleResult(BattleResult battleResult)
+    {
+        _battleHistory.Add(battleResult);
+        Stats.UpdateStats(battleResult);
+        
+        // Добавляем активность о битве
+        var activityDescription = $"Результат: {battleResult.Result}, Опыт: {battleResult.ExperienceGained}";
+        AddRecentActivity(ActivityType.Battle, 
+            $"Завершена битва", 
+            activityDescription,
+            battleResult.ExperienceGained);
+            
         UpdateLevel();
         UpdateTimestamps();
     }
@@ -116,16 +186,14 @@ public class UserProfile : Entity
         {
             var userAchievement = new UserAchievement(Id, achievement.Id);
             _achievements.Add(userAchievement);
+            
+            // Добавляем активность о достижении
+            AddRecentActivity(ActivityType.Achievement, 
+                "Получено достижение", 
+                achievement.Description);
+                
             UpdateTimestamps();
         }
-    }
-
-    public void AddBattleResult(BattleResult battleResult)
-    {
-        _battleHistory.Add(battleResult);
-        Stats.UpdateStats(battleResult);
-        UpdateLevel();
-        UpdateTimestamps();
     }
 
     private void UpdateLevel()

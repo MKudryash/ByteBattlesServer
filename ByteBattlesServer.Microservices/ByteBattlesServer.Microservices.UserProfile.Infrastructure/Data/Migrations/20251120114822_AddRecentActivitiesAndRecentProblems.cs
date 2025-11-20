@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddRecentActivitiesAndRecentProblems : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -76,6 +76,52 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     table.PrimaryKey("PK_battle_results", x => x.id);
                     table.ForeignKey(
                         name: "FK_battle_results_user_profiles_user_profile_id",
+                        column: x => x.user_profile_id,
+                        principalTable: "user_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "recent_activities",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    experience_gained = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_recent_activities", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_recent_activities_user_profiles_user_profile_id",
+                        column: x => x.user_profile_id,
+                        principalTable: "user_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "recent_problems",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    problem_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    difficulty = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    solved_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    language = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_recent_problems", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_recent_problems_user_profiles_user_profile_id",
                         column: x => x.user_profile_id,
                         principalTable: "user_profiles",
                         principalColumn: "id",
@@ -167,6 +213,62 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 column: "user_profile_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_recent_activities_timestamp",
+                table: "recent_activities",
+                column: "timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_activities_type",
+                table: "recent_activities",
+                column: "type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_activities_user_profile_id",
+                table: "recent_activities",
+                column: "user_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_activities_user_profile_id_timestamp",
+                table: "recent_activities",
+                columns: new[] { "user_profile_id", "timestamp" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_difficulty",
+                table: "recent_problems",
+                column: "difficulty");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_language",
+                table: "recent_problems",
+                column: "language");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_problem_id",
+                table: "recent_problems",
+                column: "problem_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_solved_at",
+                table: "recent_problems",
+                column: "solved_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_user_profile_id",
+                table: "recent_problems",
+                column: "user_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_user_profile_id_problem_id",
+                table: "recent_problems",
+                columns: new[] { "user_profile_id", "problem_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_recent_problems_user_profile_id_solved_at",
+                table: "recent_problems",
+                columns: new[] { "user_profile_id", "solved_at" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_achievements_achievement_id",
                 table: "user_achievements",
                 column: "achievement_id");
@@ -214,6 +316,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
         {
             migrationBuilder.DropTable(
                 name: "battle_results");
+
+            migrationBuilder.DropTable(
+                name: "recent_activities");
+
+            migrationBuilder.DropTable(
+                name: "recent_problems");
 
             migrationBuilder.DropTable(
                 name: "user_achievements");

@@ -38,7 +38,7 @@ public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsComman
         }
         
         userProfile.UpdateProblemStats(request.isSuccessful,request.difficulty,
-            request.executionTime,request.taskId);
+            request.executionTime,request.taskId,request.problemTitle, request.language);
         
         userProfile.UpdatedAt = DateTime.UtcNow;
         _userProfileRepository.Update(userProfile);

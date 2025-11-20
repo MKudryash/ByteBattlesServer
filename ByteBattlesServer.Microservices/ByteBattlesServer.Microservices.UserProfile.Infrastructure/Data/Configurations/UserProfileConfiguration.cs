@@ -182,6 +182,17 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .WithOne(br => br.UserProfile)
             .HasForeignKey(br => br.UserProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        // UserProfileConfiguration.cs
+        builder.HasMany(u => u.RecentActivities)
+            .WithOne(ra => ra.UserProfile)
+            .HasForeignKey(ra => ra.UserProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(u => u.RecentProblems)
+            .WithOne(rp => rp.UserProfile)
+            .HasForeignKey(rp => rp.UserProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
         builder.HasIndex(up => up.UserId)

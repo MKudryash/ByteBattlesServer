@@ -6,6 +6,7 @@ using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Application.Queries;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
@@ -116,7 +117,7 @@ public static class UserProfileEndpoints
             {
                 var userId = GetUserIdFromClaims(httpContext);
                 var command = new UpdateUserStatsCommand(
-                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId);
+                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId, dto.problemTitle, dto.language);
                     
                 await mediator.Send(command);
                 return Results.Ok(new { message = "Settings updated successfully" });
@@ -239,6 +240,118 @@ public static class UserProfileEndpoints
         .WithSummary("Search users by name or bio")
         .AllowAnonymous()
         .Produces<List<UserProfileDto>>(StatusCodes.Status200OK);
+        
+        
+        // Новые методы для активности и решенных задач
+        group.MapGet("/me/activity", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int? activitiesLimit, [FromQuery] int? problemsLimit) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetUserActivityQuery(userId, activitiesLimit, problemsLimit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving user activity: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyActivity")
+        .WithSummary("Get current user's recent activity and problems")
+        .Produces<UserActivityResponse>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        group.MapGet("/me/recent-activities", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int limit = 50) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetRecentActivitiesQuery(userId, limit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving recent activities: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyRecentActivities")
+        .WithSummary("Get current user's recent activities")
+        .Produces<List<RecentActivityDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        group.MapGet("/me/recent-problems", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int limit = 20) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetRecentProblemsQuery(userId, limit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving recent problems: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyRecentProblems")
+        .WithSummary("Get current user's recently solved problems")
+        .Produces<List<RecentProblemDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        // Public endpoint для получения активности других пользователей
+        group.MapGet("/{profileId:guid}/activity", async (Guid profileId, IMediator mediator, 
+            [FromQuery] int? activitiesLimit, [FromQuery] int? problemsLimit) =>
+        {
+            try
+            {
+                var query = new GetUserActivityQuery(profileId, activitiesLimit, problemsLimit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ProfileAccessDeniedException ex)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving user activity: {ex.Message}");
+            }
+        })
+        .WithName("GetUserActivity")
+        .WithSummary("Get user's recent activity and problems")
+        .AllowAnonymous()
+        .Produces<UserActivityResponse>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status403Forbidden);
+        
     }
 
 

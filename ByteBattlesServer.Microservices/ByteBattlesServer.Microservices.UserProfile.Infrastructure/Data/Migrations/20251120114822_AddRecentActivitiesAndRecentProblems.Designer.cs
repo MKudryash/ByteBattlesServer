@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(UserProfileDbContext))]
-    [Migration("20251103173634_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251120114822_AddRecentActivitiesAndRecentProblems")]
+    partial class AddRecentActivitiesAndRecentProblems
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -132,6 +132,115 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.ToTable("battle_results", (string)null);
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("ExperienceGained")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("experience_gained");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.HasIndex("UserProfileId", "Timestamp");
+
+                    b.ToTable("recent_activities", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentProblem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("difficulty");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("language");
+
+                    b.Property<Guid>("ProblemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("problem_id");
+
+                    b.Property<DateTime>("SolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("solved_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Difficulty");
+
+                    b.HasIndex("Language");
+
+                    b.HasIndex("ProblemId");
+
+                    b.HasIndex("SolvedAt");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.HasIndex("UserProfileId", "ProblemId")
+                        .IsUnique();
+
+                    b.HasIndex("UserProfileId", "SolvedAt");
+
+                    b.ToTable("recent_problems", (string)null);
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserAchievement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -243,6 +352,28 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 {
                     b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
                         .WithMany("BattleHistory")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentActivity", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("RecentActivities")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentProblem", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("RecentProblems")
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -439,6 +570,10 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.Navigation("Achievements");
 
                     b.Navigation("BattleHistory");
+
+                    b.Navigation("RecentActivities");
+
+                    b.Navigation("RecentProblems");
                 });
 #pragma warning restore 612, 618
         }
