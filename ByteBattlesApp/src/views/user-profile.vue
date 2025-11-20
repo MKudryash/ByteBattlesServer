@@ -466,57 +466,6 @@
                       </ul>
                     </div>
                   </div>
-
-                  <div class="form-section retro-card">
-                    <h3>Настройки безопасности</h3>
-
-                    <div class="security-settings">
-                      <div class="setting-item">
-                        <label class="setting-label">Двухфакторная аутентификация</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="securitySettings.twoFactorAuth"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Добавьте дополнительный уровень защиты к вашему аккаунту
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Уведомления о входе</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="securitySettings.loginNotifications"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Получать уведомления о новых входах в аккаунт
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Сессии аккаунта</label>
-                        <div class="setting-control">
-                          <button @click="showSessions = true" class="btn-text btn-sm">
-                            Управление
-                          </button>
-                        </div>
-                        <p class="setting-description">
-                          Просмотр и управление активными сессиями
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
                 </div>
 
                 <div class="form-actions">
@@ -554,12 +503,6 @@
                       <div class="stat-data">
                         <span class="stat-value">{{ userStats.solvedTasks }}</span>
                         <span class="stat-label">Решено студентами</span>
-                      </div>
-                    </div>
-                    <div class="stat-card retro-card">
-                      <div class="stat-data">
-                        <span class="stat-value">{{ userStats.averageRating }}/5</span>
-                        <span class="stat-label">Средний рейтинг</span>
                       </div>
                     </div>
                     <div class="stat-card retro-card">
@@ -719,7 +662,6 @@ export default {
       navItems: [
         { id: 'personal', name: 'Личная информация',  badge: null },
         { id: 'security', name: 'Безопасность',  badge: null },
-        { id: 'notifications', name: 'Уведомления',  badge: null },
         { id: 'stats', name: 'Статистика', badge: null }
       ],
 

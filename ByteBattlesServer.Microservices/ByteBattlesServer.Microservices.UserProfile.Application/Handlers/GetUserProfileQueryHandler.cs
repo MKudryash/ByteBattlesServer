@@ -30,7 +30,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
 
     private static UserProfileDto MapToUserProfileDto(Domain.Entities.UserProfile userProfile)
     {
-        return new UserProfileDto
+         return new UserProfileDto
         {
             Id = userProfile.Id,
             UserId = userProfile.UserId,
@@ -49,8 +49,27 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
                 BattleInvitations = userProfile.Settings.BattleInvitations,
                 EmailNotifications = userProfile.Settings.EmailNotifications,
                 PreferredLanguage = userProfile.Settings.PreferredLanguage,
+            },
+            Stats = new UserStatsDto
+            {
+                SuccessRate = userProfile.Stats.SuccessRate,
+                TotalExecutionTime = userProfile.Stats.TotalExecutionTime,
+                SolvedTaskIds = userProfile.Stats.SolvedTaskIds,
+                TotalSubmissions = userProfile.Stats.TotalSubmissions,
+                SuccessfulSubmissions = userProfile.Stats.SuccessfulSubmissions,
+                TotalBattles = userProfile.Stats.TotalBattles,
+                TotalProblemsSolved = userProfile.Stats.TotalProblemsSolved,
+                WinRate = userProfile.Stats.WinRate,
+                Wins = userProfile.Stats.Wins,
+                Losses = userProfile.Stats.Losses,
+                Draws = userProfile.Stats.Draws,
+                CurrentStreak = userProfile.Stats.CurrentStreak,
+                MaxStreak = userProfile.Stats.MaxStreak,
+                EasyProblemsSolved = userProfile.Stats.EasyProblemsSolved,
+                HardProblemsSolved = userProfile.Stats.HardProblemsSolved,
+                MediumProblemsSolved = userProfile.Stats.MediumProblemsSolved,
+                AverageExecutionTime = userProfile.Stats.AverageExecutionTime,
             }
-
         };
     }
 }

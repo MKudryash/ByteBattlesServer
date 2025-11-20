@@ -34,14 +34,14 @@ public class UserProfile : Entity
 
     private UserProfile() { }
 
-    public UserProfile(Guid userId, string userName)
+    public UserProfile(Guid userId, string userName, bool isPublic)
     {
         UserId = userId;
         UserName = userName;
         Level = UserLevel.Beginner;
         Stats = new UserStats();
         Settings = new UserSettings();
-        IsPublic = true;
+        IsPublic = isPublic;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }

@@ -114,21 +114,18 @@
                           v-if="userProfile.avatar"
                       >
                       <div class="avatar-placeholder" v-else>
-                        {{ userProfile.name.charAt(0).toUpperCase() }}
+                        {{ userProfile.userName.charAt(0).toUpperCase() }}
                       </div>
                       <div class="online-status" :class="{ online: userProfile.isOnline }">
                         {{ userProfile.isOnline ? 'Онлайн' : 'Не в сети' }}
                       </div>
                     </div>
-                    <button @click="editAvatar" class="btn-text btn-sm avatar-edit-btn">
-                      <span class="btn-icon">📷</span>
-                      Сменить фото
-                    </button>
+
                   </div>
 
                   <div class="profile-basic-info">
                     <h1 class="profile-name">{{ userProfile.name }}</h1>
-                    <p class="profile-username">@{{ userProfile.username }}</p>
+                    <p class="profile-username">@{{ userProfile.userName }}</p>
 
                     <div class="profile-badges">
                       <span class="level-badge" :class="userProfile.level">
@@ -215,45 +212,8 @@
                     </a>
                   </div>
                 </div>
-
-                <button @click="editContacts" class="btn-outline btn-sm full-width">
-                  Редактировать контакты
-                </button>
               </div>
 
-              <!-- Навыки и технологии -->
-              <div class="skills-card retro-card">
-                <h3 class="card-title">
-                  Технологии
-                </h3>
-
-                <div class="skills-list">
-                  <div
-                      v-for="skill in userProfile.skills"
-                      :key="skill.name"
-                      class="skill-item"
-                  >
-                    <div class="skill-info">
-                      <span class="skill-icon">{{ skill.icon }}</span>
-                      <span class="skill-name">{{ skill.name }}</span>
-                    </div>
-                    <div class="skill-level">
-                      <div class="level-dots">
-                        <span
-                            v-for="n in 5"
-                            :key="n"
-                            :class="['dot', { active: n <= skill.level }]"
-                        ></span>
-                      </div>
-                      <span class="level-text">{{ getSkillLevelText(skill.level) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button @click="editSkills" class="btn-outline btn-sm full-width">
-                  Настроить навыки
-                </button>
-              </div>
             </aside>
 
             <!-- Основное содержимое профиля -->
@@ -285,18 +245,12 @@
                       <h2 class="card-title">
                         О себе
                       </h2>
-                      <button @click="editBio" class="btn-text btn-sm">
-                        Редактировать
-                      </button>
                     </div>
 
                     <div class="bio-content">
                       <p v-if="userProfile.bio" class="bio-text">{{ userProfile.bio }}</p>
                       <div v-else class="bio-empty">
                         <p>Расскажите о себе, чтобы другие участники могли узнать вас лучше</p>
-                        <button @click="editBio" class="btn-outline btn-sm">
-                          Добавить описание
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -331,9 +285,6 @@
                         Достижения
                         <span class="achievements-count">({{ userProfile.achievements.length }})</span>
                       </h2>
-                      <router-link to="/achievements" class="btn-text btn-sm">
-                        Все достижения
-                      </router-link>
                     </div>
 
                     <div class="achievements-grid">
@@ -511,9 +462,6 @@
                         </div>
 
                         <div class="task-actions">
-                          <button @click="viewTask(task.id)" class="btn-outline btn-sm">
-                            Посмотреть
-                          </button>
                           <button @click="reattemptTask(task.id)" class="btn-text btn-sm">
                           </button>
                         </div>
@@ -537,156 +485,6 @@
 
                     <div class="empty-state" v-if="filteredSolvedTasks.length === 0">
                       <h3>Задачи не найдены</h3>
-                      <p>Попробуйте изменить фильтры или начать решать задачи</p>
-                      <router-link to="/tasks" class="btn-primary">
-                        Начать решать
-                      </router-link>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Вкладка: Настройки -->
-                <div v-if="activeTab === 'settings'" class="tab-pane profile-section">
-                  <div class="settings-card retro-card">
-                    <h2 class="card-title">
-                      Настройки профиля
-                    </h2>
-
-                    <div class="settings-sections">
-                      <!-- Основные настройки -->
-                      <div class="settings-section">
-                        <h3 class="section-title">Основные настройки</h3>
-
-                        <div class="settings-grid">
-                          <div class="setting-item">
-                            <label class="setting-label">Уведомления по email</label>
-                            <div class="setting-control">
-                              <label class="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    v-model="userSettings.emailNotifications"
-                                >
-                                <span class="toggle-slider"></span>
-                              </label>
-                            </div>
-                          </div>
-
-                          <div class="setting-item">
-                            <label class="setting-label">Приглашения в баттлы</label>
-                            <div class="setting-control">
-                              <label class="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    v-model="userSettings.battleInvitations"
-                                >
-                                <span class="toggle-slider"></span>
-                              </label>
-                            </div>
-                          </div>
-
-                          <div class="setting-item">
-                            <label class="setting-label">Уведомления о достижениях</label>
-                            <div class="setting-control">
-                              <label class="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    v-model="userSettings.achievementNotifications"
-                                >
-                                <span class="toggle-slider"></span>
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Внешний вид -->
-                      <div class="settings-section">
-                        <h3 class="section-title">Внешний вид</h3>
-
-                        <div class="settings-grid">
-                          <div class="setting-item">
-                            <label class="setting-label">Тема интерфейса</label>
-                            <div class="setting-control">
-                              <select v-model="userSettings.theme" class="vintage-border">
-                                <option value="light">Светлая</option>
-                                <option value="dark">Темная</option>
-                                <option value="auto">Системная</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div class="setting-item">
-                            <label class="setting-label">Тема редактора кода</label>
-                            <div class="setting-control">
-                              <select v-model="userSettings.codeEditorTheme" class="vintage-border">
-                                <option value="vs">Visual Studio</option>
-                                <option value="vs-dark">Visual Studio Dark</option>
-                                <option value="hc-black">High Contrast</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div class="setting-item">
-                            <label class="setting-label">Язык по умолчанию</label>
-                            <div class="setting-control">
-                              <select v-model="userSettings.preferredLanguage" class="vintage-border">
-                                <option value="python">Python</option>
-                                <option value="java">Java</option>
-                                <option value="javascript">JavaScript</option>
-                                <option value="cpp">C++</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Приватность -->
-                      <div class="settings-section">
-                        <h3 class="section-title">Приватность</h3>
-
-                        <div class="settings-grid">
-                          <div class="setting-item">
-                            <label class="setting-label">Публичный профиль</label>
-                            <div class="setting-control">
-                              <label class="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    v-model="userSettings.isPublic"
-                                >
-                                <span class="toggle-slider"></span>
-                              </label>
-                            </div>
-                            <p class="setting-description">
-                              Разрешить другим пользователям просматривать ваш профиль
-                            </p>
-                          </div>
-
-                          <div class="setting-item">
-                            <label class="setting-label">Показывать email</label>
-                            <div class="setting-control">
-                              <label class="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    v-model="userSettings.showEmail"
-                                >
-                                <span class="toggle-slider"></span>
-                              </label>
-                            </div>
-                            <p class="setting-description">
-                              Отображать email в публичном профиле
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="settings-actions">
-                      <button @click="saveSettings" class="btn-primary">
-                        Сохранить настройки
-                      </button>
-                      <button @click="resetSettings" class="btn-outline">
-                        Сбросить
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -705,6 +503,7 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
+import { userProfilesAPI, userProfileHelpers, USER_PROFILE_CONSTANTS } from '../api/user'
 
 export default {
   name: 'StudentProfile',
@@ -718,133 +517,66 @@ export default {
       activeTab: 'overview',
       taskFilter: 'all',
       taskSort: 'recent',
+      isLoading: false,
+      error: null,
 
       tabs: [
         { id: 'overview', name: 'Обзор', badge: null },
-        { id: 'stats', name: 'Статистика',  badge: null },
-        { id: 'solved', name: 'Решенные задачи', badge: null },
-        { id: 'settings', name: 'Настройки', badge: null }
+        { id: 'stats', name: 'Статистика', badge: null },
+        { id: 'solved', name: 'Решенные задачи', badge: null }
       ],
 
       userProfile: {
-        id: 1,
-        name: 'Иван Петров',
-        username: 'ivan_petrov',
-        email: 'ivan.petrov@example.com',
-        bio: 'Студент компьютерных наук, увлекаюсь алгоритмами и веб-разработкой. Люблю решать сложные задачи и изучать новые технологии.',
-        avatar: '',
-        level: 'intermediate',
-        rating: 1845,
-        completedTasks: 67,
-        successRate: 78,
-        rank: 42,
-        levelProgress: 65,
-        isOnline: true,
-        joinDate: '2023-01-15',
-        country: 'Россия',
-        company: 'Студент Университета',
-        githubUrl: 'https://github.com/ivanpetrov',
-        linkedinUrl: 'https://linkedin.com/in/ivanpetrov',
-        website: 'https://ivanpetrov.dev',
-        skills: [
-          { name: 'Python', icon: '🐍', level: 4 },
-          { name: 'JavaScript', icon: '📜', level: 3 },
-          { name: 'Java', icon: '☕', level: 3 },
-          { name: 'SQL', icon: '🗄️', level: 2 },
-          { name: 'Git', icon: '📚', level: 3 }
-        ],
-        achievements: [
-          { id: 1, name: 'Первая задача', icon: '🎯', description: 'Решил первую задачу на платформе', date: '2023-01-20' },
-          { id: 2, name: 'Алгоритмист', icon: '⚡', description: 'Решил 50 алгоритмических задач', date: '2023-03-15' },
-          { id: 3, name: 'Неделя кода', icon: '🔥', description: 'Решал задачи 7 дней подряд', date: '2023-04-10' },
-          { id: 4, name: 'Python мастер', icon: '🐍', description: 'Решил 30 задач на Python', date: '2023-05-22' }
-        ]
+        id: '',
+        userId: '',
+        userName: '',
+        avatarUrl: '',
+        bio: '',
+        country: '',
+        gitHubUrl: '',
+        linkedInUrl: '',
+        level: '',
+        stats: {},
+        settings: {},
+        isPublic: true,
+        achievements: [],
+        recentBattles: [],
+        recentActivities: [],
+        recentProblems: [],
+        createdAt: ''
       },
 
       userStats: {
-        totalSolved: 67,
-        averageTime: 25,
-        successRate: 78,
-        streak: 12,
-        totalTimeSpent: 1680
+        totalProblemsSolved: 0,
+        totalBattles: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        totalExperience: 0,
+        winRate: 0,
+        experienceToNextLevel: 0,
+        easyProblemsSolved: 0,
+        mediumProblemsSolved: 0,
+        hardProblemsSolved: 0,
+        totalSubmissions: 0,
+        successfulSubmissions: 0,
+        totalExecutionTime: '0:0:0',
+        successRate: 0,
+        averageExecutionTime: '00:00:0'
       },
 
       difficultyStats: [
-        { level: 'easy', name: 'Легкие', icon: '🌱', solved: 35, total: 50, percentage: 70 },
-        { level: 'medium', name: 'Средние', icon: '🎯', solved: 25, total: 40, percentage: 62.5 },
-        { level: 'hard', name: 'Сложные', icon: '🚀', solved: 7, total: 20, percentage: 35 }
+        { level: 'easy', name: 'Легкие', icon: '🌱', solved: 0, total: 0, percentage: 0 },
+        { level: 'medium', name: 'Средние', icon: '🎯', solved: 0, total: 0, percentage: 0 },
+        { level: 'hard', name: 'Сложные', icon: '🚀', solved: 0, total: 0, percentage: 0 }
       ],
 
-      solvedTasks: [
-        {
-          id: 1,
-          title: 'Сумма элементов массива',
-          difficulty: 'easy',
-          language: 'Python',
-          timeSpent: 15,
-          attempts: 1,
-          bestTime: 120,
-          solvedAt: '2024-01-15'
-        },
-        {
-          id: 2,
-          title: 'Поиск в глубину',
-          difficulty: 'medium',
-          language: 'Java',
-          timeSpent: 45,
-          attempts: 3,
-          bestTime: 450,
-          solvedAt: '2024-01-14'
-        },
-        {
-          id: 3,
-          title: 'Динамическое программирование',
-          difficulty: 'hard',
-          language: 'Python',
-          timeSpent: 90,
-          attempts: 5,
-          bestTime: 890,
-          solvedAt: '2024-01-12'
-        }
-      ],
-
-      recentActivities: [
-        {
-          id: 1,
-          icon: '✅',
-          text: 'Решил задачу "Оптимизация запросов"',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
-        },
-        {
-          id: 2,
-          icon: '📈',
-          text: 'Поднялся на 3 позиции в рейтинге',
-          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000)
-        },
-        {
-          id: 3,
-          icon: '🏆',
-          text: 'Получил достижение "Алгоритмист"',
-          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-        }
-      ],
-
-      userSettings: {
-        emailNotifications: true,
-        battleInvitations: true,
-        achievementNotifications: true,
-        theme: 'auto',
-        codeEditorTheme: 'vs-dark',
-        preferredLanguage: 'python',
-        isPublic: true,
-        showEmail: false
-      },
-
-      activityCalendar: Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 5),
-        intensity: ['none', 'low', 'medium', 'high'][Math.floor(Math.random() * 4)]
-      }))
+      solvedTasks: [],
+      recentActivities: [],
+      userSettings: {},
+      activityCalendar: []
     }
   },
   computed: {
@@ -870,6 +602,42 @@ export default {
       })
 
       return tasks
+    },
+
+    // Вычисляемые свойства для удобства отображения
+    profileDisplayName() {
+      return this.userProfile.userName || 'Анонимный пользователь'
+    },
+
+    profileLevel() {
+      return this.calculateLevel(this.userProfile.stats?.totalExperience || 0)
+    },
+
+    profileRating() {
+      return this.userProfile.stats?.totalExperience || 0
+    },
+
+    completedTasksCount() {
+      return this.userProfile.stats?.totalProblemsSolved || 0
+    },
+
+    successRate() {
+      return Math.round((this.userProfile.stats?.successRate || 0))
+    },
+
+    currentStreak() {
+      return this.userProfile.stats?.currentStreak || 0
+    },
+
+    levelProgress() {
+      return this.calculateLevelProgress(
+          this.userProfile.stats?.totalExperience || 0,
+          this.userProfile.stats?.experienceToNextLevel || 1000
+      )
+    },
+
+    isUserOnline() {
+      return Math.random() > 0.3
     }
   },
   async mounted() {
@@ -878,48 +646,194 @@ export default {
   },
   methods: {
     async loadUserProfile() {
-      // Имитация загрузки данных профиля из API
+      this.isLoading = true
+      this.error = null
+
       try {
-        // const response = await fetch('/api/user-profiles/me')
-        // this.userProfile = await response.json()
-        console.log('Профиль загружен')
+        // Получаем ID текущего пользователя из хранилища или другого источника
+        const currentUserId = this.getCurrentUserId()
+
+        if (!currentUserId) {
+          throw new Error('ID пользователя не найден')
+        }
+
+        // Загрузка основного профиля по ID
+        const profileData = await userProfilesAPI.getProfileById(currentUserId)
+        this.userProfile = profileData
+
+        this.recentActivities = profileData.recentActivities || []
+        this.solvedTasks = this.mapRecentProblemsToTasks(profileData.recentProblems || [])
+
+        // Загрузка настроек
+        this.userSettings = userProfileHelpers.settingsToForm(profileData.settings || {})
+        this.userSettings.isPublic = profileData.isPublic
+
+        // Инициализация статистики
+        this.initializeStats(profileData.stats || {})
+
+        // Инициализация календаря активности
+        this.initializeActivityCalendar()
+
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error)
+        this.error = 'Не удалось загрузить данные профиля. Попробуйте обновить страницу.'
+        this.loadFallbackData()
+      } finally {
+        this.isLoading = false
       }
+    },
+
+    getCurrentUserId() {
+      // Получаем ID пользователя из различных источников
+      // 1. Из параметров маршрута
+      if (this.$route.params.userId) {
+        return this.$route.params.userId
+      }
+
+      // 2. Из локального хранилища (если там хранится ID текущего пользователя)
+      const storedUserId = localStorage.getItem('currentUserId')
+      if (storedUserId) {
+        return storedUserId
+      }
+
+      // 3. Из данных профиля (если уже загружен)
+      if (this.userProfile.userId) {
+        return this.userProfile.userId
+      }
+
+      // 4. Альтернативный способ - получить через getMyProfile если доступен
+      return null
+    },
+
+
+
+    mapRecentProblemsToTasks(problems) {
+      return problems.map(problem => ({
+        id: problem.problemId,
+        title: problem.title || 'Неизвестная задача',
+        difficulty: problem.difficulty?.toLowerCase() || 'medium',
+        language: problem.language || 'Не указан',
+        timeSpent: this.formatExecutionTime(problem.executionTime),
+        attempts: 1,
+        solvedAt: problem.solvedAt
+      }))
+    },
+
+    initializeStats(stats) {
+      this.userStats = {
+        totalSolved: stats.totalProblemsSolved || 0,
+        averageTime: this.formatExecutionTime(stats.averageExecutionTime),
+        successRate: Math.round((stats.successRate || 0) * 100),
+        streak: stats.currentStreak || 0,
+        totalTimeSpent: this.formatExecutionTime(stats.totalExecutionTime)
+      }
+
+      // Инициализация статистики по сложности из реальных данных
+      this.difficultyStats = [
+        {
+          level: 'easy',
+          name: 'Легкие',
+          icon: '🌱',
+          solved: stats.easyProblemsSolved || 0,
+          total: Math.max(stats.easyProblemsSolved || 0, 10),
+          percentage: stats.easyProblemsSolved ? Math.round((stats.easyProblemsSolved / Math.max(stats.easyProblemsSolved, 10)) * 100) : 0
+        },
+        {
+          level: 'medium',
+          name: 'Средние',
+          icon: '🎯',
+          solved: stats.mediumProblemsSolved || 0,
+          total: Math.max(stats.mediumProblemsSolved || 0, 10),
+          percentage: stats.mediumProblemsSolved ? Math.round((stats.mediumProblemsSolved / Math.max(stats.mediumProblemsSolved, 10)) * 100) : 0
+        },
+        {
+          level: 'hard',
+          name: 'Сложные',
+          icon: '🚀',
+          solved: stats.hardProblemsSolved || 0,
+          total: Math.max(stats.hardProblemsSolved || 0, 10),
+          percentage: stats.hardProblemsSolved ? Math.round((stats.hardProblemsSolved / Math.max(stats.hardProblemsSolved, 10)) * 100) : 0
+        }
+      ]
+    },
+
+    formatExecutionTime(timeString) {
+      if (!timeString || timeString === '00:00:00') return '0м'
+
+      const [hours, minutes, seconds] = timeString.split(':').map(Number)
+
+      if (hours > 0) {
+        return `${hours}ч ${minutes}м`
+      } else if (minutes > 0) {
+        return `${minutes}м`
+      } else {
+        return `${seconds}с`
+      }
+    },
+
+    initializeActivityCalendar() {
+      this.activityCalendar = Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 5),
+        intensity: ['none', 'low', 'medium', 'high'][Math.floor(Math.random() * 4)]
+      }))
     },
 
     updateTabBadges() {
       this.tabs.find(tab => tab.id === 'solved').badge = this.solvedTasks.length
     },
 
+    calculateLevel(experience) {
+      const exp = experience || 0
+      if (exp >= 5000) return 'expert'
+      if (exp >= 2000) return 'advanced'
+      if (exp >= 500) return 'intermediate'
+      return 'Beginner'
+    },
+
+    calculateLevelProgress(experience, experienceToNextLevel) {
+      if (!experienceToNextLevel || experienceToNextLevel === 0) return 100
+      return Math.min(100, Math.max(0, (experience / experienceToNextLevel) * 100))
+    },
+
     getLevelIcon(level) {
       const icons = {
-        beginner: '🌱',
-        intermediate: '🎯',
-        advanced: '🚀',
-        expert: '🏆'
+        Beginner: '🌱',
+        Intermediate: '🎯',
+        Advanced: '🚀',
+        Expert: '🏆'
       }
       return icons[level] || '💼'
     },
 
     getLevelLabel(level) {
       const labels = {
-        beginner: 'Начинающий',
-        intermediate: 'Средний',
-        advanced: 'Продвинутый',
-        expert: 'Эксперт'
+        Beginner: 'Начинающий',
+        Intermediate: 'Средний',
+        Advanced: 'Продвинутый',
+        Expert: 'Эксперт'
       }
       return labels[level] || level
     },
 
     getNextLevel(level) {
       const nextLevels = {
-        beginner: 'Средний',
-        intermediate: 'Продвинутый',
-        advanced: 'Эксперт',
-        expert: 'Мастер'
+        Beginner: 'Средний',
+        Intermediate: 'Продвинутый',
+        Advanced: 'Эксперт',
+        Expert: 'Мастер'
       }
       return nextLevels[level] || 'Следующий уровень'
+    },
+
+    getActivityIcon(activityType) {
+      const icons = {
+        'task_solved': '✅',
+        'battle_won': '⚔️',
+        'achievement': '🏆',
+        'level_up': '📈'
+      }
+      return icons[activityType] || '📝'
     },
 
     getSkillLevelText(level) {
@@ -944,15 +858,38 @@ export default {
 
     getLanguageIcon(language) {
       const icons = {
-        'Python': '🐍',
-        'Java': '☕',
-        'JavaScript': '📜',
-        'C++': '⚡'
+        'python': '🐍',
+        'java': '☕',
+        'javascript': '📜',
+        'cpp': '⚡',
+        'csharp': '🎵'
       }
       return icons[language] || '💻'
     },
 
+    getUserSkills() {
+      const preferredLanguage = this.userProfile.settings?.preferredLanguage
+      if (!preferredLanguage) return []
+
+      const skillMap = {
+        'python': { name: 'Python', icon: '🐍', level: 4 },
+        'java': { name: 'Java', icon: '☕', level: 3 },
+        'javascript': { name: 'JavaScript', icon: '📜', level: 3 },
+        'csharp': { name: 'C#', icon: '🎵', level: 3 },
+        'cpp': { name: 'C++', icon: '⚡', level: 2 }
+      }
+
+      const mainSkill = skillMap[preferredLanguage] || { name: 'Программирование', icon: '💻', level: 3 }
+
+      return [mainSkill]
+    },
+
+    getAchievements() {
+      return this.userProfile.achievements || []
+    },
+
     formatDate(dateString) {
+      if (!dateString) return 'Не указано'
       const date = new Date(dateString)
       return date.toLocaleDateString('ru-RU', {
         year: 'numeric',
@@ -962,8 +899,10 @@ export default {
     },
 
     formatTime(timestamp) {
+      if (!timestamp) return 'давно'
       const now = new Date()
-      const diff = now - timestamp
+      const date = new Date(timestamp)
+      const diff = now - date
       const hours = Math.floor(diff / (1000 * 60 * 60))
 
       if (hours < 1) return 'только что'
@@ -973,27 +912,33 @@ export default {
       if (days === 1) return 'вчера'
       if (days < 7) return `${days} дней назад`
 
-      return timestamp.toLocaleDateString('ru-RU')
+      return date.toLocaleDateString('ru-RU')
     },
 
-    editAvatar() {
+    // Методы для редактирования профиля
+    async editAvatar() {
       console.log('Редактирование аватара')
-      // Логика загрузки нового аватара
     },
 
-    editContacts() {
-      console.log('Редактирование контактов')
-      // Логика редактирования контактной информации
+    async editBio() {
+      try {
+        const newBio = prompt('Введите новое описание:', this.userProfile.bio || '')
+        if (newBio !== null) {
+          const updateData = {
+            ...userProfileHelpers.profileToForm(this.userProfile),
+            bio: newBio
+          }
+
+          await userProfilesAPI.updateMyProfile(updateData)
+          await this.loadUserProfile()
+        }
+      } catch (error) {
+        console.error('Ошибка обновления биографии:', error)
+      }
     },
 
-    editSkills() {
+    async editSkills() {
       console.log('Редактирование навыков')
-      // Логика редактирования навыков
-    },
-
-    editBio() {
-      console.log('Редактирование биографии')
-      // Логика редактирования биографии
     },
 
     viewTask(taskId) {
@@ -1001,40 +946,99 @@ export default {
     },
 
     reattemptTask(taskId) {
-      console.log('Повторное решение задачи:', taskId)
-      // Логика повторного решения задачи
+      this.$router.push(`/solve/${taskId}`)
     },
 
     async saveSettings() {
       try {
-        // Имитация сохранения настроек
-        // await fetch('/api/user-profiles/me/settings', {
-        //   method: 'PUT',
-        //   body: JSON.stringify(this.userSettings)
-        // })
-        console.log('Настройки сохранены')
+        await userProfilesAPI.updateMySettings(this.userSettings)
+
+        // Обновляем публичность профиля
+        await userProfilesAPI.updateMyProfile({
+          ...userProfileHelpers.profileToForm(this.userProfile),
+          isPublic: this.userSettings.isPublic
+        })
+
         alert('Настройки успешно сохранены!')
+        await this.loadUserProfile()
       } catch (error) {
         console.error('Ошибка сохранения настроек:', error)
         alert('Ошибка при сохранении настроек')
       }
     },
 
-    resetSettings() {
-      this.userSettings = {
-        emailNotifications: true,
-        battleInvitations: true,
-        achievementNotifications: true,
-        theme: 'auto',
-        codeEditorTheme: 'vs-dark',
-        preferredLanguage: 'python',
-        isPublic: true,
-        showEmail: false
+    async resetSettings() {
+      try {
+        const currentUserId = this.getCurrentUserId()
+        if (!currentUserId) return
+
+        const profile = await userProfilesAPI.getProfileById(currentUserId)
+        this.userSettings = userProfileHelpers.settingsToForm(profile.settings || {})
+        this.userSettings.isPublic = profile.isPublic
+      } catch (error) {
+        console.error('Ошибка сброса настроек:', error)
       }
+    },
+
+    loadFallbackData() {
+      this.userProfile = {
+        id: '1',
+        userId: '1',
+        userName: 'Иван Петров',
+        avatarUrl: '',
+        bio: 'Студент компьютерных наук, увлекаюсь алгоритмами и веб-разработкой.',
+        country: 'Россия',
+        gitHubUrl: 'https://github.com/ivanpetrov',
+        linkedInUrl: 'https://linkedin.com/in/ivanpetrov',
+        level: 'intermediate',
+        stats: {
+          totalProblemsSolved: 67,
+          totalBattles: 15,
+          wins: 10,
+          losses: 3,
+          draws: 2,
+          currentStreak: 5,
+          maxStreak: 12,
+          totalExperience: 1845,
+          winRate: 0.78,
+          experienceToNextLevel: 500,
+          easyProblemsSolved: 35,
+          mediumProblemsSolved: 25,
+          hardProblemsSolved: 7,
+          totalSubmissions: 85,
+          successfulSubmissions: 67,
+          totalExecutionTime: '45:30:15',
+          successRate: 0.78,
+          averageExecutionTime: '00:25:45'
+        },
+        settings: {
+          emailNotifications: true,
+          battleInvitations: true,
+          achievementNotifications: true,
+          theme: 'auto',
+          codeEditorTheme: 'vs-dark',
+          preferredLanguage: 'python'
+        },
+        isPublic: true,
+        achievements: [
+          {
+            name: 'Первая задача',
+            description: 'Решил первую задачу на платформе',
+            iconUrl: '',
+            achievedAt: '2023-01-20T00:00:00Z'
+          }
+        ],
+        createdAt: '2023-01-15T00:00:00Z'
+      }
+
+      this.userSettings = userProfileHelpers.settingsToForm(this.userProfile.settings)
+      this.userSettings.isPublic = this.userProfile.isPublic
+      this.initializeStats(this.userProfile.stats)
     }
   }
 }
 </script>
+
 
 <style scoped>
 .student-profile-container {
@@ -1193,7 +1197,38 @@ export default {
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
 }
+.tasks-filters select {
+  color: var(--color-on-surface);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  background-size: 12px;
+  padding-right: var(--spacing-2xl);
+}
 
+.tasks-filters select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.tasks-filters select option {
+  color: var(--color-on-surface);
+  background: var(--color-surface);
+}
+
+/* Для темной темы */
+@media (prefers-color-scheme: dark) {
+  .tasks-filters select {
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23ccc' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  }
+}
 .level-badge,
 .rating-badge {
   display: inline-flex;

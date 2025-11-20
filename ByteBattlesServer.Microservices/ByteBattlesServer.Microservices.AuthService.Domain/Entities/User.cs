@@ -35,7 +35,7 @@ public class User:Entity
     public void AddRole(Role role)
     {
         if (role == null)
-            throw new ArgumentNullException(nameof(role));
+          {  throw new ArgumentNullException(nameof(role));}
         
         if (!UserRoles.Any(ur => ur.RoleId == role.Id))
         {

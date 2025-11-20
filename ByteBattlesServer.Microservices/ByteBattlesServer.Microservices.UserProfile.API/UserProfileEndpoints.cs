@@ -180,7 +180,7 @@ public static class UserProfileEndpoints
         {
             try
             {
-                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName);
+                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName, dto.IsPublic);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/user-profiles/{result.Id}", result);
             }

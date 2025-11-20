@@ -25,7 +25,7 @@ public class CreateUserProfileCommandHandler : IRequestHandler<CreateUserProfile
         if (existingProfile != null)
             throw new UserProfileAlreadyExistsException(request.UserId);
 
-        var profile = new Domain.Entities.UserProfile(request.UserId, request.UserName);
+        var profile = new Domain.Entities.UserProfile(request.UserId, request.UserName,request.isPublic);
         await _userProfileRepository.AddAsync(profile);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -42,19 +42,6 @@ public class CreateUserProfileCommandHandler : IRequestHandler<CreateUserProfile
         GitHubUrl = profile.GitHubUrl,
         LinkedInUrl = profile.LinkedInUrl,
         Level = profile.Level.ToString(),
-        Stats = new UserStatsDto
-        {
-            TotalProblemsSolved = profile.Stats.TotalProblemsSolved,
-            TotalBattles = profile.Stats.TotalBattles,
-            Wins = profile.Stats.Wins,
-            Losses = profile.Stats.Losses,
-            Draws = profile.Stats.Draws,
-            CurrentStreak = profile.Stats.CurrentStreak,
-            MaxStreak = profile.Stats.MaxStreak,
-            TotalExperience = profile.Stats.TotalExperience,
-            WinRate = profile.Stats.WinRate,
-            ExperienceToNextLevel = UserLevelCalculator.GetExperienceForNextLevel(profile.Level, profile.Stats.TotalExperience)
-        },
         Settings = new UserSettingsDto
         {
             EmailNotifications = profile.Settings.EmailNotifications,
@@ -63,6 +50,26 @@ public class CreateUserProfileCommandHandler : IRequestHandler<CreateUserProfile
             Theme = profile.Settings.Theme,
             CodeEditorTheme = profile.Settings.CodeEditorTheme,
             PreferredLanguage = profile.Settings.PreferredLanguage
+        },
+        Stats = new UserStatsDto
+        {
+            SuccessRate = profile.Stats.SuccessRate,
+            TotalExecutionTime = profile.Stats.TotalExecutionTime,
+            SolvedTaskIds = profile.Stats.SolvedTaskIds,
+            TotalSubmissions = profile.Stats.TotalSubmissions,
+            SuccessfulSubmissions = profile.Stats.SuccessfulSubmissions,
+            TotalBattles = profile.Stats.TotalBattles,
+            TotalProblemsSolved = profile.Stats.TotalProblemsSolved,
+            WinRate = profile.Stats.WinRate,
+            Wins = profile.Stats.Wins,
+            Losses = profile.Stats.Losses,
+            Draws = profile.Stats.Draws,
+            CurrentStreak = profile.Stats.CurrentStreak,
+            MaxStreak = profile.Stats.MaxStreak,
+            EasyProblemsSolved = profile.Stats.EasyProblemsSolved,
+            HardProblemsSolved = profile.Stats.HardProblemsSolved,
+            MediumProblemsSolved = profile.Stats.MediumProblemsSolved,
+            AverageExecutionTime = profile.Stats.AverageExecutionTime,
         },
         IsPublic = profile.IsPublic,
         CreatedAt = profile.CreatedAt

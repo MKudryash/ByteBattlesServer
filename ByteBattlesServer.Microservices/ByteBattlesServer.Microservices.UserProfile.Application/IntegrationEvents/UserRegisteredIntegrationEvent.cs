@@ -6,7 +6,8 @@ public record UserRegisteredIntegrationEvent(
     Guid UserId, 
     string Email, 
     string FirstName, 
-    string LastName) : IIntegrationEvent
+    string LastName,
+    bool IsPublic) : IIntegrationEvent
 {
     public Guid Id { get; }
     public DateTime OccurredOn { get; }

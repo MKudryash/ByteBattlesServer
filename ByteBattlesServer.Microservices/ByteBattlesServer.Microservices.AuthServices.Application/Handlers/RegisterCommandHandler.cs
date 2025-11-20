@@ -87,6 +87,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             rolesToAdd.Add(defaultRole);
         }
 
+        var isPublic = rolesToAdd.Count == 1 && 
+                       rolesToAdd.Any(r => r.Name.Equals("user", StringComparison.OrdinalIgnoreCase));
         // Добавляем роли пользователю
         foreach (var role in rolesToAdd)
         {
@@ -113,7 +115,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             Email = user.Email.Value,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            RegisteredAt = DateTime.UtcNow
+            RegisteredAt = DateTime.UtcNow,
+            IsPublic =  isPublic
         };
 
         _messageBus.Publish(

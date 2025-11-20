@@ -58,7 +58,7 @@ public class UserRegisteredEventHandler : BackgroundService
 
             // Создание профиля пользователя
             var userName = GenerateUserName(@event.FirstName, @event.LastName);
-            var command = new CreateUserProfileCommand(@event.UserId, userName);
+            var command = new CreateUserProfileCommand(@event.UserId, userName,@event.IsPublic);
 
             var result = await mediator.Send(command);
 

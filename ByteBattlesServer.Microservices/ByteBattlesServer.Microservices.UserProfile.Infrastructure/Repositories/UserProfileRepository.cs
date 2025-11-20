@@ -46,14 +46,26 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<List<Domain.Entities.UserProfile>> SearchAsync(string searchTerm, int page, int pageSize)
     {
-        return await _context.UserProfiles
-            .Where(up => up.IsPublic && 
-                (up.UserName.Contains(searchTerm) || 
-                 (up.Bio != null && up.Bio.Contains(searchTerm))))
-            .OrderByDescending(up => up.Stats.TotalExperience)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return await _context.UserProfiles
+                .Where(up => up.IsPublic)
+                .OrderByDescending(up => up.Stats.TotalExperience)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        else
+        {
+            return await _context.UserProfiles
+                .Where(up => up.IsPublic && 
+                             (up.UserName.Contains(searchTerm) || 
+                              (up.Bio != null && up.Bio.Contains(searchTerm))))
+                .OrderByDescending(up => up.Stats.TotalExperience)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
     }
 
     public async Task AddAsync(Domain.Entities.UserProfile userProfile)
