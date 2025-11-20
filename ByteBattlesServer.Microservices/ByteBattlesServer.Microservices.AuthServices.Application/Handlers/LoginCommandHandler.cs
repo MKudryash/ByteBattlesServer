@@ -39,7 +39,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             throw new ErrorRequest("Invalid credentials");
 
         if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            throw new ErrorRequest("Invalid credentials");
+            throw new ErrorRequest("Invalid password");
 
         // Revoke existing refresh tokens
         var existingToken = await _refreshTokenRepository.GetActiveByUserIdAsync(user.Id);
