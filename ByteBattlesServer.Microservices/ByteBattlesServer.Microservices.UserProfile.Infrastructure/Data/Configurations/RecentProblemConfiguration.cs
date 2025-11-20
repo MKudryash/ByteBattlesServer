@@ -35,31 +35,18 @@ public class RecentProblemConfiguration : IEntityTypeConfiguration<RecentProblem
             .HasConversion<string>()
             .HasMaxLength(20);
             
-        builder.Property(rp => rp.SolvedAt)
-            .HasColumnName("solved_at")
-            .IsRequired();
-            
         builder.Property(rp => rp.Language)
             .HasColumnName("language")
             .IsRequired()
             .HasMaxLength(50);
-
-        // Relationships
-        builder.HasOne(rp => rp.UserProfile)
-            .WithMany(up => up.RecentProblems)
-            .HasForeignKey(rp => rp.UserProfileId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
+            
+        builder.Property(rp => rp.SolvedAt)
+            .HasColumnName("solved_at")
+            .IsRequired();
+            
         builder.HasIndex(rp => rp.UserProfileId);
         builder.HasIndex(rp => rp.ProblemId);
         builder.HasIndex(rp => rp.Difficulty);
         builder.HasIndex(rp => rp.SolvedAt);
-        builder.HasIndex(rp => rp.Language);
-        builder.HasIndex(rp => new { rp.UserProfileId, rp.SolvedAt });
-        
-        // Уникальный индекс, чтобы избежать дубликатов проблем для одного пользователя
-        builder.HasIndex(rp => new { rp.UserProfileId, rp.ProblemId })
-            .IsUnique();
     }
 }

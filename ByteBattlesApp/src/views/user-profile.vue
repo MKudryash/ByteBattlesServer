@@ -716,7 +716,7 @@ export default {
       }
 
       // Статистика (если есть в API)
-      if (apiData.stats) {
+      if (apiData.teacherStats) {
         this.userStats = {
           createdTasks: apiData.stats.createdTasks || 0,
           solvedTasks: apiData.stats.totalProblemsSolved || 0, // Обратите внимание на название поля

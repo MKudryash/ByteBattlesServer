@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251019173405_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251120172950_AddRecentActivitiesAndRecentProblems")]
+    partial class AddRecentActivitiesAndRecentProblems
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -124,34 +124,17 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.UserRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("UserId", "RoleId")
-                        .IsUnique();
-
-                    b.ToTable("user_roles", (string)null);
+                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.RefreshToken", b =>
@@ -167,6 +150,12 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.User", b =>
                 {
+                    b.HasOne("ByteBattlesServer.Microservices.AuthService.Domain.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.OwnsOne("ByteBattlesServer.Microservices.AuthService.Domain.ValueObject.Email", "Email", b1 =>
                         {
                             b1.Property<Guid>("UserId")
@@ -191,35 +180,8 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
 
                     b.Navigation("Email")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.UserRole", b =>
-                {
-                    b.HasOne("ByteBattlesServer.Microservices.AuthService.Domain.Entities.Role", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ByteBattlesServer.Microservices.AuthService.Domain.Entities.User", "User")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("Role");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.Role", b =>
-                {
-                    b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.User", b =>
-                {
-                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,3 +1,4 @@
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,12 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .HasColumnName("user_name")
             .IsRequired()
             .HasMaxLength(100);
+
+        builder.Property(up => up.Email)
+            .HasColumnName("email")
+            .HasMaxLength(255)
+            .IsRequired(false);
+        
             
         builder.Property(up => up.AvatarUrl)
             .HasColumnName("avatar_url")
@@ -48,6 +55,12 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .HasColumnName("linkedin_url")
             .HasMaxLength(200)
             .IsRequired(false);
+
+        builder.Property(up => up.Role)
+            .HasColumnName("Role")
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
             
         builder.Property(up => up.Level)
             .HasColumnName("level")
@@ -67,110 +80,24 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .HasColumnName("updated_at")
             .IsRequired();
 
-        // Owned type for UserStats with proper column names
-        builder.OwnsOne(up => up.Stats, stats =>
-        {
-            stats.ToTable("user_stats"); // Optional: separate table
-            
-            stats.Property(s => s.TotalProblemsSolved)
-                .HasColumnName("total_problems_solved")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.TotalBattles)
-                .HasColumnName("total_battles")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.Wins)
-                .HasColumnName("wins")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.Losses)
-                .HasColumnName("losses")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.Draws)
-                .HasColumnName("draws")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.CurrentStreak)
-                .HasColumnName("current_streak")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.MaxStreak)
-                .HasColumnName("max_streak")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.TotalExperience)
-                .HasColumnName("total_experience")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.EasyProblemsSolved)
-                .HasColumnName("easy_problems_solved")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.MediumProblemsSolved)
-                .HasColumnName("medium_problems_solved")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.HardProblemsSolved)
-                .HasColumnName("hard_problems_solved")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.TotalSubmissions)
-                .HasColumnName("total_submissions")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.SuccessfulSubmissions)
-                .HasColumnName("successful_submissions")
-                .HasDefaultValue(0);
-                
-            stats.Property(s => s.TotalExecutionTime)
-                .HasColumnName("total_execution_time")
-                .HasConversion(
-                    v => v.Ticks,
-                    v => TimeSpan.FromTicks(v))
-                .HasDefaultValue(TimeSpan.Zero);
+        builder.HasOne(up => up.Stats)
+            .WithOne(us => us.UserProfile) // Add navigation property
+            .HasForeignKey<UserStats>(us => us.UserProfileId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            // Store SolvedTaskIds as JSON or in separate table
-            stats.Property(s => s.SolvedTaskIds)
-                .HasColumnName("solved_task_ids")
-                .HasConversion(
-                    v => string.Join(',', v),
-                    v => new HashSet<Guid>(v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                          .Select(Guid.Parse)))
-                .IsRequired(false);
-        });
+        builder.HasOne(up => up.TeacherStats)
+            .WithOne(ts => ts.UserProfile) // Add navigation property
+            .HasForeignKey<TeacherStats>(ts => ts.UserProfileId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // Owned type for UserSettings
-        builder.OwnsOne(up => up.Settings, settings =>
-        {
-            settings.Property(s => s.EmailNotifications)
-                .HasColumnName("email_notifications")
-                .HasDefaultValue(true);
-                
-            settings.Property(s => s.BattleInvitations)
-                .HasColumnName("battle_invitations")
-                .HasDefaultValue(true);
-                
-            settings.Property(s => s.AchievementNotifications)
-                .HasColumnName("achievement_notifications")
-                .HasDefaultValue(true);
-                
-            settings.Property(s => s.Theme)
-                .HasColumnName("theme")
-                .HasMaxLength(50)
-                .HasDefaultValue("light");
-                
-            settings.Property(s => s.CodeEditorTheme)
-                .HasColumnName("code_editor_theme")
-                .HasMaxLength(50)
-                .HasDefaultValue("vs-light");
-                
-            settings.Property(s => s.PreferredLanguage)
-                .HasColumnName("preferred_language")
-                .HasMaxLength(50)
-                .HasDefaultValue("csharp");
-        });
+        builder.HasOne(up => up.Settings)
+            .WithOne(us => us.UserProfile) // Add navigation property
+            .HasForeignKey<UserSettings>(us => us.UserProfileId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
 
         // Relationships
         builder.HasMany(up => up.Achievements)
@@ -183,7 +110,6 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .HasForeignKey(br => br.UserProfileId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        // UserProfileConfiguration.cs
         builder.HasMany(u => u.RecentActivities)
             .WithOne(ra => ra.UserProfile)
             .HasForeignKey(ra => ra.UserProfileId)
@@ -199,9 +125,20 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .IsUnique();
             
         builder.HasIndex(up => up.UserName);
+        builder.HasIndex(up => up.Email);
+        builder.HasIndex(up => up.Role);
         builder.HasIndex(up => up.IsPublic);
         builder.HasIndex(up => up.Level);
         builder.HasIndex(up => up.CreatedAt);
         builder.HasIndex(up => up.UpdatedAt);
+
+        // Частичные индексы для оптимизации запросов по ролям
+        builder.HasIndex(up => up.Role)
+            .HasFilter("\"Role\" = 'Student'")
+            .HasDatabaseName("ix_user_profiles_role_student");
+
+        builder.HasIndex(up => up.Role)
+            .HasFilter("\"Role\" = 'Teacher'")
+            .HasDatabaseName("ix_user_profiles_role_teacher");
     }
 }

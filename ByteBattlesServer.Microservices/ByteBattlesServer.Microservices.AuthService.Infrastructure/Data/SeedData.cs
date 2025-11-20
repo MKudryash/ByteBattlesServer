@@ -35,7 +35,7 @@ public class SeedService : ISeedService
                 {
                     await _roleRepository.AddAsync(role);
                     rolesAdded++;
-                    _logger.LogInformation("Added role: {RoleName}", role.Name);
+                    _logger.LogInformation("Added Role: {RoleName}", role.Name);
                 }
             }
 

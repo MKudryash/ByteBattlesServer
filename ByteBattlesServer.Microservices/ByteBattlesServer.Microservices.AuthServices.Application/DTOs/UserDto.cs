@@ -1,3 +1,6 @@
+using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Microservices.AuthService.Domain.Entities;
+
 namespace ByteBattlesServer.Microservices.AuthServices.Application.DTOs;
 
 public class UserDto
@@ -6,5 +9,5 @@ public class UserDto
     public string Email { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public IEnumerable<string> Roles { get; set; }
+    public RoleDto Role { get; set; }
 }

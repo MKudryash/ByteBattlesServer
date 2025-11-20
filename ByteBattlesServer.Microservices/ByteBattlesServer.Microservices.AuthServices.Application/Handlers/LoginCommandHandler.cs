@@ -73,7 +73,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+                Role = new RoleDto()
+                {
+                    Id = user.Role.Id,
+                    Name = user.Role.Name,
+                    Description =  user.Role.Description
+                }
             }
         };
 

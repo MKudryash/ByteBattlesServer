@@ -1,5 +1,6 @@
 // UserProfile.API/Endpoints/UserProfileEndpoints.cs
 using System.Security.Claims;
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
@@ -26,7 +27,8 @@ public static class UserProfileEndpoints
             try
             {
                 var userId = GetUserIdFromClaims(httpContext);
-                var query = new GetUserProfileQuery(userId);
+                var roleUser = GetUserRoleFromClaims(httpContext);
+                var query = new GetUserProfileQuery(userId,roleUser);
                 var result = await mediator.Send(query);
                 
                 return Results.Ok(result);
@@ -180,7 +182,7 @@ public static class UserProfileEndpoints
         {
             try
             {
-                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName, dto.IsPublic);
+                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName, dto.Email,dto.IsPublic,dto.Role);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/user-profiles/{result.Id}", result);
             }
@@ -354,6 +356,30 @@ public static class UserProfileEndpoints
         
     }
 
+    private static UserRole GetUserRoleFromClaims(HttpContext context)
+    {
+        var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value
+                        ?? context.User.FindFirst("Role")?.Value
+                        ?? context.User.FindFirst("roles")?.Value
+                        ?? context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/Role")?.Value;
+
+        if (string.IsNullOrEmpty(roleClaim))
+        {
+            var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
+            Console.WriteLine("Available claims for Role: " + string.Join(", ", allClaims));
+            
+            throw new UnauthorizedAccessException("Role not found in claims");
+        }
+
+        // Парсим роль, учитывая возможные варианты написания
+        return roleClaim.ToLower() switch
+        {
+            "student" or "1" => UserRole.student,
+            "teacher" or "2" => UserRole.teacher,
+            "admin" or "administrator" or "3" => UserRole.admin,
+            _ => UserRole.student // значение по умолчанию
+        };
+    }
 
     private static Guid GetUserIdFromClaims(HttpContext context)
     {

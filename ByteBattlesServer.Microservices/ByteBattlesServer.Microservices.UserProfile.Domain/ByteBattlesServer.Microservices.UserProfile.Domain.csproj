@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj" />
       <ProjectReference Include="..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
     </ItemGroup>
 

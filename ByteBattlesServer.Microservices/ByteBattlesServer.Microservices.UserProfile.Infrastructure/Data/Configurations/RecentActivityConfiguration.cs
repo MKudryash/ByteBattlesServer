@@ -1,3 +1,5 @@
+// Конфигурация для RecentActivity
+
 using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -24,7 +26,7 @@ public class RecentActivityConfiguration : IEntityTypeConfiguration<RecentActivi
             .HasColumnName("type")
             .IsRequired()
             .HasConversion<string>()
-            .HasMaxLength(20);
+            .HasMaxLength(50);
             
         builder.Property(ra => ra.Title)
             .HasColumnName("title")
@@ -33,27 +35,21 @@ public class RecentActivityConfiguration : IEntityTypeConfiguration<RecentActivi
             
         builder.Property(ra => ra.Description)
             .HasColumnName("description")
-            .IsRequired()
-            .HasMaxLength(500);
-            
-        builder.Property(ra => ra.Timestamp)
-            .HasColumnName("timestamp")
-            .IsRequired();
+            .HasMaxLength(1000)
+            .IsRequired(false);
             
         builder.Property(ra => ra.ExperienceGained)
             .HasColumnName("experience_gained")
             .HasDefaultValue(0);
-
-        // Relationships
-        builder.HasOne(ra => ra.UserProfile)
-            .WithMany(up => up.RecentActivities)
-            .HasForeignKey(ra => ra.UserProfileId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
+            
+        builder.Property(ra => ra.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+            
         builder.HasIndex(ra => ra.UserProfileId);
         builder.HasIndex(ra => ra.Type);
-        builder.HasIndex(ra => ra.Timestamp);
-        builder.HasIndex(ra => new { ra.UserProfileId, ra.Timestamp });
+        builder.HasIndex(ra => ra.CreatedAt);
     }
 }
+
+

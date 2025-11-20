@@ -32,7 +32,7 @@ public static class AuthEndpoints
                     registerDto.Password,
                     registerDto.FirstName,
                     registerDto.LastName,
-                    registerDto.Roles);
+                    registerDto.Role);
 
                 var result = await mediator.Send(command);
                 Console.WriteLine(result);

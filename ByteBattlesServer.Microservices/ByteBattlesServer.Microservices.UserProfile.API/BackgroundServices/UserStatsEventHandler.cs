@@ -68,22 +68,12 @@ public class UserStatsEventHandler : BackgroundService
             var result = await mediator.Send(command);
 
             _logger.LogInformation("🟢 [UserProfile] Successfully updated stats for user: {UserId}, total solved: {TotalSolved}", 
-                arg.UserId, result.Stats.TotalProblemsSolved);
+                arg.UserId, 0);
 
             // Публикация события о обновлении профиля
             var profileUpdatedEvent = new UserStatsUpdateIntegrationEvent
             {
-                UserId = arg.UserId,
-                TotalProblemsSolved = result.Stats.TotalProblemsSolved,
-                TotalBattles = result.Stats.TotalBattles,
-                Wins = result.Stats.Wins,
-                Losses = result.Stats.Losses,
-                Draws = result.Stats.Draws,
-                CurrentStreak = result.Stats.CurrentStreak,
-                MaxStreak = result.Stats.MaxStreak,
-                TotalExperience = result.Stats.TotalExperience,
-                WinRate = result.Stats.WinRate,
-                ExperienceToNextLevel = result.Stats.ExperienceToNextLevel,
+                UserId = arg.UserId
             };
 
             _messageBus.Publish(

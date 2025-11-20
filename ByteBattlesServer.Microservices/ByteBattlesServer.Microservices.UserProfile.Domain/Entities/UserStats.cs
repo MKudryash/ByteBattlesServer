@@ -3,8 +3,12 @@ using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 
+
 public class UserStats : ValueObject
 {
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid UserProfileId { get; private set; } // Явный FK
+    public UserProfile UserProfile { get; private set; }
     public int TotalProblemsSolved { get; private set; }
     public int TotalBattles { get; private set; }
     public int Wins { get; private set; }

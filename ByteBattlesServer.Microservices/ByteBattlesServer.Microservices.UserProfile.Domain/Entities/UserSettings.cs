@@ -2,6 +2,9 @@ namespace ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 
 public class UserSettings : ValueObject
 {
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid UserProfileId { get; private set; } // Явный FK
+    public UserProfile UserProfile { get; private set; }
     public bool EmailNotifications { get; private set; } = true;
     public bool BattleInvitations { get; private set; } = true;
     public bool AchievementNotifications { get; private set; } = true;

@@ -8,7 +8,7 @@ public class RecentActivity : Entity
     public string Description { get; private set; }
     public DateTime Timestamp { get; private set; }
     public int ExperienceGained { get; private set; }
-
+    public DateTime CreatedAt { get; private set; }
     public UserProfile UserProfile { get; private set; }
 
     private RecentActivity() { }
@@ -22,6 +22,7 @@ public class RecentActivity : Entity
         Description = description;
         ExperienceGained = experienceGained;
         Timestamp = DateTime.UtcNow;
+        CreatedAt = DateTime.UtcNow;
     }
 }
 

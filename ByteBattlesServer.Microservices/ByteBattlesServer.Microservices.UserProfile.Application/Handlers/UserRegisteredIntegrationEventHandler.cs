@@ -29,7 +29,7 @@ public class UserRegisteredIntegrationEventHandler
             // Генерируем username на основе имени и фамилии
             var userName = GenerateUserName(@event.FirstName, @event.LastName);
             
-            var command = new CreateUserProfileCommand(@event.UserId, userName, @event.IsPublic);
+            var command = new CreateUserProfileCommand(@event.UserId, userName, @event.Email,@event.IsPublic,@event.Role);
             var result = await _mediator.Send(command);
 
             if (result.Id==null)

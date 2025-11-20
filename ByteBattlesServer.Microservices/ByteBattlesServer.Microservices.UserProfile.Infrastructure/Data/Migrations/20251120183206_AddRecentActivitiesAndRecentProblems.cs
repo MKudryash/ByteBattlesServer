@@ -36,18 +36,14 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     avatar_url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     bio = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     country = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     github_url = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     linkedin_url = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     level = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    email_notifications = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    battle_invitations = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    achievement_notifications = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    theme = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "light"),
-                    code_editor_theme = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "vs-light"),
-                    preferred_language = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "csharp"),
                     is_public = table.Column<bool>(type: "boolean", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -88,11 +84,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    experience_gained = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    experience_gained = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -129,6 +126,28 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 });
 
             migrationBuilder.CreateTable(
+                name: "teacher_stats",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    created_tasks = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    active_students = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    average_rating = table.Column<double>(type: "double precision", precision: 3, scale: 2, nullable: false, defaultValue: 0.0),
+                    total_submissions = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_teacher_stats", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_teacher_stats_user_profiles_user_profile_id",
+                        column: x => x.user_profile_id,
+                        principalTable: "user_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "user_achievements",
                 columns: table => new
                 {
@@ -155,10 +174,35 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 });
 
             migrationBuilder.CreateTable(
+                name: "user_settings",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    email_notifications = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    battle_invitations = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    achievement_notifications = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    theme = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "light"),
+                    code_editor_theme = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "vs-light"),
+                    preferred_language = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "csharp")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_settings", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_user_settings_user_profiles_user_profile_id",
+                        column: x => x.user_profile_id,
+                        principalTable: "user_profiles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "user_stats",
                 columns: table => new
                 {
-                    UserProfileId = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
                     total_problems_solved = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     total_battles = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     wins = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -173,14 +217,14 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     total_submissions = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     successful_submissions = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     total_execution_time = table.Column<long>(type: "bigint", nullable: false, defaultValue: 0L),
-                    solved_task_ids = table.Column<string>(type: "text", nullable: true)
+                    solved_task_ids = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_user_stats", x => x.UserProfileId);
+                    table.PrimaryKey("PK_user_stats", x => x.id);
                     table.ForeignKey(
-                        name: "FK_user_stats_user_profiles_UserProfileId",
-                        column: x => x.UserProfileId,
+                        name: "FK_user_stats_user_profiles_user_profile_id",
+                        column: x => x.user_profile_id,
                         principalTable: "user_profiles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -213,9 +257,9 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 column: "user_profile_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_recent_activities_timestamp",
+                name: "IX_recent_activities_created_at",
                 table: "recent_activities",
-                column: "timestamp");
+                column: "created_at");
 
             migrationBuilder.CreateIndex(
                 name: "IX_recent_activities_type",
@@ -228,19 +272,9 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 column: "user_profile_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_recent_activities_user_profile_id_timestamp",
-                table: "recent_activities",
-                columns: new[] { "user_profile_id", "timestamp" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_recent_problems_difficulty",
                 table: "recent_problems",
                 column: "difficulty");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_recent_problems_language",
-                table: "recent_problems",
-                column: "language");
 
             migrationBuilder.CreateIndex(
                 name: "IX_recent_problems_problem_id",
@@ -258,15 +292,10 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 column: "user_profile_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_recent_problems_user_profile_id_problem_id",
-                table: "recent_problems",
-                columns: new[] { "user_profile_id", "problem_id" },
+                name: "IX_teacher_stats_user_profile_id",
+                table: "teacher_stats",
+                column: "user_profile_id",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_recent_problems_user_profile_id_solved_at",
-                table: "recent_problems",
-                columns: new[] { "user_profile_id", "solved_at" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_achievements_achievement_id",
@@ -285,6 +314,11 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 column: "created_at");
 
             migrationBuilder.CreateIndex(
+                name: "IX_user_profiles_email",
+                table: "user_profiles",
+                column: "email");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_profiles_is_public",
                 table: "user_profiles",
                 column: "is_public");
@@ -293,6 +327,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 name: "IX_user_profiles_level",
                 table: "user_profiles",
                 column: "level");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_profiles_role_teacher",
+                table: "user_profiles",
+                column: "Role",
+                filter: "\"Role\" = 'Teacher'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_profiles_updated_at",
@@ -309,6 +349,18 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 name: "IX_user_profiles_user_name",
                 table: "user_profiles",
                 column: "user_name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_settings_user_profile_id",
+                table: "user_settings",
+                column: "user_profile_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_stats_user_profile_id",
+                table: "user_stats",
+                column: "user_profile_id",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -324,7 +376,13 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 name: "recent_problems");
 
             migrationBuilder.DropTable(
+                name: "teacher_stats");
+
+            migrationBuilder.DropTable(
                 name: "user_achievements");
+
+            migrationBuilder.DropTable(
+                name: "user_settings");
 
             migrationBuilder.DropTable(
                 name: "user_stats");

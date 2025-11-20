@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddRecentActivitiesAndRecentProblems : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,12 +34,19 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_users_roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "roles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -67,31 +74,6 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "user_roles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_user_roles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_user_roles_roles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "roles",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_user_roles_users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_Token",
                 table: "refresh_tokens",
@@ -110,21 +92,15 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_user_roles_RoleId",
-                table: "user_roles",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_user_roles_UserId_RoleId",
-                table: "user_roles",
-                columns: new[] { "UserId", "RoleId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_users_Email",
                 table: "users",
                 column: "Email",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_RoleId",
+                table: "users",
+                column: "RoleId");
         }
 
         /// <inheritdoc />
@@ -134,13 +110,10 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                 name: "refresh_tokens");
 
             migrationBuilder.DropTable(
-                name: "user_roles");
+                name: "users");
 
             migrationBuilder.DropTable(
                 name: "roles");
-
-            migrationBuilder.DropTable(
-                name: "users");
         }
     }
 }
