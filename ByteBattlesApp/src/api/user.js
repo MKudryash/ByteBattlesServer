@@ -79,6 +79,14 @@ export const userProfilesAPI = {
             body: updateProfileCommandDto
         });
     },
+    // Смена пароля (если есть такой эндпоинт)
+    changePassword: async (passwordData) => {
+        return makeRequest('/api/auth/passwordChange', {
+            method: 'PUT',
+            body: passwordData
+        });
+    },
+
 
     // Обновить настройки текущего пользователя
     updateMySettings: async (updateSettingsCommandDto) => {
