@@ -884,7 +884,6 @@ export default {
         this.isLoading = false
       }
     },
-
     async loadTask() {
       this.isLoading = true
       try {
@@ -910,14 +909,44 @@ export default {
         // Преобразуем библиотеки из задачи в правильный формат
         let taskLibraries = [];
         if (task.libraries && Array.isArray(task.libraries)) {
-          // Если библиотеки приходят как объекты, извлекаем только ID
           taskLibraries = task.libraries.map(lib => {
             if (typeof lib === 'object' && lib.id) {
               return lib.id;
             }
-            return lib; // если это уже строка (ID)
+            return lib;
           });
           console.log('Task libraries:', taskLibraries);
+        }
+
+        // Загружаем тестовые случаи отдельно
+        let tests = [];
+        try {
+          const testCases = await taskAPI.getTestCases(this.taskId)
+          console.log('Loaded test cases from API:', testCases)
+
+          if (testCases && testCases.length > 0) {
+            tests = testCases.map(test => ({
+              id: test.id, // Сохраняем ID теста
+              input: test.input || '',
+              expectedOutput: test.output || '', // API использует output, а мы expectedOutput
+              isPublic: test.isExample || false // API использует isExample, а мы isPublic
+            }));
+          } else {
+            // Если тестов нет, создаем один пустой тест
+            tests = [{
+              input: '',
+              expectedOutput: '',
+              isPublic: true
+            }];
+          }
+        } catch (testError) {
+          console.error('Ошибка загрузки тестовых случаев:', testError)
+          // Если не удалось загрузить тесты, создаем один пустой тест
+          tests = [{
+            input: '',
+            expectedOutput: '',
+            isPublic: true
+          }];
         }
 
         this.taskData = {
@@ -935,34 +964,19 @@ export default {
           language: languageId || '',
           codeTemplate: task.patternFunction || '',
           mainTemplate: task.patternMain || '',
-          libraries: taskLibraries, // Используем преобразованные библиотеки
+          libraries: taskLibraries,
 
-          tests: task.tests || [{
-            input: '',
-            expectedOutput: '',
-            isPublic: true
-          }]
+          tests: tests // Используем загруженные тесты
         }
 
         console.log('Loaded task data with language:', this.taskData.language);
         console.log('Loaded task libraries:', this.taskData.libraries);
+        console.log('Loaded task tests:', this.taskData.tests);
 
-        // Загружаем библиотеки для выбранного языка СРАЗУ после установки языка
+        // Загружаем библиотеки для выбранного языка
         if (this.taskData.language) {
           console.log('Loading libraries for existing task language:', this.taskData.language);
           await this.loadLibrariesForLanguage(this.taskData.language);
-        }
-
-        // Загружаем тестовые случаи
-        if (this.isEditMode) {
-          const testCases = await taskAPI.getTestCases(this.taskId)
-          if (testCases && testCases.length > 0) {
-            this.taskData.tests = testCases.map(test => ({
-              input: test.input,
-              expectedOutput: test.output,
-              isPublic: test.isPublic || false,
-            }))
-          }
         }
 
       } catch (error) {
@@ -1043,7 +1057,7 @@ export default {
         console.log('Отправляемые данные:', this.taskData)
         const currentUser = this.getCurrentUser();
 
-        // Подготавливаем данные для отправки в правильном формате
+        // Сначала сохраняем основную задачу без тестов
         const taskToSave = {
           title: this.taskData.title,
           description: this.taskData.description,
@@ -1054,36 +1068,35 @@ export default {
           patternFunction: this.taskData.codeTemplate,
           parameters: this.formatInputParameters(),
           returnType: this.taskData.returnType,
-          languageIds: this.taskData.language ? [this.taskData.language] : [], // Массив с одним элементом
-          librariesIds: this.taskData.libraries // Уже массив ID библиотек
+          languageIds: this.taskData.language ? [this.taskData.language] : [],
+          librariesIds: this.taskData.libraries
         }
 
-        console.log('Данные для сохранения:', taskToSave)
+        console.log('Данные для сохранения (без тестов):', taskToSave)
 
         let response
         if (this.isEditMode) {
-          // Обновление существующей задачи
           response = await taskAPI.update({
             ...taskToSave,
             id: this.taskId
           })
           console.log('Задача обновлена:', response)
-          this.showSaveStatus('success', 'Задача успешно обновлена')
 
-          // Сохраняем тестовые случаи после обновления задачи
+          // Затем сохраняем тесты отдельно
           await this.saveTestCases(this.taskId)
+
+          this.showSaveStatus('success', 'Задача успешно обновлена')
         } else {
-          // Создание новой задачи
           response = await taskAPI.create(taskToSave)
           console.log('Задача создана:', response)
-          this.showSaveStatus('success', 'Задача успешно создана')
 
-          // Сохраняем тестовые случаи для новой задачи
+          // Сохраняем тесты для новой задачи
           if (response && response.id) {
             await this.saveTestCases(response.id)
           }
 
-          // Перенаправляем на страницу задачи
+          this.showSaveStatus('success', 'Задача успешно создана')
+
           setTimeout(() => {
             this.$router.push(`/tasks/${response.id}`)
           }, 1500)
@@ -1111,26 +1124,61 @@ export default {
 
     async saveTestCases(taskId) {
       try {
-        const testCasesDto = {
-          testCases: this.taskData.tests
-              .filter(test => test.input.trim() && test.expectedOutput.trim())
-              .map(test => ({
-                input: test.input.trim(),
-                output: test.expectedOutput.trim(),
-                isPublic: test.isPublic || false
-              }))
+        console.log('Saving test cases for task:', taskId)
+
+        // Фильтруем только заполненные тесты
+        const validTests = this.taskData.tests.filter(test =>
+            test.input.trim() && test.expectedOutput.trim()
+        )
+
+        if (validTests.length === 0) {
+          console.log('No valid tests to save')
+          return
         }
 
-        if (testCasesDto.testCases.length > 0) {
-          await taskAPI.createTestCases(taskId, testCasesDto)
-          console.log('Тестовые случаи успешно сохранены')
+        const testCasesDto = {
+          testCases: validTests.map(test => ({
+            input: test.input.trim(),
+            output: test.expectedOutput.trim(),
+            isExample: test.isPublic || false
+          }))
         }
+
+        console.log('Test cases to save:', testCasesDto)
+
+        // Для существующей задачи сначала очищаем старые тесты
+        if (this.isEditMode) {
+          try {
+            // ДОБАВЛЕНО: await для получения тестов
+            const testCases = await taskAPI.getTestCases(taskId)
+            console.log('Found test cases to delete:', testCases)
+
+            // ИСПРАВЛЕНО: используем Promise.all для параллельного удаления
+            if (testCases && testCases.length > 0) {
+              await Promise.all(
+                  testCases.map(testCase =>
+                      taskAPI.deleteTestCase(testCase.id)
+                  )
+              )
+              console.log('Old test cases cleared')
+            } else {
+              console.log('No existing test cases to clear')
+            }
+          } catch (deleteError) {
+            console.warn('Could not clear old test cases:', deleteError)
+            // Продолжаем выполнение, даже если не удалось очистить старые тесты
+          }
+        }
+
+        // Создаем новые тесты
+        await taskAPI.createTestCases(taskId, testCasesDto)
+        console.log('Test cases saved successfully')
+
       } catch (error) {
-        console.error('Ошибка при сохранении тестовых случаев:', error)
-        throw error
+        console.error('Error saving test cases:', error)
+        throw new Error('Не удалось сохранить тестовые случаи')
       }
     },
-
     async saveDraft() {
       this.isSaving = true
       try {

@@ -16,5 +16,6 @@ public record UpdateTaskCommand
     string Parameters,
     string ReturnType,
     List<Guid> LanguageIds,
-    List<Guid> LibrariesIds
+    List<Guid> LibrariesIds,
+    List<TestCaseDto> TestCases
     ): IRequest<TaskDto>;

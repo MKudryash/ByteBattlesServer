@@ -151,7 +151,8 @@ public static class TaskEndpoints
                     dto.Parameters,
                     dto.ReturnType,
                     dto.LanguageIds,
-                    dto.LibrariesIds);
+                    dto.LibrariesIds,
+                    dto.TestCases);
                 
                 var result = await mediator.Send(command);
                 return Results.Ok(result);

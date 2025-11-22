@@ -30,7 +30,7 @@ public class SearchQueryHandler:IRequestHandler<SearchQueryParams,List<StudentPr
             Country = profile.Country,
             GitHubUrl = profile.GitHubUrl,
             LinkedInUrl = profile.LinkedInUrl,
-            Level = profile.Level,
+            Level = profile.Level.ToString(),
             IsPublic = profile.IsPublic,
             CreatedAt = profile.CreatedAt,
             Settings = new UserSettingsDto

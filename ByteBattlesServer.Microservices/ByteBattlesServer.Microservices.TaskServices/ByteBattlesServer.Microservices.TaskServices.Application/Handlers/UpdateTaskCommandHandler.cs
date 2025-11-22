@@ -27,8 +27,8 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
     
     public async Task<TaskDto> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
     {
-        // Получаем задачу с включенными языками
-        var task = await _repository.GetByIdAsync(request.TaskId);
+        // Получаем задачу с включенными языками и тестовыми случаями
+        var task = await _repository.GetByIdAsyncWithTasks(request.TaskId);
         
         if (task == null)
             throw new TaskNotFoundException(request.TaskId);
@@ -50,9 +50,17 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         {
             await UpdateTaskLanguagesAsync(task, request.LanguageIds);
         }
+        
+        // Обновляем библиотеки если переданы
         if (request.LibrariesIds != null && request.LibrariesIds.Any())
         {
             await UpdateTaskLibrariesAsync(task, request.LibrariesIds);
+        }
+        
+        // Обновляем тестовые случаи если переданы
+        if (request.TestCases != null && request.TestCases.Any())
+        {
+            await UpdateTaskTestCasesAsync(task, request.TestCases);
         }
         
         // Явно отмечаем задачу как измененную
@@ -61,7 +69,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Перезагружаем задачу с актуальными данными
-        var updatedTask = await _repository.GetByIdAsync(request.TaskId);
+        var updatedTask = await _repository.GetByIdAsyncWithTasks(request.TaskId);
         return TaskMapping.MapToDto(updatedTask);
     }
     
@@ -106,7 +114,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
     
     private async Task UpdateTaskLibrariesAsync(Domain.Entities.Task task, List<Guid> newLibrariesIds)
     {
-        // Валидируем новые языки
+        // Валидируем новые библиотеки
         var validLibraries = new List<Library>();
         foreach (var libraryId in newLibrariesIds)
         {
@@ -116,7 +124,7 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
             validLibraries.Add(library);
         }
 
-        // Получаем текущие языки
+        // Получаем текущие библиотеки
         var currentLibrariesIds = task.Libraries.Select(tl => tl.IdLibrary).ToList();
         
         // Находим изменения
@@ -142,5 +150,67 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         }
     }
     
-   
+    private async Task UpdateTaskTestCasesAsync(Domain.Entities.Task task, List<TestCaseDto> newTestCases)
+    {
+        // Получаем текущие тестовые случаи
+        var currentTestCases = task.TestCases?.ToList() ?? new List<TestCases>();
+        
+        // Создаем словарь для быстрого поиска по входным данным
+        var currentTestCasesDict = currentTestCases.ToDictionary(tc => tc.Input);
+        
+        // Списки для операций
+        var testCasesToAdd = new List<TestCases>();
+        var testCasesToUpdate = new List<TestCases>();
+        var testCasesToRemove = new List<TestCases>();
+        
+        // Обрабатываем новые тестовые случаи
+        foreach (var testCaseDto in newTestCases)
+        {
+            if (currentTestCasesDict.TryGetValue(testCaseDto.Input, out var existingTestCase))
+            {
+                // Обновляем существующий тестовый случай
+                existingTestCase.Update(
+                    testCaseDto.Input,
+                    testCaseDto.Output,
+                    testCaseDto.IsExample);
+                testCasesToUpdate.Add(existingTestCase);
+            }
+            else
+            {
+                // Создаем новый тестовый случай
+                var newTestCase = new TestCases(
+                    task.Id,
+                    testCaseDto.Input,
+                    testCaseDto.Output,
+                    testCaseDto.IsExample);
+                testCasesToAdd.Add(newTestCase);
+            }
+        }
+        
+        // Находим тестовые случаи для удаления (которые отсутствуют в новых данных)
+        var newInputs = newTestCases.Select(tc => tc.Input).ToHashSet();
+        foreach (var existingTestCase in currentTestCases)
+        {
+            if (!newInputs.Contains(existingTestCase.Input))
+            {
+                testCasesToRemove.Add(existingTestCase);
+            }
+        }
+        
+        // Выполняем операции с тестовыми случаями
+        foreach (var testCase in testCasesToRemove)
+        {
+            _repository.RemoveTestCaseAsync(testCase);
+        }
+        
+        foreach (var testCase in testCasesToAdd)
+        {
+            await _repository.AddTestCaseAsync(testCase);
+        }
+        
+        foreach (var testCase in testCasesToUpdate)
+        {
+            _repository.UpdateTestCaseAsync(testCase);
+        }
+    }
 }

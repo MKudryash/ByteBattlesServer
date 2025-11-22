@@ -803,9 +803,9 @@ export default {
   components: {
     AppNavigation,
     DangerousHTML,
-    mixins: [authMixin],
     AppFooter,
   },
+  mixins: [authMixin],
   data() {
     return {
       currentStep: 1,

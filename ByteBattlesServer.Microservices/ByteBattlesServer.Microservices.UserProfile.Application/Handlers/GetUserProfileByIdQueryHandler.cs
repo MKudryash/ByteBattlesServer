@@ -50,7 +50,7 @@ public class GetUserProfileByIdQueryHandler : IRequestHandler<GetUserProfileById
             Country = userProfile.Country,
             GitHubUrl = userProfile.GitHubUrl,
             LinkedInUrl = userProfile.LinkedInUrl,
-            Level = userProfile.Level,
+            Level = userProfile.Level.ToString(),
             IsPublic = userProfile.IsPublic,
             CreatedAt = userProfile.CreatedAt,
             Settings = new UserSettingsDto

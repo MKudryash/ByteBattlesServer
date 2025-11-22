@@ -119,7 +119,7 @@ public class TeacherStatsDto
 }
 public class StudentProfileDto : UserProfileDto
 {
-    public UserLevel Level { get; set; }
+    public string Level { get; set; }
     public UserStatsDto Stats { get; set; }
     public List<RecentProblemDto> RecentProblems { get; set; } = new List<RecentProblemDto>();
     public List<BattleResultDto> BattleHistory { get; set; } = new List<BattleResultDto>();

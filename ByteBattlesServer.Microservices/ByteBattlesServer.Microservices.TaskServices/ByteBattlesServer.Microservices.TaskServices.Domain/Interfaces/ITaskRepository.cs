@@ -12,8 +12,8 @@ public interface ITaskRepository
     System.Threading.Tasks.Task AddAsync(Task task);
     System.Threading.Tasks.Task Update(Task task);
     System.Threading.Tasks.Task Delete(Task task);
-    
-    
+
+    Task<Task> GetByIdAsyncWithTasks(Guid id);
     System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty();
     
     

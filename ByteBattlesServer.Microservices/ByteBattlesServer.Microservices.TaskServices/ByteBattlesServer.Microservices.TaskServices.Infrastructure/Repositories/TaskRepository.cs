@@ -25,6 +25,17 @@ public class TaskRepository : ITaskRepository
             .ThenInclude(l => l.Library)
             .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Id == id);
+    }  
+    
+    public async Task<Task> GetByIdAsyncWithTasks(Guid id)
+    {
+        return await _dbContext.Tasks
+            .Include(up => up.TaskLanguages)
+            .ThenInclude(ua => ua.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
+            .Include(t => t.TestCases)
+            .FirstOrDefaultAsync(up => up.Id == id);
     }
     public void RemoveTaskLanguage(TaskLanguage taskLanguage)
     {
