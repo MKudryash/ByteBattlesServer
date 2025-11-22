@@ -796,12 +796,14 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
-import { languageAPI, taskAPI } from '../api/task.js'
+import { languageAPI, taskAPI } from '@/api/task'
+import { authMixin } from '@/mixins/authMixin'
 export default {
   name: 'TaskTemplateBuilder',
   components: {
     AppNavigation,
     DangerousHTML,
+    mixins: [authMixin],
     AppFooter,
   },
   data() {
@@ -887,6 +889,9 @@ export default {
     }
   },
   async mounted() {
+    if (!this.requireTeacher()) {
+      return
+    }
   await this.loadLanguages()
   },
   computed: {
@@ -906,6 +911,7 @@ export default {
       }
     },
     canSave() {
+      if (!this.requireTeacher()) return
       // Безопасная проверка тестов
       const hasValidTests = this.taskData.tests.some(test =>
           test.input.trim() && test.expectedOutput.trim() // Исправлено имя поля

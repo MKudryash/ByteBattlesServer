@@ -68,6 +68,7 @@ export const languageAPI = {
         return makeRequest(`/api/language/${languageId}`);
     },
 
+
     // Удалить язык программирования
     delete: async (languageId) => {
         return makeRequest(`/api/language/${languageId}`, {
@@ -209,7 +210,9 @@ export const taskAPI = {
     getTestCases: async (taskId) => {
         return makeRequest(`/api/task/testCases/${taskId}`);
     },
-
+    getCount: async () => {
+        return makeRequest(`/api/task/count`);
+    },
     // Обновить тестовый случай
     updateTestCase: async (testCaseId, updateTestCaseDto) => {
         return makeRequest(`/api/task/testCases/${testCaseId}`, {

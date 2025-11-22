@@ -23,13 +23,29 @@ export const authUtils = {
     // Проверка роли преподавателя
     isTeacher() {
         const user = this.getUser()
-        return user && (user.role === 'teacher' || user.role === 'admin')
+        if (!user || !user.role) return false
+
+        // Обрабатываем разные форматы роли
+        const roleName = user.role.name || user.role
+        return roleName === 'teacher' || roleName === 'admin'
     },
 
     // Проверка роли студента
     isStudent() {
         const user = this.getUser()
-        return user && user.role === 'student'
+        if (!user || !user.role) return false
+
+        // Обрабатываем разные форматы роли
+        const roleName = user.role.name || user.role
+        return roleName === 'student'
+    },
+
+    // Получение роли пользователя
+    getUserRole() {
+        const user = this.getUser()
+        if (!user || !user.role) return null
+
+        return user.role.name || user.role
     },
 
     // Очистка данных аутентификации
@@ -54,5 +70,10 @@ export const authUtils = {
     // Получение токена
     getToken() {
         return localStorage.getItem('accessToken')
+    },
+
+    // Уведомление об изменении состояния аутентификации
+    notifyAuthChange() {
+        window.dispatchEvent(new Event('authStateChanged'))
     }
 }

@@ -14,6 +14,8 @@ public interface ITaskRepository
     System.Threading.Tasks.Task Delete(Task task);
     
     
+    System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty();
+    
     
     Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId);
     Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId);

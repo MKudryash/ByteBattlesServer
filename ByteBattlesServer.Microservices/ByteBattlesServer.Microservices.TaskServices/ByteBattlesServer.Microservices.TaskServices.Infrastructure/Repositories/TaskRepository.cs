@@ -70,6 +70,20 @@ public class TaskRepository : ITaskRepository
         _dbContext.Tasks.Remove(task);
     }
 
+    public async System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty()
+    {
+        var counts = await _dbContext.Tasks
+            .GroupBy(x => x.Difficulty)
+            .Select(g => new { Difficulty = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var easyCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Easy")?.Count ?? 0;
+        var mediumCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Medium")?.Count ?? 0;
+        var hardCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Hard")?.Count ?? 0;
+    
+        return (easyCount, mediumCount, hardCount);
+    }
+
     public async Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId)
     {
         return await _dbContext.TaskLanguages

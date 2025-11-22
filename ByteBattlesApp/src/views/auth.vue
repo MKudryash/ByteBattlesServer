@@ -486,7 +486,8 @@
 
 <script>
 import DangerousHTML from 'dangerous-html/vue';
-import {authAPI} from '../api/auth.js'
+import {authAPI} from '@/api/auth'
+import { authUtils } from '@/utils/auth'
 
 export default {
   name: 'Auth',
@@ -532,7 +533,6 @@ export default {
 
         console.log('Login response:', response);
 
-        // Проверяем статус ответа
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Login failed with status:', response.status, 'Response:', errorText);
@@ -549,7 +549,6 @@ export default {
           throw new Error(errorMessage);
         }
 
-        // Пытаемся распарсить JSON
         let data;
         try {
           data = await response.json();
@@ -559,9 +558,9 @@ export default {
           throw new Error('Неверный формат ответа от сервера');
         }
 
-        // Сохраняем данные
         if (data.accessToken) {
-          localStorage.setItem('user', JSON.stringify(data.user || data));
+          // Сохраняем данные через утилиты
+          authUtils.setUser(data.user || data);
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken || '');
 
@@ -569,15 +568,23 @@ export default {
             localStorage.setItem('rememberMe', 'true');
           }
 
+          // Уведомляем об изменении состояния аутентификации
+          authUtils.notifyAuthChange();
+
+          // Отправляем событие через глобальную шину
+          this.$root.$emit('userUpdated');
+
           console.log('Login successful, redirecting...');
-          this.$router.push('/');
+
+          // Проверяем, есть ли redirect параметр
+          const redirect = this.$route.query.redirect || '/';
+          this.$router.push(redirect);
         } else {
           throw new Error('Отсутствует токен доступа в ответе');
         }
 
       } catch (error) {
         console.error('Login error:', error);
-
         let userMessage = 'Ошибка входа';
         if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
           userMessage = 'Ошибка сети. Проверьте подключение к интернету.';
@@ -614,7 +621,6 @@ export default {
 
         const data = await response.json()
 
-        // Обработка различных статусов ответа
         if (!response.ok) {
           await this.handleErrorResponse(response.status, data)
           return
@@ -622,11 +628,16 @@ export default {
 
         console.log("Success: ", data)
 
-        // Сохраняем данные пользователя
-        localStorage.setItem('user', JSON.stringify(data.user || data))
-        localStorage.setItem('accessToken', data.accessToken)
-        console.log(localStorage.getItem('accessToken'))
-        localStorage.setItem('refreshToken', data.refreshToken)
+        // Сохраняем данные через утилиты
+        authUtils.setUser(data.user || data);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+
+        // Уведомляем об изменении состояния аутентификации
+        authUtils.notifyAuthChange();
+
+        // Отправляем событие через глобальную шину
+        this.$root.$emit('userUpdated');
 
         // Показываем сообщение об успехе
         alert('Регистрация прошла успешно!')

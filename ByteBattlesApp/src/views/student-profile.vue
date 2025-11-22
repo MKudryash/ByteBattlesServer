@@ -504,6 +504,7 @@ import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
 import { userProfilesAPI, userProfileHelpers, USER_PROFILE_CONSTANTS } from '../api/user'
+import {taskAPI} from "@/api/task";
 
 export default {
   name: 'StudentProfile',
@@ -572,7 +573,9 @@ export default {
         { level: 'medium', name: 'Средние', icon: '🎯', solved: 0, total: 0, percentage: 0 },
         { level: 'hard', name: 'Сложные', icon: '🚀', solved: 0, total: 0, percentage: 0 }
       ],
-
+      countMedium :0,
+      countHard :0,
+      countEasy: 0,
       solvedTasks: [],
       recentActivities: [],
       userSettings: {},
@@ -641,6 +644,9 @@ export default {
     }
   },
   async mounted() {
+    // Сначала загружаем количество задач
+    await this.getCount()
+    // Затем загружаем профиль пользователя
     await this.loadUserProfile()
     this.updateTabBadges()
   },
@@ -728,31 +734,35 @@ export default {
         totalTimeSpent: this.formatExecutionTime(stats.totalExecutionTime)
       }
 
-      // Инициализация статистики по сложности из реальных данных
+      // Используем реальные значения count, если они уже загружены
+      const totalEasy = this.countEasy > 0 ? this.countEasy : (stats.easyProblemsSolved || 1)
+      const totalMedium = this.countMedium > 0 ? this.countMedium : (stats.mediumProblemsSolved || 1)
+      const totalHard = this.countHard > 0 ? this.countHard : (stats.hardProblemsSolved || 1)
+
       this.difficultyStats = [
         {
           level: 'easy',
           name: 'Легкие',
           icon: '🌱',
           solved: stats.easyProblemsSolved || 0,
-          total: Math.max(stats.easyProblemsSolved || 0, 10),
-          percentage: stats.easyProblemsSolved ? Math.round((stats.easyProblemsSolved / Math.max(stats.easyProblemsSolved, 10)) * 100) : 0
+          total: totalEasy,
+          percentage: stats.easyProblemsSolved ? Math.round((stats.easyProblemsSolved / Math.max(totalEasy, 1)) * 100) : 0
         },
         {
           level: 'medium',
           name: 'Средние',
           icon: '🎯',
           solved: stats.mediumProblemsSolved || 0,
-          total: Math.max(stats.mediumProblemsSolved || 0, 10),
-          percentage: stats.mediumProblemsSolved ? Math.round((stats.mediumProblemsSolved / Math.max(stats.mediumProblemsSolved, 10)) * 100) : 0
+          total: totalMedium,
+          percentage: stats.mediumProblemsSolved ? Math.round((stats.mediumProblemsSolved / Math.max(totalMedium, 1)) * 100) : 0
         },
         {
           level: 'hard',
           name: 'Сложные',
           icon: '🚀',
           solved: stats.hardProblemsSolved || 0,
-          total: Math.max(stats.hardProblemsSolved || 0, 10),
-          percentage: stats.hardProblemsSolved ? Math.round((stats.hardProblemsSolved / Math.max(stats.hardProblemsSolved, 10)) * 100) : 0
+          total: totalHard,
+          percentage: stats.hardProblemsSolved ? Math.round((stats.hardProblemsSolved / Math.max(totalHard, 1)) * 100) : 0
         }
       ]
     },
@@ -777,6 +787,17 @@ export default {
         count: Math.floor(Math.random() * 5),
         intensity: ['none', 'low', 'medium', 'high'][Math.floor(Math.random() * 4)]
       }))
+    },
+    async getCount(){
+      try{
+        const count = await taskAPI.getCount()
+        this.countMedium = count.medium
+        this.countEasy = count.easy
+        this.countHard = count.hard
+      }
+      catch(error){
+        console.error('Ошибка загрузки профиля:', error)
+      }
     },
 
     updateTabBadges() {

@@ -19,6 +19,8 @@ public static class TaskEndpoints
         var group = routes.MapGroup("/api/task")
             .WithTags("Task");
 
+   
+        
         // Получение задачи по ID
         group.MapGet("/{taskId:guid}", async (Guid taskId, IMediator mediator, HttpContext http) =>
         {
@@ -46,6 +48,37 @@ public static class TaskEndpoints
         .WithSummary("Получение задачи по идентификатору")
         .WithDescription("Определяет конкретную задачу по ее уникальному идентификатору")
         .Produces<TaskDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
+        .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
+        .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);    
+        
+        group.MapGet("/count", async (IMediator mediator, HttpContext http) =>
+        {
+            try
+            {
+                ValidateUserOrAdminOrTeacherAccess(http);
+                var query = new GetTaskCountDiffictly();
+                var result = await mediator.Send(query);
+                return Results.Ok(result);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return Results.BadRequest(new ErrorResponse(ex.Message, "VALIDATION_ERROR"));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving task: {ex.Message}");
+            }
+        })
+        .WithName("GetTaskCount")
+        .WithSummary("Получение задачи по идентификатору")
+        .WithDescription("Определяет конкретную задачу по ее уникальному идентификатору")
+        .Produces<TaskCountDifficatly>(StatusCodes.Status200OK)
         .Produces<ErrorResponse>(StatusCodes.Status409Conflict)
         .Produces<ErrorResponse>(StatusCodes.Status401Unauthorized)
         .Produces<ErrorResponse>(StatusCodes.Status403Forbidden)

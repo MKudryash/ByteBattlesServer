@@ -579,6 +579,7 @@ import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
 import {userProfilesAPI} from '../api/user'
+import {taskAPI} from "@/api/task";
 
 export default {
   name: 'UserProfile',
@@ -618,7 +619,9 @@ export default {
         linkedInUrl: ''
 
       },
-
+      countMedium :0,
+      countHard :0,
+      countEasy: 0,
       userStats: {
         createdTasks: 0,
         solvedTasks: 0,
@@ -696,6 +699,7 @@ export default {
         this.isLoading = false
       }
     },
+
 
     // Преобразование данных из API в формат компонента
 // Преобразование данных из API в формат компонента

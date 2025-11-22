@@ -78,7 +78,7 @@
         >
           <ul class="navigation__list">
             <li class="navigation__item">
-              <a href="/task-template-builder">
+              <router-link to="/task-template-builder">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -99,10 +99,10 @@
                   </svg>
                   <span>Создать Шаблон</span>
                 </div>
-              </a>
+              </router-link>
             </li>
             <li class="navigation__item">
-              <a href="/students">
+              <router-link to="/students">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -125,10 +125,10 @@
                   </svg>
                   <span>Пользователи</span>
                 </div>
-              </a>
+              </router-link>
             </li>
             <li class="navigation__item">
-              <a href="/tasks">
+              <router-link to="/tasks">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -153,7 +153,7 @@
                   </svg>
                   <span>Задачи</span>
                 </div>
-              </a>
+              </router-link>
             </li>
           </ul>
           <div class="navigation__actions">
@@ -229,6 +229,7 @@
 
 <script>
 import DangerousHTML from 'dangerous-html/vue'
+import { authUtils } from '@/utils/auth'
 
 export default {
   name: 'Navigation',
@@ -241,76 +242,112 @@ export default {
   mounted() {
     this.checkAuth()
     this.setupMediaQueryListener()
+
+    // Слушаем изменения аутентификации
+    window.addEventListener('authStateChanged', this.checkAuth)
+    window.addEventListener('storage', this.checkAuth)
+
+    // Слушаем события обновления пользователя через глобальную шину
+    this.$root.$on('userUpdated', this.checkAuth)
+  },
+  beforeUnmount() {
+    window.removeEventListener('authStateChanged', this.checkAuth)
+    window.removeEventListener('storage', this.checkAuth)
+    this.$root.$off('userUpdated', this.checkAuth)
   },
   methods: {
     checkAuth() {
-      const userData = localStorage.getItem('user')
-      if (userData) {
-        try {
-          const parsedData = JSON.parse(userData)
-          // Проверяем структуру данных
-          if (parsedData.user) {
-            this.user = parsedData.user
-          } else if (parsedData.firstName) {
-            this.user = parsedData
-          }
-          console.log('User data:', this.user)
-        } catch (error) {
-          console.error('Error parsing user data:', error)
-        }
-      }
+      console.log('Checking auth in Navigation...')
+      this.user = authUtils.getUser()
+      console.log('Current user:', this.user)
     },
-
 
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen
-
-      if (this.isMenuOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
+      document.body.style.overflow = this.isMenuOpen ? 'hidden' : ''
     },
 
     handleMenuClick(event) {
-      // Закрываем меню при клике на ссылку
       if (event.target.closest('.navigation__link')) {
         this.isMenuOpen = false
         document.body.style.overflow = ''
       }
     },
 
-    profile() {
-      this.isMenuOpen = false
-      document.body.style.overflow = ''
-      this.$router.push('/me')
+    async profile() {
+      if (!this.user) {
+        this.navigateToAuth()
+        return
+      }
+
+      this.closeMenu()
+      await this.$router.push('/me')
     },
+
     navigateToAuth() {
-      this.isMenuOpen = false
-      document.body.style.overflow = ''
+      this.closeMenu()
       this.$router.push('/auth')
     },
 
     logout() {
-      localStorage.removeItem('user')
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('rememberMe')
-      this.user = null
+      if (confirm('Вы уверены, что хотите выйти?')) {
+        authUtils.clearAuth()
+        authUtils.notifyAuthChange() // Уведомляем об изменении
+        this.user = null
+        this.closeMenu()
+
+        // Показываем уведомление
+        this.showNotification('Вы успешно вышли из системы')
+
+        // Редирект если находимся на защищенной странице
+        if (this.$route.meta && this.$route.meta.requiresAuth) {
+          this.$router.push('/')
+        }
+
+        // Отправляем событие об обновлении пользователя
+        this.$root.$emit('userUpdated')
+      }
+    },
+
+    closeMenu() {
       this.isMenuOpen = false
       document.body.style.overflow = ''
     },
 
+    showNotification(message, type = 'success') {
+      const notification = document.createElement('div')
+      const backgroundColor = type === 'success' ? 'var(--color-success)' : 'var(--color-error)'
+
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${backgroundColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+        word-wrap: break-word;
+      `
+      notification.textContent = message
+      document.body.appendChild(notification)
+
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification)
+        }
+      }, 3000)
+    },
+
     setupMediaQueryListener() {
       const mediaQuery = window.matchMedia('(min-width: 992px)')
-
       const handleViewportChange = (e) => {
         if (e.matches && this.isMenuOpen) {
-          this.isMenuOpen = false
-          document.body.style.overflow = ''
+          this.closeMenu()
         }
       }
-
       mediaQuery.addEventListener('change', handleViewportChange)
     }
   }
@@ -318,6 +355,7 @@ export default {
 </script>
 
 <style scoped>
+/* Ваши существующие стили остаются без изменений */
 .navigation-container1 {
   display: contents;
 }
