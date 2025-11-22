@@ -1042,20 +1042,20 @@ export default {
       try {
         console.log('Отправляемые данные:', this.taskData)
         const currentUser = this.getCurrentUser();
-        // Подготавливаем данные для отправки
+
+        // Подготавливаем данные для отправки в правильном формате
         const taskToSave = {
           title: this.taskData.title,
           description: this.taskData.description,
           difficulty: this.taskData.difficulty,
-          // category: this.taskData.category,
           author: currentUser,
           functionName: this.taskData.functionName,
-           parameters: this.formatInputParameters(),
-           returnType: this.taskData.returnType,
-
-          languageId: this.formatLanguageIds(),
+          patternMain: this.taskData.mainTemplate,
           patternFunction: this.taskData.codeTemplate,
-          patternMain: this.taskData.mainTemplate
+          parameters: this.formatInputParameters(),
+          returnType: this.taskData.returnType,
+          languageIds: this.taskData.language ? [this.taskData.language] : [], // Массив с одним элементом
+          librariesIds: this.taskData.libraries // Уже массив ID библиотек
         }
 
         console.log('Данные для сохранения:', taskToSave)
@@ -1069,6 +1069,9 @@ export default {
           })
           console.log('Задача обновлена:', response)
           this.showSaveStatus('success', 'Задача успешно обновлена')
+
+          // Сохраняем тестовые случаи после обновления задачи
+          await this.saveTestCases(this.taskId)
         } else {
           // Создание новой задачи
           response = await taskAPI.create(taskToSave)
@@ -1096,6 +1099,8 @@ export default {
           errorMessage = error.response.data.detail
         } else if (error.response?.data?.title) {
           errorMessage = error.response.data.title
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
         }
 
         this.showSaveStatus('error', errorMessage)
@@ -1312,7 +1317,6 @@ export default {
           })
           .join(', ')
     },
-
     formatLanguageIds() {
       return this.taskData.language ? [this.taskData.language] : []
     },

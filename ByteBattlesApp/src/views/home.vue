@@ -180,7 +180,7 @@ export default {
 /* Hero секция */
 .hero-section {
   position: relative;
-  padding: var(--spacing-4xl) 0;
+  padding: var(--spacing-4xl) var(--spacing-xl);
   background: linear-gradient(135deg,
   color-mix(in srgb, var(--color-primary) 5%, transparent) 0%,
   color-mix(in srgb, var(--color-secondary) 8%, transparent) 100%);

@@ -130,7 +130,6 @@ function isTeacher() {
     }
 }
 
-// Глобальный навигационный гард
 router.beforeEach((to, from, next) => {
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
     const requiresTeacher = to.matched.some(record => record.meta.requiresTeacher)

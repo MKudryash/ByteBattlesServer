@@ -316,29 +316,156 @@ export default {
 
     showNotification(message, type = 'success') {
       const notification = document.createElement('div')
-      const backgroundColor = type === 'success' ? 'var(--color-success)' : 'var(--color-error)'
+
+      const colors = {
+        success: {
+          background: 'var(--color-success, #10B981)',
+          icon: '✅'
+        },
+        error: {
+          background: 'var(--color-error, #EF4444)',
+          icon: '❌'
+        },
+        warning: {
+          background: 'var(--color-warning, #F59E0B)',
+          icon: '⚠️'
+        },
+        info: {
+          background: 'var(--color-info, #3B82F6)',
+          icon: 'ℹ️'
+        }
+      }
+
+      const config = colors[type] || colors.info
 
       notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${backgroundColor};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 4px;
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-        max-width: 300px;
-        word-wrap: break-word;
-      `
-      notification.textContent = message
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--color-surface-elevated);
+    color: var(--color-on-surface);
+    padding: 16px 20px;
+    border-radius: var(--border-radius-lg);
+    z-index: 10000;
+    animation: slideIn 0.3s var(--animation-curve-primary);
+    max-width: 400px;
+    word-wrap: break-word;
+    box-shadow: var(--shadow-level-3);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    line-height: var(--line-height-body);
+    cursor: pointer;
+    transition: all var(--animation-duration-standard) var(--animation-curve-primary);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+  `
+
+      // Создаем иконку с акцентным цветом
+      const iconSpan = document.createElement('span')
+      iconSpan.style.cssText = `
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: ${config.background};
+  `
+      iconSpan.textContent = config.icon
+
+      // Создаем текстовый контент
+      const textSpan = document.createElement('span')
+      textSpan.style.cssText = `
+    flex: 1;
+    color: var(--color-on-surface);
+  `
+      textSpan.textContent = message
+
+      // Добавляем акцентную полоску слева
+      const accentBar = document.createElement('div')
+      accentBar.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: ${config.background};
+    border-radius: var(--border-radius-lg) 0 0 var(--border-radius-lg);
+  `
+
+      notification.appendChild(accentBar)
+      notification.appendChild(iconSpan)
+      notification.appendChild(textSpan)
+
+      // Добавляем стили для анимации в стиле вашего сайта
+      const style = document.createElement('style')
+      style.textContent = `
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideOut {
+      to {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px) scale(0.95);
+      }
+    }
+  `
+
+      // Проверяем, не добавлены ли уже стили
+      if (!document.getElementById('notification-styles')) {
+        style.id = 'notification-styles'
+        document.head.appendChild(style)
+      } else {
+        document.getElementById('notification-styles').appendChild(document.createTextNode(style.textContent))
+      }
+
       document.body.appendChild(notification)
 
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification)
-        }
-      }, 3000)
+      // Закрытие по клику
+      const closeNotification = () => {
+        notification.style.animation = 'slideOut 0.25s var(--animation-curve-primary) forwards'
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification)
+          }
+        }, 250)
+      }
+
+      notification.addEventListener('click', closeNotification)
+
+      // Эффект при наведении в стиле retro-card
+      notification.addEventListener('mouseenter', () => {
+        notification.style.transform = 'translateY(-2px)'
+        notification.style.boxShadow = 'var(--shadow-level-4)'
+        notification.style.borderColor = 'var(--color-primary)'
+      })
+
+      notification.addEventListener('mouseleave', () => {
+        notification.style.transform = 'translateY(0)'
+        notification.style.boxShadow = 'var(--shadow-level-3)'
+        notification.style.borderColor = 'var(--color-border)'
+      })
+
+      // Авто-закрытие
+      const autoCloseTimeout = setTimeout(closeNotification, 5000)
+
+      // Останавливаем авто-закрытие при наведении
+      notification.addEventListener('mouseenter', () => {
+        clearTimeout(autoCloseTimeout)
+      })
+
+      notification.addEventListener('mouseleave', () => {
+        setTimeout(closeNotification, 5000)
+      })
     },
 
     setupMediaQueryListener() {
