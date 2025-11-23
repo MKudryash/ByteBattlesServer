@@ -37,7 +37,7 @@
                   stroke-linejoin="round"
               ></path>
             </svg>
-            <span class="auth-logo-text">CodeCraft Template</span>
+            <span class="auth-logo-text">ByteBattles Template</span>
           </div>
           <p class="auth-tagline">
             Войдите в свою мастерскую создания учебных задач
@@ -366,7 +366,7 @@
                   stroke-linejoin="round"
               ></path>
             </svg>
-            <span>© 2025 CodeCraft Template. Ваши данные в безопасности.</span>
+            <span>© 2025 ByteBattles Template. Ваши данные в безопасности.</span>
           </p>
         </div>
       </div>

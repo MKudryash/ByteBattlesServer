@@ -155,11 +155,11 @@ export default {
     }
   },
   metaInfo: {
-    title: 'Sarcastic Affectionate Gerbil - Образовательная платформа',
+    title: 'ByteBattles - Образовательная платформа',
     meta: [
       {
         property: 'og:title',
-        content: 'Sarcastic Affectionate Gerbil - Образовательная платформа',
+        content: 'ByteBattles - Образовательная платформа',
       },
       {
         name: 'description',

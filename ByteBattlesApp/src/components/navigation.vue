@@ -4,7 +4,7 @@
       <div class="navigation__container">
         <a href="/">
           <div
-              aria-label="CodeCraft Template - Главная страница"
+              aria-label="ByteBattles Template - Главная страница"
               class="navigation__logo"
           >
             <svg
@@ -145,10 +145,11 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                     >
-                      <path
-                          d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
-                      ></path>
-                      <circle r="3" cx="12" cy="12"></circle>
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                      <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+                      <path d="M9 14h.01"></path>
+                      <path d="M9 17h.01"></path>
+                      <path d="M12 16l1 1 3-3"></path>
                     </g>
                   </svg>
                   <span>Задачи</span>
