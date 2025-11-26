@@ -278,7 +278,7 @@ export default {
     async profile() {
       if (!this.user) {
         this.navigateToAuth()
-        
+
         return
       }
 

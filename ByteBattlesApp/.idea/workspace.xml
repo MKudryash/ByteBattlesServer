@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="b9f3e05e-c0a3-4eed-bbd3-a99ecc29c1bc" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/footer.vue" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/footer.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/navigation.vue" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/navigation.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -193,7 +195,8 @@
       <workItem from="1763657099796" duration="2356000" />
       <workItem from="1763666106195" duration="1007000" />
       <workItem from="1763731848851" duration="4123000" />
-      <workItem from="1763788492284" duration="10738000" />
+      <workItem from="1763788492284" duration="11187000" />
+      <workItem from="1763909469297" duration="3263000" />
     </task>
     <servers />
   </component>

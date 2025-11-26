@@ -1,4 +1,4 @@
-namespace ByteBattlesServer.Microservices.AuthService.Domain.Interfaces;
+namespace ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {

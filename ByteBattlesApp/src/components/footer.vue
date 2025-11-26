@@ -302,10 +302,10 @@
             </div>
             <div class="footer-contact-info">
               <span class="footer-contact-label">Email</span>
-              <a href="mailto:info@codecraft.ru?subject=">
+              <a href="mailto:info@me.ru?subject=">
                 <div class="footer-contact-value">
                   <span>
-                    info@codecraft.ru
+                    info@me.ru
                     <span v-html="raw0q1h"></span>
                   </span>
                 </div>
@@ -387,7 +387,7 @@
                   stroke-linejoin="round"
                 ></path>
               </svg>
-              <span>© 2025 CodeCraft Template. Все права защищены.</span>
+              <span>© 2025 ByteBattles Template. Все права защищены.</span>
             </p>
             <div class="footer-legal-links">
               <a href="#privacy">
