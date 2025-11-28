@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251126115532_InitialCreate")]
+    [Migration("20251128110242_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,10 +28,21 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
             modelBuilder.Entity("ByteBattles.Microservices.CodeBattleServer.Domain.Entities.BattleRoom", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("language_id");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -42,6 +53,10 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
 
                     b.HasKey("Id");
 

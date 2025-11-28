@@ -13,13 +13,26 @@ public class BattleRoomConfiguration : IEntityTypeConfiguration<BattleRoom>
         builder.HasKey(r => r.Id);
         
         builder.Property(r => r.Id)
-            .ValueGeneratedNever()
+            .HasColumnName("id")
             .IsRequired();
 
         builder.Property(r => r.Name)
             .HasMaxLength(200)
+            .IsRequired();     
+        
+        builder.Property(r => r.LanguageId)
+            .HasColumnName("language_id")
+            .ValueGeneratedNever()
+            .IsRequired();     
+        
+        builder.Property(r => r.TaskId)
+            .HasColumnName("task_id")
+            .ValueGeneratedNever()
             .IsRequired();
-
+        builder.Property(t => t.Difficulty)
+            .IsRequired()
+            .HasConversion<string>() 
+            .HasMaxLength(20);
         builder.Property(r => r.CreatedAt)
             .IsRequired();
 
@@ -38,7 +51,7 @@ public class BattleRoomConfiguration : IEntityTypeConfiguration<BattleRoom>
             participant.HasKey("Id");
             
             participant.Property(p => p.UserId)
-                .IsRequired();
+                .IsRequired(); 
                 
             participant.Property(p => p.JoinedAt)
                 .IsRequired();

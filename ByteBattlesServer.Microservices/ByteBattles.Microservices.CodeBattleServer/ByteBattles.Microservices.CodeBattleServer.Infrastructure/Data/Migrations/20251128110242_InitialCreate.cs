@@ -15,14 +15,17 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                 name: "battle_rooms",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    language_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    task_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Difficulty = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_battle_rooms", x => x.Id);
+                    table.PrimaryKey("PK_battle_rooms", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -48,7 +51,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                         name: "FK_code_submissions_battle_rooms_RoomId",
                         column: x => x.RoomId,
                         principalTable: "battle_rooms",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -68,7 +71,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                         name: "FK_room_participants_battle_rooms_RoomId",
                         column: x => x.RoomId,
                         principalTable: "battle_rooms",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 

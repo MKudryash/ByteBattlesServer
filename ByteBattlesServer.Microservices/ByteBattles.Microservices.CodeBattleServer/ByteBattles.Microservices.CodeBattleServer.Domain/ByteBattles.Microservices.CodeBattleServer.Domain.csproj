@@ -6,4 +6,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj" />
+      <ProjectReference Include="..\..\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.Domain\ByteBattlesServer.Microservices.TaskServices.Domain.csproj" />
+    </ItemGroup>
+
 </Project>

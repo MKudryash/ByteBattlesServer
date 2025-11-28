@@ -14,7 +14,6 @@ class Program
     {
         Console.WriteLine("Подключение к серверу битв...");
         
-        // Исправленный URL - используйте /battlehub вместо /battle
         await _webSocket.ConnectAsync(new Uri("ws://localhost:5065/api/battle"), CancellationToken.None);
         Console.WriteLine("Подключено!");
 
@@ -98,38 +97,74 @@ class Program
 
             switch (typeProperty)
             {
-                case "Connected":
+                case "connected":
                     if (json.RootElement.TryGetProperty("playerId", out var playerIdElement))
                         _playerId = playerIdElement.GetString();
                     Console.WriteLine($"ID игрока: {_playerId}");
-                    Console.WriteLine($"Сообщение: {json.RootElement.GetProperty("message").GetString()}");
+                    Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
                     break;
+                    
                 case "room_created":
-                    Console.WriteLine($"Комната создана: {json.RootElement.GetProperty("roomName").GetString()}");
-                    Console.WriteLine($"ID комнаты: {json.RootElement.GetProperty("roomId").GetString()}");
+                    Console.WriteLine($"Комната создана: {GetStringProperty(json.RootElement, "roomName")}");
+                    Console.WriteLine($"ID комнаты: {GetStringProperty(json.RootElement, "roomId")}");
+                    Console.WriteLine($"Сложность: {GetStringProperty(json.RootElement, "difficulty")}");
+                    Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
                     break;
+                    
                 case "joined_room":
-                    Console.WriteLine($"Присоединились к комнате: {json.RootElement.GetProperty("roomName").GetString()}");
-                    if (json.RootElement.TryGetProperty("players", out var playersElement))
+                    Console.WriteLine($"Присоединились к комнате: {GetStringProperty(json.RootElement, "roomId")}");
+                    Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
+                    if (json.RootElement.TryGetProperty("participants", out var participantsElement) && 
+                        participantsElement.ValueKind == JsonValueKind.Number)
                     {
-                        Console.WriteLine("Игроки в комнате:");
-                        foreach (var player in playersElement.EnumerateArray())
-                        {
-                            Console.WriteLine($"  - {player}");
-                        }
+                        Console.WriteLine($"Участников в комнате: {participantsElement.GetInt32()}");
                     }
                     break;
+                    
                 case "player_joined":
-                    Console.WriteLine($"Новый игрок: {json.RootElement.GetProperty("playerId").GetString()}");
+                    Console.WriteLine($"Новый игрок присоединился: {GetStringProperty(json.RootElement, "playerId")}");
+                    if (json.RootElement.TryGetProperty("participants", out var joinedParticipants) && 
+                        joinedParticipants.ValueKind == JsonValueKind.Number)
+                    {
+                        Console.WriteLine($"Теперь участников: {joinedParticipants.GetInt32()}");
+                    }
                     break;
+                    
+                case "player_left":
+                    Console.WriteLine($"Игрок вышел: {GetStringProperty(json.RootElement, "playerId")}");
+                    if (json.RootElement.TryGetProperty("participants", out var leftParticipants) && 
+                        leftParticipants.ValueKind == JsonValueKind.Number)
+                    {
+                        Console.WriteLine($"Осталось участников: {leftParticipants.GetInt32()}");
+                    }
+                    break;
+                    
+                case "code_submitted":
+                    Console.WriteLine($"Код отправлен на проверку");
+                    Console.WriteLine($"Задача: {GetStringProperty(json.RootElement, "problemId")}");
+                    break;
+                    
+                case "code_submitted_by_player":
+                    Console.WriteLine($"Игрок {GetStringProperty(json.RootElement, "playerId")} отправил код");
+                    Console.WriteLine($"Задача: {GetStringProperty(json.RootElement, "problemId")}");
+                    break;
+                    
                 case "code_result":
-                    Console.WriteLine($"Результат проверки: {json.RootElement.GetProperty("result").GetString()}");
+                    Console.WriteLine($"Результат проверки кода:");
+                    if (json.RootElement.TryGetProperty("result", out var resultElement))
+                    {
+                        Console.WriteLine($"  Статус: {GetStringProperty(resultElement, "status")}");
+                        Console.WriteLine($"  Пройдено тестов: {GetIntProperty(resultElement, "passedTests")}/{GetIntProperty(resultElement, "totalTests")}");
+                        Console.WriteLine($"  Время выполнения: {GetIntProperty(resultElement, "executionTime")}мс");
+                    }
                     break;
+                    
                 case "error":
-                    Console.WriteLine($"Ошибка: {json.RootElement.GetProperty("message").GetString()}");
+                    Console.WriteLine($"ОШИБКА: {GetStringProperty(json.RootElement, "message")}");
                     break;
+                    
                 default:
-                    Console.WriteLine($"Необработанное сообщение: {jsonMessage}");
+                    Console.WriteLine($"Неизвестный тип сообщения: {jsonMessage}");
                     break;
             }
             Console.WriteLine("---");
@@ -141,19 +176,56 @@ class Program
         }
     }
 
+    // Вспомогательные методы для безопасного получения свойств
+    private static string GetStringProperty(JsonElement element, string propertyName)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && 
+            property.ValueKind == JsonValueKind.String)
+        {
+            return property.GetString();
+        }
+        return "N/A";
+    }
+
+    private static int GetIntProperty(JsonElement element, string propertyName)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && 
+            property.ValueKind == JsonValueKind.Number)
+        {
+            return property.GetInt32();
+        }
+        return 0;
+    }
+
     static async Task CreateRoom()
     {
         Console.Write("Введите название комнаты: ");
         var roomName = Console.ReadLine();
 
-        // Для тестирования - используем фиксированный languageId
-        var languageId = Guid.NewGuid();
+        Console.Write("Введите ID языка (например, 019ac01b-7977-731a-82e6-cfc2ab28e762): ");
+        var languageIdInput = Console.ReadLine();
+        
+        if (!Guid.TryParse(languageIdInput, out var languageId))
+        {
+            Console.WriteLine("ОШИБКА: Неверный формат GUID для languageId");
+            return;
+        }
+
+        Console.Write("Введите сложность задачи (Easy/Medium/Hard): ");
+        var difficulty = Console.ReadLine();
+
+        if (string.IsNullOrEmpty(roomName) || string.IsNullOrEmpty(difficulty))
+        {
+            Console.WriteLine("ОШИБКА: Название комнаты и сложность не могут быть пустыми");
+            return;
+        }
 
         var message = new
         {
-            type = "CreateRoom", // Имя метода в Hub
-            roomName,
-            languageId
+            type = "CreateRoom",
+            roomName = roomName,
+            languageId = languageId,
+            difficulty = difficulty
         };
 
         await SendMessage(message);
@@ -162,12 +234,18 @@ class Program
     static async Task JoinRoom()
     {
         Console.Write("Введите ID комнаты: ");
-        var roomId = Console.ReadLine();
+        var roomIdInput = Console.ReadLine();
+
+        if (!Guid.TryParse(roomIdInput, out var roomId))
+        {
+            Console.WriteLine("ОШИБКА: Неверный формат GUID для roomId");
+            return;
+        }
 
         var message = new
         {
-            type = "JoinRoom", // Имя метода в Hub
-            roomId = Guid.Parse(roomId)
+            type = "JoinRoom",
+            roomId = roomId
         };
 
         await SendMessage(message);
@@ -176,19 +254,31 @@ class Program
     static async Task SubmitCode()
     {
         Console.Write("Введите ID комнаты: ");
-        var roomId = Console.ReadLine();
+        var roomIdInput = Console.ReadLine();
 
-        Console.Write("Введите название задачи: ");
-        var problem = Console.ReadLine();
+        if (!Guid.TryParse(roomIdInput, out var roomId))
+        {
+            Console.WriteLine("ОШИБКА: Неверный формат GUID для roomId");
+            return;
+        }
+
+        Console.Write("Введите ID задачи: ");
+        var problemId = Console.ReadLine();
 
         Console.Write("Введите ваш код: ");
         var code = Console.ReadLine();
 
+        if (string.IsNullOrEmpty(problemId) || string.IsNullOrEmpty(code))
+        {
+            Console.WriteLine("ОШИБКА: ID задачи и код не могут быть пустыми");
+            return;
+        }
+
         var message = new
         {
-            type = "SubmitCode", // Имя метода в Hub
-            roomId = Guid.Parse(roomId),
-            problemId = problem,
+            type = "SubmitCode",
+            roomId = roomId,
+            problemId = problemId,
             code = code
         };
 

@@ -15,7 +15,8 @@ public interface ITaskRepository
 
     Task<Task> GetByIdAsyncWithTasks(Guid id);
     System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty();
-    
+
+    Task<Task> GetRandomByDifficultyAsync(Difficulty difficulty);
     
     Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId);
     Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId);

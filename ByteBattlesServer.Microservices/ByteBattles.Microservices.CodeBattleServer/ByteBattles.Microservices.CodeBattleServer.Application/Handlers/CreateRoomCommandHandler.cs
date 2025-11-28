@@ -19,7 +19,12 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Respo
 
     public async Task<ResponseCreateRoom> Handle(CreateRoomCommand request, CancellationToken cancellationToken)
     {
-        var room = new BattleRoom(request.Name);
+        
+        //Сначала проверка LanguageId
+        
+        var room = new BattleRoom(request.Name, request.LanguageId,request.Difficulty);
+        
+        
         
         room.AddParticipant(request.UserId);
         await _battleRoomRepository.AddAsync(room);
