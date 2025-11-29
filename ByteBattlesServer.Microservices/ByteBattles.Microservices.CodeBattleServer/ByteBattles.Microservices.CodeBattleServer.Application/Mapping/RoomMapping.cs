@@ -9,6 +9,7 @@ public class RoomMapping
     {
         Id = room.Id,
         Name = room.Name,
-        Status = room.Status
+        Status = room.Status,
+        LanguageId = room.LanguageId,
     };
 }

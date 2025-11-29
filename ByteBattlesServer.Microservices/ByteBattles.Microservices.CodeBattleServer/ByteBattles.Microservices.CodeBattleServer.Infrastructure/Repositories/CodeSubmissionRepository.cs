@@ -44,10 +44,10 @@ public class CodeSubmissionRepository : ICodeSubmissionRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<CodeSubmission>> GetByProblemIdAsync(string problemId)
+    public async Task<IEnumerable<CodeSubmission>> GetByProblemIdAsync(Guid problemId)
     {
         return await _context.CodeSubmissions
-            .Where(s => s.ProblemId == problemId)
+            .Where(s => s.TaskId == problemId)
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync();
     }

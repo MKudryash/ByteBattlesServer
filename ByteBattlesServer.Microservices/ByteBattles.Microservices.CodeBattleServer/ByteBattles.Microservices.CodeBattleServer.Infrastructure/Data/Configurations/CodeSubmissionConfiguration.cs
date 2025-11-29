@@ -10,7 +10,7 @@ public class CodeSubmissionConfiguration : IEntityTypeConfiguration<CodeSubmissi
     {
         builder.HasKey(s => s.Id);
         
-        builder.Property(s => s.ProblemId)
+        builder.Property(s => s.TaskId)
             .HasMaxLength(50)
             .IsRequired();
             

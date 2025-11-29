@@ -35,7 +35,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     RoomId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProblemId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TaskId = table.Column<Guid>(type: "uuid", maxLength: 50, nullable: false),
                     Code = table.Column<string>(type: "text", nullable: false),
                     SubmittedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Result_IsSuccess = table.Column<bool>(type: "boolean", nullable: true),

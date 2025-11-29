@@ -1,4 +1,5 @@
 using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
+using ByteBattles.Microservices.CodeBattleServer.Domain.Services;
 using ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data;
 using ByteBattles.Microservices.CodeBattleServer.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<ICodeSubmissionRepository, CodeSubmissionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ITaskLanguageService, RabbitMQTaskLanguageService>();
+        services.AddScoped<ICompilationService, RabbitMqCompilationService>();
         services.AddMemoryCache();
 
         return services;

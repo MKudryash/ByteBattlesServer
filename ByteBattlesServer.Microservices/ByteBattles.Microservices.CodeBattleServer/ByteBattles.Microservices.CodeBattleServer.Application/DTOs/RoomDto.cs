@@ -7,4 +7,5 @@ public class RoomDto
     public Guid Id { get; set; }
     public string Name { get; set; }
     public RoomStatus Status { get; set; }
+    public Guid LanguageId { get; set; }
 }

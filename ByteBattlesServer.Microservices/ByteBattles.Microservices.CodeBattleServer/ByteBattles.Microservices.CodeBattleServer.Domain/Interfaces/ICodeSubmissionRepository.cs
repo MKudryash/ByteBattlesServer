@@ -9,7 +9,7 @@ public interface ICodeSubmissionRepository
     Task<IEnumerable<CodeSubmission>> GetByRoomIdAsync(Guid roomId);
     Task<IEnumerable<CodeSubmission>> GetByUserIdAsync(Guid userId);
     Task<IEnumerable<CodeSubmission>> GetByRoomAndUserAsync(Guid roomId, Guid userId);
-    Task<IEnumerable<CodeSubmission>> GetByProblemIdAsync(string problemId);
+    Task<IEnumerable<CodeSubmission>> GetByProblemIdAsync(Guid problemId);
     Task<CodeSubmission?> GetLatestByRoomAndUserAsync(Guid roomId, Guid userId);
     Task AddAsync(CodeSubmission submission);
     Task UpdateAsync(CodeSubmission submission);

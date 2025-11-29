@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251128110242_InitialCreate")]
+    [Migration("20251129114936_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -73,16 +73,15 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ProblemId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TaskId")
+                        .HasMaxLength(50)
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
