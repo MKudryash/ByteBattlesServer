@@ -7,6 +7,7 @@ using ByteBattles.Microservices.CodeBattleServer.Domain.Models;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Services;
 using ByteBattlesServer.Domain.enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, SubmitCodeResponse>
 {
@@ -14,112 +15,144 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
     private readonly IBattleRoomRepository _battleRoomRepository;
     private readonly ICompilationService _compilationService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<SubmitCodeCommandHandler> _logger;
 
     public SubmitCodeCommandHandler(
         ICodeSubmissionRepository codeSubmissionRepository,
         IUnitOfWork unitOfWork, 
         ICompilationService compilationService, 
-        IBattleRoomRepository battleRoomRepository)
+        IBattleRoomRepository battleRoomRepository,
+        ILogger<SubmitCodeCommandHandler> logger)
     {
         _codeSubmissionRepository = codeSubmissionRepository;
         _compilationService = compilationService;
         _battleRoomRepository = battleRoomRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<SubmitCodeResponse> Handle(SubmitCodeCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("🟠 [SubmitCode] Starting code submission for User: {UserId}, Room: {RoomId}, Language: {LanguageId}", 
+            request.UserId, request.RoomId, request.LanguageId);
+
         var room = await _battleRoomRepository.GetByIdAsync(request.RoomId);
 
-        Console.WriteLine("Sending code" + request.LanguageId);
-        
         if (room == null)
-            throw new BattleRoomNotFoundException(request.RoomId);
-
-        if (!room.Participants.Any(p => p.UserId == request.UserId))
-            throw new BattleRoomUserNotFoundException(request.UserId);
-
-        // Создаем submission
-        var submission = new CodeSubmission(request.RoomId, request.UserId, request.Task.Id, request.Code);
-        
-        // Выполняем тесты
-        var executionResults = await _compilationService.ExecuteAllTestsAsync(
-            request.Code, 
-            request.Task.TestCases.ToList(), 
-            request.LanguageId);
-        
-        int passedTests = 0;
-        int totalTests = request.Task.TestCases.Count();
-        var totalExecutionTime = TimeSpan.Zero;
-        var testResults = new List<TestResultDto>();
-
-        // Обрабатываем результаты тестов
-        foreach (var (testCase, executionResult) in request.Task.TestCases.Zip(executionResults))
         {
-            var testStatus = executionResult.IsSuccess && 
-                           executionResult.Output?.Trim() == testCase.Output.Trim()
-                ? TestStatus.Passed
-                : TestStatus.Failed;
-
-            var testResult = new TestResultDto
-            {
-                Id = Guid.NewGuid(),
-                Status = testStatus.ToString(),
-                Input = testCase.Input,
-                ExpectedOutput = testCase.Output,
-                ActualOutput = executionResult.Output,
-                ErrorMessage = executionResult.ErrorMessage,
-                ExecutionTime = executionResult.ExecutionTime,
-                MemoryUsed = executionResult.MemoryUsed
-            };
-
-            testResults.Add(testResult);
-
-            if (testStatus == TestStatus.Passed)
-            {
-                passedTests++;
-            }
-
-            totalExecutionTime += executionResult.ExecutionTime;
+            _logger.LogWarning("🔴 [SubmitCode] Room not found: {RoomId}", request.RoomId);
+            throw new BattleRoomNotFoundException(request.RoomId);
         }
 
-      
-        var averageExecutionTime = totalTests > 0 ? totalExecutionTime / totalTests : TimeSpan.Zero;
-        var successRate = totalTests > 0 ? (double)passedTests / totalTests * 100 : 0;
-
-    
-        var response = new SubmitCodeResponse
+        if (!room.Participants.Any(p => p.UserId == request.UserId))
         {
-            Id = submission.Id,
-            TaskId = submission.TaskId,
-            UserId = submission.UserId,
-            LanguageId = request.LanguageId,
-            Status = passedTests == totalTests ? TestStatus.Passed : TestStatus.Failed,
-            SubmittedAt = submission.SubmittedAt,
-            CompletedAt = DateTime.UtcNow,
-            ExecutionTime = averageExecutionTime,
-            MemoryUsed = executionResults.FirstOrDefault()?.MemoryUsed ?? 0,
-            PassedTests = passedTests,
-            TotalTests = totalTests,
-            SuccessRate = successRate,
-            TestResults = testResults,
-            Attempts = new List<SolutionAttemptDto> 
+            _logger.LogWarning("🔴 [SubmitCode] User {UserId} not found in room {RoomId}", request.UserId, request.RoomId);
+            throw new BattleRoomUserNotFoundException(request.UserId);
+        }
+
+        try
+        {
+            // Создаем submission
+            var submission = new CodeSubmission(request.RoomId, request.UserId, request.Task.Id, request.Code);
+            
+            _logger.LogInformation("🟠 [SubmitCode] Executing tests for task: {TaskId}, Test cases: {TestCaseCount}", 
+                request.Task.Id, request.Task.TestCases.Count());
+
+            // Выполняем тесты
+            var executionResults = await _compilationService.ExecuteAllTestsAsync(
+                request.Code, 
+                request.Task.TestCases.ToList(), 
+                request.LanguageId);
+            
+            _logger.LogInformation("🟢 [SubmitCode] Tests executed successfully. Results count: {ResultsCount}", 
+                executionResults.Count());
+
+            int passedTests = 0;
+            int totalTests = request.Task.TestCases.Count();
+            var totalExecutionTime = TimeSpan.Zero;
+            var testResults = new List<TestResultDto>();
+
+            // Обрабатываем результаты тестов
+            foreach (var (testCase, executionResult) in request.Task.TestCases.Zip(executionResults))
             {
-                new SolutionAttemptDto
+                var testStatus = executionResult.IsSuccess && 
+                               executionResult.Output?.Trim() == testCase.Output.Trim()
+                    ? TestStatus.Passed
+                    : TestStatus.Failed;
+
+                var testResult = new TestResultDto
                 {
                     Id = Guid.NewGuid(),
-                    Code = request.Code,
-                    AttemptedAt = submission.SubmittedAt,
-                    Status = (passedTests == totalTests ? TestStatus.Passed : TestStatus.Failed).ToString(),
-                    ExecutionTime = averageExecutionTime,
-                    MemoryUsed = executionResults.FirstOrDefault()?.MemoryUsed ?? 0
-                }
-            }
-        };
-        
-        await _codeSubmissionRepository.AddAsync(submission);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    Status = testStatus.ToString(),
+                    Input = testCase.Input,
+                    ExpectedOutput = testCase.Output,
+                    ActualOutput = executionResult.Output,
+                    ErrorMessage = executionResult.ErrorMessage,
+                    ExecutionTime = executionResult.ExecutionTime,
+                    MemoryUsed = executionResult.MemoryUsed
+                };
 
-        return response;
+                testResults.Add(testResult);
+
+                if (testStatus == TestStatus.Passed)
+                {
+                    passedTests++;
+                }
+
+                totalExecutionTime += executionResult.ExecutionTime;
+            }
+
+            var averageExecutionTime = totalTests > 0 ? totalExecutionTime / totalTests : TimeSpan.Zero;
+            var successRate = totalTests > 0 ? (double)passedTests / totalTests * 100 : 0;
+            var finalStatus = passedTests == totalTests ? TestStatus.Passed : TestStatus.Failed;
+
+            _logger.LogInformation("🟢 [SubmitCode] Test results: {PassedTests}/{TotalTests} passed, Status: {Status}", 
+                passedTests, totalTests, finalStatus);
+
+            // Создаем response
+            var response = new SubmitCodeResponse
+            {
+                Id = submission.Id,
+                TaskId = submission.TaskId,
+                UserId = submission.UserId,
+                LanguageId = request.LanguageId,
+                Status = finalStatus,
+                SubmittedAt = submission.SubmittedAt,
+                CompletedAt = DateTime.UtcNow,
+                ExecutionTime = averageExecutionTime,
+                MemoryUsed = executionResults.FirstOrDefault()?.MemoryUsed ?? 0,
+                PassedTests = passedTests,
+                TotalTests = totalTests,
+                SuccessRate = successRate,
+                TestResults = testResults,
+                Attempts = new List<SolutionAttemptDto> 
+                {
+                    new SolutionAttemptDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = request.Code,
+                        AttemptedAt = submission.SubmittedAt,
+                        Status = finalStatus.ToString(),
+                        ExecutionTime = averageExecutionTime,
+                        MemoryUsed = executionResults.FirstOrDefault()?.MemoryUsed ?? 0
+                    }
+                }
+            };
+            
+            // Сохраняем в базу
+            await _codeSubmissionRepository.AddAsync(submission);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("🟢 [SubmitCode] Code submission completed successfully. Submission ID: {SubmissionId}", 
+                submission.Id);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔴 [SubmitCode] Error during code submission for User: {UserId}, Room: {RoomId}", 
+                request.UserId, request.RoomId);
+            throw;
+        }
     }
 }

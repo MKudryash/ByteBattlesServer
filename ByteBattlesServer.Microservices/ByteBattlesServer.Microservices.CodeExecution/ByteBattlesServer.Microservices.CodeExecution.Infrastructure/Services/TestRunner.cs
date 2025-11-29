@@ -34,10 +34,11 @@ public class TestRunner : ITestRunner
     {
         var results = new List<TestCaseResult>();
         var allTestsPassed = true;
-
+        
+        
         // Генерация исполняемого кода
         //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
-        var executableCode = submission.Code;
+        var executableCode = NormalizeCode(submission.Code);
 
         //Получить информацию о языке submission.Language
         var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
@@ -49,8 +50,8 @@ public class TestRunner : ITestRunner
         //     ExecutionCommand = ".c",
         //     SupportsCompilation = true
         // };
- 
         
+        Console.WriteLine($"FileExtension C: {languageInfo.FileExtension}");
         
         // Создание временного файла
         var filePath = _fileService.GetTempFilePath(languageInfo.FileExtension);
@@ -90,8 +91,25 @@ public class TestRunner : ITestRunner
         }
         finally
         {
+            
             // Очистка временных файлов
             await _fileService.DeleteFileAsync(filePath);
         }
+    }
+    private string NormalizeCode(string code)
+    {
+        if (string.IsNullOrEmpty(code))
+            return code;
+
+        // Разэкранирование специальных символов
+        return code
+            .Replace("\\n", "\n")           // Переносы строк
+            .Replace("\\t", "\t")           // Табуляции
+            .Replace("\\\"", "\"")          // Кавычки
+            .Replace("\\\\", "\\")          // Обратные слеши
+            .Replace("\\r", "\r")           // Возврат каретки
+            .Replace("\\'", "'")            // Одиночные кавычки
+            .Replace("\\b", "\b")           // Backspace
+            .Replace("\\f", "\f");          // Form feed
     }
 }

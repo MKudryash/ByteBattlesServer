@@ -24,7 +24,7 @@ public class TaskRepository : ITaskRepository
             .ThenInclude(tl => tl.Language)
             .Include(t => t.Libraries)
             .ThenInclude(l => l.Library)
-            .Include(t => t.TestCases.Where(tc => tc.IsExample))
+            .Include(t => t.TestCases)
             .OrderBy(t => EF.Functions.Random())
             .FirstOrDefaultAsync();
     }

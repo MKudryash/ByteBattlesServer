@@ -23,7 +23,6 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Respo
 
     public async Task<ResponseCreateRoom> Handle(CreateRoomCommand request, CancellationToken cancellationToken)
     {
-        //Сначала проверка LanguageId с возвратом task
 
         var task = await _taskLanguageService.GetTaskInfoAsync(request.LanguageId, request.Difficulty);
 
@@ -41,6 +40,8 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Respo
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        Console.WriteLine("Task:" + task.TestCases.Count);
+        
         return new ResponseCreateRoom()
         {
             Id = room.Id, 

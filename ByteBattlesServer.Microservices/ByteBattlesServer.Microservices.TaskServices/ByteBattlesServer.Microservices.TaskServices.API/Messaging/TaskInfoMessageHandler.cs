@@ -53,6 +53,7 @@ public class TaskInfoMessageHandler : BackgroundService
             var queryTask = new GetRandomTask(request.Difficulty);
             var task = await mediator.Send(queryTask);
             
+            
             if (task == null)
             {
                 _logger.LogWarning("🔴 [TaskServices] Task not found for difficulty: {Difficulty}", request.Difficulty);
@@ -71,6 +72,7 @@ public class TaskInfoMessageHandler : BackgroundService
                 return;
             }
             
+            Console.WriteLine("TaskInfo"+ task.TestCases);
             var response = new TaskInfoResponse()
             {
                 Id = task.Id,

@@ -312,10 +312,11 @@ class Program
     static async Task CreateRoom()
     {
         Console.Write("Введите название комнаты: ");
-        var roomName = Console.ReadLine();
+        var roomName = "mew";
 
         Console.Write("Введите ID языка (например, 019ac01b-7977-731a-82e6-cfc2ab28e762): ");
-        var languageIdInput = Console.ReadLine();
+        var languageIdInput = "0250f966-d5db-4994-8bd7-0911460ffbe9";
+        //var languageIdInput = "76f0b6a1-40fc-42ca-8735-cf8ce6096789";
         
         if (!Guid.TryParse(languageIdInput, out var languageId))
         {
@@ -324,7 +325,7 @@ class Program
         }
 
         Console.Write("Введите сложность задачи (Easy/Medium/Hard): ");
-        var difficulty = Console.ReadLine();
+        var difficulty = "Easy";
 
         if (string.IsNullOrEmpty(roomName) || string.IsNullOrEmpty(difficulty))
         {

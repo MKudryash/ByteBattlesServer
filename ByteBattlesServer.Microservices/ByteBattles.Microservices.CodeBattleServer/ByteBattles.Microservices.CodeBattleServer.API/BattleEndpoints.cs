@@ -6,6 +6,7 @@ using System.Text.Json;
 using ByteBattles.Microservices.CodeBattleServer.Application.Commands;
 using ByteBattles.Microservices.CodeBattleServer.Application.Queries;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Enums;
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
@@ -453,8 +454,8 @@ private static async Task SubmitCode(
             return;
         }
 
-        Console.WriteLine($"Submitting code for task: {taskInfo.Title} in room {roomId}");
-        Console.WriteLine($"Code: {roomQuery.LanguageId}");
+        Console.WriteLine($"🟠 [SubmitCode] Submitting code for task: {taskInfo.Title} in room {roomId}");
+        Console.WriteLine($"🟠 [SubmitCode] Language: {roomQuery.LanguageId}, Code length: {code.Length}");
 
         var command = new SubmitCodeCommand(
             roomId, 
@@ -466,6 +467,7 @@ private static async Task SubmitCode(
         
         var result = await mediator.Send(command);
         
+        // Сначала отправляем подтверждение отправки
         await SendToPlayer(playerId, new
         {
             type = "code_submitted",
@@ -488,6 +490,8 @@ private static async Task SubmitCode(
         // Отправляем результат проверки
         if (result != null)
         {
+            Console.WriteLine($"🟢 [SubmitCode] Sending code result: Status={result.Status}, Passed={result.PassedTests}/{result.TotalTests}");
+            
             await SendToPlayer(playerId, new
             {
                 type = "code_result",
@@ -496,18 +500,108 @@ private static async Task SubmitCode(
                 taskTitle = taskInfo.Title,
                 result = new
                 {
-                    status = result.Status,
+                    status = result.Status.ToString(),
                     passedTests = result.PassedTests,
                     totalTests = result.TotalTests,
-                    executionTime = result.ExecutionTime,
-                    message = result.Status
+                    executionTime = result.ExecutionTime?.TotalMilliseconds ?? 0,
+                    successRate = result.SuccessRate,
+                    statusMessage = result.Status,
+                    testResults = result.TestResults.Select(tr => new {
+                        status = tr.Status,
+                        input = tr.Input,
+                        expectedOutput = tr.ExpectedOutput,
+                        actualOutput = tr.ActualOutput,
+                        errorMessage = tr.ErrorMessage,
+                        executionTime = tr.ExecutionTime.TotalMilliseconds
+                    }).ToList()
                 }
+            }, mediator);
+            if (result.Status == TestStatus.Passed && result.PassedTests == result.TotalTests)
+            {
+                await HandlePlayerWin(playerId, roomId, taskInfo, mediator);
+            }
+        }
+        else
+        {
+            Console.WriteLine("🔴 [SubmitCode] Result is null!");
+            await SendToPlayer(playerId, new
+            {
+                type = "error",
+                message = "No result returned from code execution"
             }, mediator);
         }
     }
     catch (Exception ex)
     {
-        await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+        Console.WriteLine($"🔴 [SubmitCode] Error: {ex.Message}");
+        await SendToPlayer(playerId, new { 
+            type = "error", 
+            message = $"Code submission failed: {ex.Message}" 
+        }, mediator);
+    }
+}
+private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo taskInfo, IMediator mediator)
+{
+    try
+    {
+        Console.WriteLine($"🎉 Player {winnerId} won the battle in room {roomId}!");
+
+        // Уведомляем победителя
+        await SendToPlayer(winnerId, new
+        {
+            type = "battle_won",
+            roomId = roomId,
+            taskTitle = taskInfo.Title,
+            message = "🎉 Поздравляем! Вы выиграли битву!",
+            winnerId = winnerId.ToString(),
+            timestamp = DateTime.UtcNow
+        }, mediator);
+
+        // Уведомляем всех участников комнаты о победе
+        await BroadcastToRoom(winnerId, roomId, new
+        {
+            type = "battle_finished",
+            roomId = roomId,
+            winnerId = winnerId.ToString(),
+            taskTitle = taskInfo.Title,
+            message = $"Игрок {winnerId} выиграл битву!",
+            timestamp = DateTime.UtcNow
+        }, mediator);
+
+        // Обновляем статус комнаты в базе данных
+       // var endBattleCommand = new EndBattleCommand(roomId, winnerId);
+       // await mediator.Send(endBattleCommand);
+
+        // Очищаем данные комнаты
+        CleanupRoom(roomId);
+
+        Console.WriteLine($"Battle in room {roomId} finished. Winner: {winnerId}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error handling player win: {ex.Message}");
+    }
+}
+private static void CleanupRoom(Guid roomId)
+{
+    try
+    {
+        // Удаляем комнату из всех словарей
+        _roomParticipants.TryRemove(roomId, out _);
+        _readyPlayers.TryRemove(roomId, out _);
+        _roomTasks.TryRemove(roomId, out _);
+        
+        // Останавливаем и удаляем таймер
+        if (_roomTimers.TryRemove(roomId, out var timer))
+        {
+            timer?.Dispose();
+        }
+        
+        Console.WriteLine($"Room {roomId} cleaned up after battle completion");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error cleaning up room {roomId}: {ex.Message}");
     }
 }
 private static async Task SetPlayerReady(
