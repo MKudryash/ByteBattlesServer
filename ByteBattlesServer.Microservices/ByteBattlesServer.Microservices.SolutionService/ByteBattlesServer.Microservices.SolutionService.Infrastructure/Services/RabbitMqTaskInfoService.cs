@@ -27,18 +27,26 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
         _cache = cache;
         _logger = logger;
         
- 
-        _responseQueueName = $"solution.task.responses.{Guid.NewGuid():N}";
+        // Исправлено имя очереди для ясности
+        _responseQueueName = $"task.info.responses.{Guid.NewGuid():N}";
         
         SubscribeToResponses();
     }
 
-    public async Task<TaskInfo> GetTestCasesInfoAsync(Guid taskId)
+    public async Task<TaskInfo> GetTaskInfoAsync(Guid taskId) // Исправлено имя метода
     {
+        var cacheKey = $"task_info_{taskId}";
+        
+        // Пробуем получить из кэша
+        if (_cache.TryGetValue(cacheKey, out TaskInfo cachedInfo))
+        {
+            _logger.LogDebug("Returning cached task info for task {TaskId}", taskId);
+            return cachedInfo;
+        }
 
         var request = new TaskInfoRequest
         {
-            TaskId = taskId,
+            TaskId = taskId, // Исправлено свойство
             ReplyToQueue = _responseQueueName,
             CorrelationId = Guid.NewGuid().ToString()
         };
@@ -46,22 +54,24 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
         var tcs = new TaskCompletionSource<TaskInfoResponse>();
         _pendingRequests[request.CorrelationId] = tcs;
 
-try
+        try
         {
-            
-            // Исправляем exchange и routing key
+            EnsureSubscribed();
+
+            _logger.LogInformation("🟠 [TaskInfoService] Sending TaskInfoRequest for TaskId: {TaskId}, CorrelationId: {CorrelationId}", 
+                taskId, request.CorrelationId);
+
             _messageBus.Publish(
                 request, 
                 "codebattles.exchange", 
                 "codebattles.info.request");
 
-            // Уменьшим таймаут для тестирования
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(10));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                _logger.LogWarning("🔴 [CodeExecution] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
+                _logger.LogWarning("❌ [TaskInfoService] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
                     request.CorrelationId);
                 throw new TimeoutException("Task info request timeout");
             }
@@ -70,29 +80,31 @@ try
 
             if (!response.Success)
             {
-                _logger.LogError("🔴 [CodeExecution] TaskInfoRequest failed: {ErrorMessage}", response.ErrorMessage);
+                _logger.LogError("🔴 [TaskInfoService] TaskInfoRequest failed: {ErrorMessage}", response.ErrorMessage);
                 throw new InvalidOperationException($"Failed to get task info: {response.ErrorMessage}");
             }
 
-            _logger.LogInformation("🟢 [CodeExecution] Received successful TaskInfoResponse for TaskId: {TaskId}", response.Id);
+            _logger.LogInformation("🟢 [TaskInfoService] Received successful TaskInfoResponse for TaskId: {TaskId}", response.Id);
 
             var taskInfo = new TaskInfo
             {
-                Id = response.Id,
-                Title = response.Title,
-                Description = response.Description,
-                Author = response.Author,
+                Id = response.Id, // Исправлено свойство
+                Title = response.Title ?? string.Empty,
+                Description = response.Description ?? string.Empty,
+                Author = response.Author ?? string.Empty,
                 Difficulty = response.Difficulty,
-                FunctionName = response.FunctionName,
-                Parameters = response.Parameters,
-                PatternFunction = response.PatternFunction,
-                PatternMain = response.PatternMain,
-                ReturnType = response.ReturnType,
-                TestCases = response.TestCases,
-                Libraries = response.Libraries,
+                FunctionName = response.FunctionName ?? string.Empty,
+                Parameters = response.Parameters ?? string.Empty,
+                PatternFunction = response.PatternFunction ?? string.Empty,
+                PatternMain = response.PatternMain ?? string.Empty,
+                ReturnType = response.ReturnType ?? string.Empty,
+                TestCases = response.TestCases ?? new List<TestCaseInfo>(),
+                Libraries = response.Libraries ?? new List<LibraryInfo>(),
+                Language = response.Language
             };
 
-
+            // Кэшируем на 10 минут
+            _cache.Set(cacheKey, taskInfo, TimeSpan.FromMinutes(10));
             
             return taskInfo;
         }
@@ -104,34 +116,52 @@ try
 
     private void SubscribeToResponses()
     {
-        try
-        {
-            _messageBus.Subscribe<TaskInfoResponse>(
-                "codebattles.exchange",
-                _responseQueueName,
-                "codebattles.info.response",
-                async (response) =>
-                {
-                    _logger.LogInformation("🟠 [CodeExecution] Received TaskInfoResponse for CorrelationId: {CorrelationId}, Success: {Success}", 
-                        response.CorrelationId, response.Success);
+        if (_isSubscribed) return;
 
-                    if (_pendingRequests.TryGetValue(response.CorrelationId, out var tcs))
-                    {
-                        tcs.TrySetResult(response);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("🟡 [CodeExecution] No pending request found for correlation {CorrelationId}", 
-                            response.CorrelationId);
-                    }
-                });
-
-            _logger.LogInformation("🟢 [CodeExecution] Successfully subscribed to task responses on queue: {QueueName}", _responseQueueName);
-        }
-        catch (Exception ex)
+        lock (_subscribeLock)
         {
-            _logger.LogError(ex, "🔴 [CodeExecution] Failed to subscribe to task responses");
-            throw;
+            if (_isSubscribed) return;
+
+            try
+            {
+                _logger.LogInformation("🟠 [TaskInfoService] Subscribing to task info responses on queue: {QueueName}", _responseQueueName);
+
+                _messageBus.Subscribe<TaskInfoResponse>(
+                    "codebattles.exchange",
+                    _responseQueueName,
+                    "codebattles.info.response",
+                    async (response) =>
+                    {
+                        _logger.LogDebug("🟣 [TaskInfoService] Received task info response for correlation {CorrelationId}, Success: {Success}", 
+                            response?.CorrelationId, response?.Success);
+
+                        if (response == null)
+                        {
+                            _logger.LogWarning("⚠️ [TaskInfoService] Received null response");
+                            return;
+                        }
+
+                        if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
+                        {
+                            tcs.TrySetResult(response);
+                            _logger.LogDebug("✅ [TaskInfoService] Successfully processed response for correlation {CorrelationId}", 
+                                response.CorrelationId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("⚠️ [TaskInfoService] No pending request found for correlation {CorrelationId}", 
+                                response.CorrelationId);
+                        }
+                    });
+
+                _isSubscribed = true;
+                _logger.LogInformation("🟢 [TaskInfoService] Successfully subscribed to task info responses");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "🔴 [TaskInfoService] Failed to subscribe to task info responses");
+                throw;
+            }
         }
     }
 
@@ -147,8 +177,14 @@ try
     {
         if (!_disposed)
         {
+            // Завершаем все ожидающие запросы
+            foreach (var pendingRequest in _pendingRequests.Values)
+            {
+                pendingRequest.TrySetCanceled();
+            }
             _pendingRequests.Clear();
             _disposed = true;
+            _logger.LogInformation("🟠 [TaskInfoService] Disposed");
         }
     }
 }

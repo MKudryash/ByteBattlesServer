@@ -37,7 +37,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
     public async Task<SolutionDto> Handle(SubmitSolutionCommand request, CancellationToken cancellationToken)
     {
 
-        var task = await _taskInfoServices.GetTestCasesInfoAsync(request.TaskId);
+        var task = await _taskInfoServices.GetTaskInfoAsync(request.TaskId);
 
         // 2. Create solution entity
         var solution = new Solution(request.TaskId, request.UserId, request.LanguageId, request.Code);

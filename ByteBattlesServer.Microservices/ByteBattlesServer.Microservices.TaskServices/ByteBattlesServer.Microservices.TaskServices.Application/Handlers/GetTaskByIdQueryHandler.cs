@@ -17,6 +17,6 @@ public class GetTaskByIdQueryHandler: IRequestHandler<GetTaskByIdQuery, TaskDto?
         var task = await _repository.GetByIdAsync(request.TaskId);
         if (task ==null) 
             throw new TaskNotFoundException(request.TaskId);
-        return TaskMapping.MapToDto(task);
+        return TaskMapping.MapToDtoAllInfo(task);
     }
 }

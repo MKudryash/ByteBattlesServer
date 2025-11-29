@@ -4,5 +4,5 @@ namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Serv
 
 public interface ITaskInfoServices
 {
-    Task<TaskInfo> GetTestCasesInfoAsync(Guid taskId);
+    Task<TaskInfo> GetTaskInfoAsync(Guid taskId);
 }

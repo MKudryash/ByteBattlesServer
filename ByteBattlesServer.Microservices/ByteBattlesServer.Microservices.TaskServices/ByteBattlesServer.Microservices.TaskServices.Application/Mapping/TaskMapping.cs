@@ -9,6 +9,7 @@ public class TaskMapping
     public static TaskDto MapToDtoAllInfo(Task task)
     {
         if (task == null) return null;
+        var mainLanguage = task.TaskLanguages.FirstOrDefault()?.Language;
         return new TaskDto
         {
             Id = task.Id,
@@ -27,6 +28,16 @@ public class TaskMapping
             ReturnType = task.ReturnType,
             CreatedAt = task.CreatedAt,
             UpdatedAt = task.UpdatedAt,
+            Language = mainLanguage != null ? new LanguageDto
+            {
+                Id = mainLanguage.Id,
+                Title = mainLanguage.Title ?? string.Empty,
+                ShortTitle = mainLanguage.ShortTitle ?? string.Empty,
+                FileExtension = mainLanguage.FileExtension ?? string.Empty,
+                CompilerCommand = mainLanguage.CompilerCommand ?? string.Empty,
+                ExecutionCommand = mainLanguage.ExecutionCommand ?? string.Empty,
+                SupportsCompilation = mainLanguage.SupportsCompilation,
+            } : null,
             Libraries = task.Libraries.Select(l=>new LibraryDto()
             {
                 Id = l.IdLibrary,

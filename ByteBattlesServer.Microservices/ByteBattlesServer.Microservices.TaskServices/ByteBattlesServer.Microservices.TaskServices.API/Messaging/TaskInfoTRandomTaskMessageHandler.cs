@@ -4,16 +4,18 @@ using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
 using MediatR;
 
-public class TaskInfoMessageHandler : BackgroundService
+namespace ByteBattlesServer.Microservices.TaskServices.API.Messaging;
+
+public class TaskInfoTRandomTaskMessageHandler : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IMessageBus _messageBus;
-    private readonly ILogger<TaskInfoMessageHandler> _logger;
+    private readonly ILogger<TaskInfoTRandomTaskMessageHandler> _logger;
 
-    public TaskInfoMessageHandler(
+    public TaskInfoTRandomTaskMessageHandler(
         IServiceProvider serviceProvider,
         IMessageBus messageBus,
-        ILogger<TaskInfoMessageHandler> logger)
+        ILogger<TaskInfoTRandomTaskMessageHandler> logger)
     {
         _serviceProvider = serviceProvider;
         _messageBus = messageBus;

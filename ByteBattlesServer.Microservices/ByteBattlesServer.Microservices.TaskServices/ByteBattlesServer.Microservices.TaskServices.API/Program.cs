@@ -105,13 +105,16 @@ builder.Services.AddSwaggerGen(options =>
 
 // Регистрируем LanguageMessageHandler как Singleton, если он не зависит от scoped сервисов
 builder.Services.AddSingleton<LanguageMessageHandler>();
-builder.Services.AddSingleton<TaskInfoMessageHandler>();
+builder.Services.AddSingleton<TaskInfoTRandomTaskMessageHandler>();
+builder.Services.AddSingleton<TaskInfoTaskMessageHandler>();
 builder.Services.AddSingleton<TaskMessageHandler>();
 
 // LanguageMessageHandler регистрируется как Hosted Service
 builder.Services.AddHostedService<LanguageMessageHandler>();
 builder.Services.AddHostedService<TaskMessageHandler>();
-builder.Services.AddHostedService<TaskInfoMessageHandler>();
+builder.Services.AddHostedService<TaskInfoTaskMessageHandler>();
+
+builder.Services.AddHostedService<TaskInfoTRandomTaskMessageHandler>();
 
 builder.Services.AddCors(options =>
 {
