@@ -132,7 +132,16 @@ public class TaskRepository : ITaskRepository
     {
         await _dbContext.TaskLibraries.AddAsync(taskLibrary);
     }
-    
+
+
+    public async Task<Task?> InfoForCompilerAsync(Guid taskId)
+    {
+      return  await _dbContext.Tasks
+            .Include(up => up.TaskLanguages)
+            .Where(t=>t.Id == taskId)
+            .Include(t=>t.TestCases)
+            .FirstOrDefaultAsync();
+    }
 
     public async Task<List<Task>> SearchTask(Difficulty? difficulty, Guid? languageId, string? searchTerm)
     {

@@ -1,44 +1,44 @@
 using System.Collections.Concurrent;
-using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
-using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Service;
+namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Services;
 
-public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
+public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
 {
     private readonly IMessageBus _messageBus;
     private readonly IMemoryCache _cache;
-    private readonly ILogger<RabbitMQTaskLanguageService> _logger;
+    private readonly ILogger<RabbitMQTaskInfoService> _logger;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
     private readonly string _responseQueueName;
     private bool _disposed = false;
+    private bool _isSubscribed = false;
+    private readonly object _subscribeLock = new object();
 
-    public RabbitMQTaskLanguageService(
+    public RabbitMQTaskInfoService(
         IMessageBus messageBus,
         IMemoryCache cache,
-        ILogger<RabbitMQTaskLanguageService> logger)
+        ILogger<RabbitMQTaskInfoService> logger)
     {
         _messageBus = messageBus;
         _cache = cache;
         _logger = logger;
         
-        // Создаем уникальную очередь для ответов
-        _responseQueueName = $"codebattles.task.responses.{Guid.NewGuid():N}";
+ 
+        _responseQueueName = $"solution.task.responses.{Guid.NewGuid():N}";
         
         SubscribeToResponses();
     }
 
-    public async Task<TaskInfo> GetTaskInfoAsync(Guid languageId, Difficulty difficulty)
+    public async Task<TaskInfo> GetTestCasesInfoAsync(Guid taskId)
     {
-        
+
         var request = new TaskInfoRequest
         {
-            Id = languageId,
-            Difficulty = difficulty,
+            TaskId = taskId,
             ReplyToQueue = _responseQueueName,
             CorrelationId = Guid.NewGuid().ToString()
         };
@@ -46,11 +46,9 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
         var tcs = new TaskCompletionSource<TaskInfoResponse>();
         _pendingRequests[request.CorrelationId] = tcs;
 
-        try
+try
         {
-            _logger.LogInformation("🟠 [CodeExecution] Sending TaskInfoRequest for LanguageId: {LanguageId}, CorrelationId: {CorrelationId}", 
-                languageId, request.CorrelationId);
-
+            
             // Исправляем exchange и routing key
             _messageBus.Publish(
                 request, 
@@ -92,8 +90,8 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
                 ReturnType = response.ReturnType,
                 TestCases = response.TestCases,
                 Libraries = response.Libraries,
-                Language = response.Language,
             };
+
 
             
             return taskInfo;
@@ -134,6 +132,14 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
         {
             _logger.LogError(ex, "🔴 [CodeExecution] Failed to subscribe to task responses");
             throw;
+        }
+    }
+
+    private void EnsureSubscribed()
+    {
+        if (!_isSubscribed)
+        {
+            SubscribeToResponses();
         }
     }
 

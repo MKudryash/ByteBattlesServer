@@ -2,7 +2,7 @@ using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 
 namespace ByteBattlesServer.SharedContracts.IntegrationEvents;
 
-public class TaskInfo
+public class TaskInfoResponse
 {
     public Guid Id { get; set; }
     public string? Title { get; set; }
@@ -10,6 +10,7 @@ public class TaskInfo
     public string? Description { get; set; }
     
     public Difficulty Difficulty { get; set; }
+    public LanguageInfo Language { get; set; }
 
     public string? Author { get; set; }
 
@@ -21,11 +22,13 @@ public class TaskInfo
     
     public string? Parameters { get; set; }
     public string? ReturnType { get; set; }
-    public LanguageInfo? Language { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
     public virtual ICollection<TestCaseInfo> TestCases { get; set; } = new List<TestCaseInfo>();
     public virtual ICollection<LibraryInfo> Libraries { get; set; } = new List<LibraryInfo>();
+    public string CorrelationId { get; set; } = string.Empty;
+    public bool Success { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 }

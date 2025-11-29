@@ -21,6 +21,7 @@ public class TaskDto
   public int SuccessfulAttempts { get; set; }
   public double SuccessRate { get; set; }
   public double AverageExecutionTime { get; set; }
+  public LanguageDto Language { get; set; }
   public  List<TaskLanguageDto> TaskLanguages { get; set; }
   public List<LibraryDto>  Libraries { get; set; }
   public List<TestCaseDto> TestCases { get; set; }

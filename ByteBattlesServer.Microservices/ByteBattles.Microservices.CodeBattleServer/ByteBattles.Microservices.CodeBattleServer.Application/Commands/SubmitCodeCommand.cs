@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ByteBattles.Microservices.CodeBattleServer.Application.Commands;
 
-public record SubmitCodeCommand(Guid RoomId, Guid UserId, TaskInfo Task, string Code, Guid LanguageId) : IRequest<SubmitCodeResponse>;
+public record SubmitCodeCommand(Guid RoomId, Guid UserId, TaskInfo Task, string Code) : IRequest<SubmitCodeResponse>;

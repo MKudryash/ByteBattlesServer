@@ -42,6 +42,7 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Respo
 
         Console.WriteLine("Task:" + task.TestCases.Count);
         
+        Console.WriteLine("Task Language" + task.Language.Title);
         return new ResponseCreateRoom()
         {
             Id = room.Id, 

@@ -66,7 +66,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
 
     public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode,
         List<TestCaseInfo> testCasesDto,
-        Guid languageId)
+        LanguageInfo languageId)
     {
         var request = new CodeSubmissionEvent()
         {

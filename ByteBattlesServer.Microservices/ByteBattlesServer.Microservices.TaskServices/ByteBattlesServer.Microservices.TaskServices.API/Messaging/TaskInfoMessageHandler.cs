@@ -1,3 +1,4 @@
+using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
@@ -53,7 +54,6 @@ public class TaskInfoMessageHandler : BackgroundService
             var queryTask = new GetRandomTask(request.Difficulty);
             var task = await mediator.Send(queryTask);
             
-            
             if (task == null)
             {
                 _logger.LogWarning("🔴 [TaskServices] Task not found for difficulty: {Difficulty}", request.Difficulty);
@@ -71,31 +71,57 @@ public class TaskInfoMessageHandler : BackgroundService
                     "codebattles.info.response");
                 return;
             }
-            
-            Console.WriteLine("TaskInfo"+ task.TestCases);
+
+            // Добавляем проверки на null для всех критических свойств
+            if (task.TestCases == null)
+            {
+                _logger.LogWarning("⚠️ [TaskServices] TestCases is null for TaskId: {TaskId}", task.Id);
+                task.TestCases = new List<TestCaseDto>(); // Инициализируем пустым списком
+            }
+
+            if (task.Libraries == null)
+            {
+                _logger.LogWarning("⚠️ [TaskServices] Libraries is null for TaskId: {TaskId}", task.Id);
+                task.Libraries = new List<LibraryDto>(); // Инициализируем пустым списком
+            }
+
+            _logger.LogInformation("🟢 [TaskServices] Task found: {TaskId}, TestCases count: {TestCasesCount}, Libraries count: {LibrariesCount}", 
+                task.Id, task.TestCases.Count, task.Libraries.Count);
+
+            // Безопасное создание response с проверками на null
             var response = new TaskInfoResponse()
             {
                 Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Author = task.Author,
+                Title = task.Title ?? string.Empty,
+                Description = task.Description ?? string.Empty,
+                Author = task.Author ?? string.Empty,
                 Difficulty = task.Difficulty,
-                FunctionName = task.FunctionName,
-                Parameters = task.Parameters,
-                PatternFunction = task.PatternFunction,
-                PatternMain = task.PatternMain,
-                ReturnType = task.ReturnType,
-                TestCases = task.TestCases.Select(x => new TestCaseInfo()
+                FunctionName = task.FunctionName ?? string.Empty,
+                Parameters = task.Parameters ?? string.Empty,
+                PatternFunction = task.PatternFunction ?? string.Empty,
+                PatternMain = task.PatternMain ?? string.Empty,
+                ReturnType = task.ReturnType ?? string.Empty,
+                TestCases = task.TestCases?.Select(x => new TestCaseInfo()
                 {
-                    Input = x.Input,
-                    Output = x.Output
-                }).ToList(),
-                Libraries = task.Libraries.Select(x => new LibraryInfo()
+                    Input = x.Input ?? string.Empty,
+                    Output = x.Output ?? string.Empty
+                }).ToList() ?? new List<TestCaseInfo>(),
+                Libraries = task.Libraries?.Select(x => new LibraryInfo()
                 {
                     Id = x.Id,
-                    NameLibrary = x.Name,
-                    Description = x.Description
-                }).ToList(),
+                    NameLibrary = x.Name ?? string.Empty,
+                    Description = x.Description ?? string.Empty
+                }).ToList() ?? new List<LibraryInfo>(),
+                Language = new LanguageInfo()
+                {
+                    Id = language.Id,
+                    Title = language.Title ?? string.Empty,
+                    ShortTitle = language.ShortTitle ?? string.Empty,
+                    FileExtension = language.FileExtension ?? string.Empty,
+                    CompilerCommand = language.CompilerCommand ?? string.Empty,
+                    ExecutionCommand = language.ExecutionCommand ?? string.Empty,
+                    SupportsCompilation = language.SupportsCompilation,
+                },
                 CorrelationId = request.CorrelationId,
                 Success = true
             };
@@ -140,7 +166,6 @@ public class TaskInfoMessageHandler : BackgroundService
 
             _logger.LogInformation("🟢 [TaskServices] TaskInfo subscriptions started successfully");
             
-            // Ждем отмены вместо бесконечного ожидания
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
         catch (TaskCanceledException)

@@ -219,7 +219,6 @@ public static class BattleEndpoints
                 case "SubmitCode":
                     await SubmitCode(playerId,
                         json.RootElement.GetProperty("roomId").GetGuid(),
-                        json.RootElement.GetProperty("problemId").GetGuid(),
                         json.RootElement.GetProperty("code").GetString(),
                         mediator,
                         connectionManager);
@@ -426,7 +425,6 @@ private static async Task JoinRoom(
 private static async Task SubmitCode(
     Guid playerId, 
     Guid roomId, 
-    Guid problemId, 
     string code, 
     IMediator mediator,
     IConnectionManager connectionManager)
@@ -453,16 +451,13 @@ private static async Task SubmitCode(
             }, mediator);
             return;
         }
-
-        Console.WriteLine($"🟠 [SubmitCode] Submitting code for task: {taskInfo.Title} in room {roomId}");
-        Console.WriteLine($"🟠 [SubmitCode] Language: {roomQuery.LanguageId}, Code length: {code.Length}");
+        
 
         var command = new SubmitCodeCommand(
             roomId, 
             playerId, 
             taskInfo, 
-            code, 
-            roomQuery.LanguageId
+            code
         );
         
         var result = await mediator.Send(command);
@@ -472,7 +467,7 @@ private static async Task SubmitCode(
         {
             type = "code_submitted",
             roomId = roomId,
-            problemId = problemId,
+            problemId = taskInfo.Id,
             taskTitle = taskInfo.Title,
             message = "Код отправлен на проверку"
         }, mediator);
@@ -482,7 +477,7 @@ private static async Task SubmitCode(
         {
             type = "code_submitted_by_player",
             playerId = playerId.ToString(),
-            problemId = problemId,
+            problemId = taskInfo.Id,
             taskTitle = taskInfo.Title,
             roomId = roomId
         }, mediator);
@@ -496,7 +491,7 @@ private static async Task SubmitCode(
             {
                 type = "code_result",
                 roomId = roomId,
-                problemId = problemId,
+                problemId = taskInfo.Id,
                 taskTitle = taskInfo.Title,
                 result = new
                 {

@@ -17,34 +17,28 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
     private readonly ISolutionRepository _solutionRepository;
     private readonly ICompilationService _compilationService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITestCasesServices _testCasesServices;
+    private readonly ITaskInfoServices _taskInfoServices;
     private readonly IMessageBus _messageBus;
 
     public SubmitSolutionCommandHandler(
         ISolutionRepository solutionRepository,
         ICompilationService compilationService,
         IUnitOfWork unitOfWork,
-        ITestCasesServices testCasesServices,
+        ITaskInfoServices taskInfoServices,
         IMessageBus messageBus)
     {
         _solutionRepository = solutionRepository;
         _compilationService = compilationService;
         _unitOfWork = unitOfWork;
-        _testCasesServices = testCasesServices;
+        _taskInfoServices = taskInfoServices;
         _messageBus = messageBus;
     }
 
     public async Task<SolutionDto> Handle(SubmitSolutionCommand request, CancellationToken cancellationToken)
     {
-        // 1. Get task and test cases
-        //var task = await _taskServiceClient.GetTaskAsync(request.TaskId);
-        //var testCases = await _taskServiceClient.GetTestCasesAsync(request.TaskId);
 
-        var testCasesInfo = await _testCasesServices.GetTestCasesInfoAsync(request.TaskId);
+        var task = await _taskInfoServices.GetTestCasesInfoAsync(request.TaskId);
 
-        var testCases = testCasesInfo.Select(x => 
-            new TestCaseDto(x.TaskId, x.Input, x.Output, false)).ToList();
-        
         // 2. Create solution entity
         var solution = new Solution(request.TaskId, request.UserId, request.LanguageId, request.Code);
         await _solutionRepository.AddAsync(solution);
@@ -58,85 +52,87 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
         try
         {
             // 4. Update status to Compiling
-            solution.UpdateStatus(SolutionStatus.Compiling, 0, testCases.Count);
+            solution.UpdateStatus(SolutionStatus.Compiling, 0, task.TestCases.Count);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 5. Execute all tests at once using batch execution
-            solution.UpdateStatus(SolutionStatus.RunningTests, 0, testCases.Count);
+            solution.UpdateStatus(SolutionStatus.RunningTests, 0, task.TestCases.Count);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // var executionResults = await _compilationService.ExecuteAllTestsAsync(
-            //     request.Code, 
-            //     testCases,
-            //     request.LanguageId);
 
-            var executionResults = await _compilationService.ExecuteAllTestsAsync(request.Code,
-                testCases,
-                request.LanguageId);
-
-            int passedTests = 0;
-            var totalExecutionTime = TimeSpan.Zero;
-
-            // 6. Process test results
-            foreach (var (testCaseDto, executionResult) in testCases.Zip(executionResults))
+            if (task.Language != null)
             {
-                var testResult = new TestResult(solution.Id, testCaseDto.Id, testCaseDto.Input, testCaseDto.Output);
-                
-                var testStatus = executionResult.IsSuccess && 
-                               executionResult.Output?.Trim() == testCaseDto.Output.Trim()
-                    ? TestStatus.Passed
-                    : TestStatus.Failed;
+                var executionResults = await _compilationService.ExecuteAllTestsAsync(request.Code,
+                    task.TestCases.Select(x => new TestCaseDto(x.Id, x.Input, x.Output, x.Hidden)
+                    ).ToList(),
+                    task.Language);
 
-                testResult.UpdateResult(
-                    testStatus,
-                    executionResult.Output,
-                    executionResult.ErrorMessage,
-                    executionResult.ExecutionTime,
-                    executionResult.MemoryUsed);
+                int passedTests = 0;
+                var totalExecutionTime = TimeSpan.Zero;
 
-                solution.AddTestResult(testResult);
-                await _solutionRepository.AddTestResultAsync(testResult);
-
-                if (testStatus == TestStatus.Passed)
+                var testCases = task.TestCases;
+                // 6. Process test results
+                foreach (var (testCaseDto, executionResult) in task.TestCases.Zip(executionResults))
                 {
-                    passedTests++;
+                    var testResult = new TestResult(solution.Id, testCaseDto.Id, testCaseDto.Input, testCaseDto.Output);
+
+                    var testStatus = executionResult.IsSuccess &&
+                                     executionResult.Output?.Trim() == testCaseDto.Output.Trim()
+                        ? TestStatus.Passed
+                        : TestStatus.Failed;
+
+                    testResult.UpdateResult(
+                        testStatus,
+                        executionResult.Output,
+                        executionResult.ErrorMessage,
+                        executionResult.ExecutionTime,
+                        executionResult.MemoryUsed);
+
+                    solution.AddTestResult(testResult);
+                    await _solutionRepository.AddTestResultAsync(testResult);
+
+                    if (testStatus == TestStatus.Passed)
+                    {
+                        passedTests++;
+                    }
+
+                    totalExecutionTime += executionResult.ExecutionTime;
                 }
 
-                totalExecutionTime += executionResult.ExecutionTime;
+                // 7. Update solution status
+                var averageExecutionTime = testCases.Count > 0 ? totalExecutionTime / testCases.Count : TimeSpan.Zero;
+                var finalStatus = passedTests == testCases.Count ? SolutionStatus.Completed : SolutionStatus.Failed;
+
+                solution.UpdateStatus(finalStatus, passedTests, testCases.Count, averageExecutionTime);
+                attempt.UpdateStatus(finalStatus, averageExecutionTime);
+
+                // 8. Update user stats
+                var userUpdateStats = new UserStatsIntegrationEvent()
+                {
+                    UserId = request.UserId,
+                    IsSuccessful = finalStatus == SolutionStatus.Completed,
+                    Difficulty = request.Difficulty,
+                    ExecutionTime = averageExecutionTime,
+                    TaskId = request.TaskId
+                };
+                _messageBus.Publish(
+                    userUpdateStats,
+                    "user_stats-events",
+                    "user.stats.update");
             }
 
-            // 7. Update solution status
-            var averageExecutionTime = testCases.Count > 0 ? totalExecutionTime / testCases.Count : TimeSpan.Zero;
-            var finalStatus = passedTests == testCases.Count ? SolutionStatus.Completed : SolutionStatus.Failed;
-            
-            solution.UpdateStatus(finalStatus, passedTests, testCases.Count, averageExecutionTime);
-            attempt.UpdateStatus(finalStatus, averageExecutionTime);
-
-            // 8. Update user stats
-            var userUpdateStats = new UserStatsIntegrationEvent()
-            {
-                UserId = request.UserId,
-                IsSuccessful = finalStatus == SolutionStatus.Completed,
-                Difficulty = request.Difficulty,
-                ExecutionTime = averageExecutionTime,
-                TaskId = request.TaskId
-            };
-            _messageBus.Publish(
-                userUpdateStats,
-                "user_stats-events",
-                "user.stats.update");
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            
+
             return MapToDto(solution);
         }
         catch (Exception ex)
         {
             // Handle compilation or execution errors
-            solution.UpdateStatus(SolutionStatus.Failed, 0, testCases.Count);
+            solution.UpdateStatus(SolutionStatus.Failed, 0, task.TestCases.Count);
             attempt.UpdateStatus(SolutionStatus.Failed);
-            
+
             // Create error test results for all test cases
-            foreach (var testCaseDto in testCases)
+            foreach (var testCaseDto in task.TestCases)
             {
                 var testResult = new TestResult(solution.Id, testCaseDto.Id, testCaseDto.Input, testCaseDto.Output);
                 testResult.UpdateResult(
@@ -145,13 +141,13 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
                     $"Execution failed: {ex.Message}",
                     TimeSpan.Zero,
                     0);
-                
+
                 solution.AddTestResult(testResult);
                 await _solutionRepository.AddTestResultAsync(testResult);
             }
-            
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            
+
             // Re-throw the exception to be handled by the exception middleware
             throw new ApplicationException($"Solution execution failed: {ex.Message}", ex);
         }

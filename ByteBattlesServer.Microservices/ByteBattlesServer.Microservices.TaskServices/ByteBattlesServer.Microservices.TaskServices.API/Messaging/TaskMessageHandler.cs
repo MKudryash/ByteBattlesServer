@@ -48,6 +48,9 @@ public class TaskMessageHandler : BackgroundService
             var query = new GetTestCasesByTaskQuery(arg.TaskId);
             var testCase = await mediator.Send(query);
 
+            var queryLanguage = new GetTaskByIdQuery(arg.TaskId);
+            var task = await mediator.Send(queryLanguage);
+
             var response =
                 new TestCasesInfoResponse()
                 {
@@ -58,6 +61,16 @@ public class TaskMessageHandler : BackgroundService
                             TaskId = arg.TaskId  
                         }
                     ).ToList(),
+                    // Language = new LanguageInfo()
+                    // {
+                    //     Id = task..Id,
+                    //     Title = language.Title,
+                    //     ShortTitle = language.ShortTitle,
+                    //     FileExtension = language.FileExtension,
+                    //     CompilerCommand = language.CompilerCommand,
+                    //     ExecutionCommand = language.ExecutionCommand,
+                    //     SupportsCompilation = language.SupportsCompilation,
+                    // },
                     CorrelationId = arg.CorrelationId,
                     Success = true
                 };

@@ -2,7 +2,7 @@ using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Services;
 
-public interface ITestCasesServices
+public interface ITaskInfoServices
 {
-    Task<List<TestCaseInfo>> GetTestCasesInfoAsync(Guid taskId);
+    Task<TaskInfo> GetTestCasesInfoAsync(Guid taskId);
 }

@@ -102,212 +102,309 @@ class Program
         }
     }
 
-    static void ProcessMessage(string jsonMessage)
+ static void ProcessMessage(string jsonMessage)
+{
+    try
     {
-        try
+        using var json = JsonDocument.Parse(jsonMessage);
+        var typeProperty = json.RootElement.TryGetProperty("type", out var typeElement) 
+            ? typeElement.GetString() 
+            : "unknown";
+
+        Console.WriteLine($"\n[СЕРВЕР] {DateTime.Now:T}");
+        Console.WriteLine($"Тип: {typeProperty}");
+
+        switch (typeProperty)
         {
-            using var json = JsonDocument.Parse(jsonMessage);
-            var typeProperty = json.RootElement.TryGetProperty("type", out var typeElement) 
-                ? typeElement.GetString() 
-                : "unknown";
+            case "connected":
+                if (json.RootElement.TryGetProperty("playerId", out var playerIdElement))
+                    _playerId = playerIdElement.GetString();
+                Console.WriteLine($"ID игрока: {_playerId}");
+                Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
+                break;
+                
+            case "room_created":
+                Console.WriteLine($" Комната создана: {GetStringProperty(json.RootElement, "roomName")}");
+                Console.WriteLine($"ID комнаты: {GetStringProperty(json.RootElement, "roomId")}");
+                Console.WriteLine($"Сложность: {GetStringProperty(json.RootElement, "difficulty")}");
+                Console.WriteLine($"ообщение: {GetStringProperty(json.RootElement, "message")}");
+                
+                if (Guid.TryParse(GetStringProperty(json.RootElement, "roomId"), out var roomId))
+                {
+                    _currentRoomId = roomId;
+                }
+                break;
+                
+            case "joined_room":
+                Console.WriteLine($"Присоединились к комнате: {GetStringProperty(json.RootElement, "roomName")}");
+                Console.WriteLine($"ID комнаты: {GetStringProperty(json.RootElement, "roomId")}");
+                Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
+                Console.WriteLine($"Участников: {GetIntProperty(json.RootElement, "participants")}");
+                Console.WriteLine($"Статус: {GetStringProperty(json.RootElement, "status")}");
+                Console.WriteLine($"Можно начать: {(GetBoolProperty(json.RootElement, "canStart") ? "ДА" : "НЕТ")}");
+                
+                if (Guid.TryParse(GetStringProperty(json.RootElement, "roomId"), out var joinedRoomId))
+                {
+                    _currentRoomId = joinedRoomId;
+                }
+                break;
+                
+            case "player_joined":
+                Console.WriteLine($"Новый игрок: {GetStringProperty(json.RootElement, "playerId")}");
+                Console.WriteLine($"Теперь участников: {GetIntProperty(json.RootElement, "participants")}");
+                Console.WriteLine($"Статус комнаты: {GetStringProperty(json.RootElement, "roomStatus")}");
+                break;
+                
+            case "player_left":
+                Console.WriteLine($"Игрок вышел: {GetStringProperty(json.RootElement, "playerId")}");
+                Console.WriteLine($"Осталось участников: {GetIntProperty(json.RootElement, "participants")}");
+                break;
+                
+            case "room_status":
+                Console.WriteLine($"СТАТУС КОМНАТЫ:");
+                Console.WriteLine($"ID: {GetStringProperty(json.RootElement, "roomId")}");
+                Console.WriteLine($"Статус: {GetStringProperty(json.RootElement, "status")}");
+                Console.WriteLine($"Участников: {GetIntProperty(json.RootElement, "participantCount")}");
+                Console.WriteLine($"Готово: {GetIntProperty(json.RootElement, "readyCount")}");
+                Console.WriteLine($"Можно начать: {(GetBoolProperty(json.RootElement, "canStart") ? "ДА" : "НЕТ")}");
+                Console.WriteLine($"Активна: {(GetBoolProperty(json.RootElement, "isActive") ? "ДА" : "НЕТ")}");
+                break;
+                
+            case "game_can_start":
+                Console.WriteLine($"КОМНАТА ГОТОВА К НАЧАЛУ!");
+                Console.WriteLine($"{GetStringProperty(json.RootElement, "message")}");
+                Console.WriteLine($"Подтвердите готовность в течение {GetIntProperty(json.RootElement, "countdown")} секунд");
+                break;
+                
+            case "player_ready_changed":
+                var playerId = GetStringProperty(json.RootElement, "playerId");
+                var isReady = GetBoolProperty(json.RootElement, "isReady");
+                var readyCount = GetIntProperty(json.RootElement, "readyCount");
+                var totalPlayers = GetIntProperty(json.RootElement, "totalPlayers");
+                
+                if (playerId == _playerId)
+                {
+                    _isReady = isReady;
+                }
+                else
+                {
+                }
+                Console.WriteLine($"Готовы: {readyCount}/{totalPlayers} игроков");
+                break;
+                
+            case "player_ready_set":
+                _isReady = GetBoolProperty(json.RootElement, "isReady");
+                Console.WriteLine($"{(GetBoolProperty(json.RootElement, "isReady") ? "Готовы" : "Не готовы")} {GetStringProperty(json.RootElement, "message")}");
+                break;
+                
+            case "game_started":
+                Console.WriteLine($"ИГРА НАЧАЛАСЬ!");
+                Console.WriteLine($"{GetStringProperty(json.RootElement, "message")}");
+                Console.WriteLine($"Время начала: {GetStringProperty(json.RootElement, "startTime")}");
+                Console.WriteLine($"Длительность: {GetIntProperty(json.RootElement, "duration")} секунд");
+                _isReady = false; // Сбрасываем флаг готовности
+                break;
+                
+            case "readiness_timeout":
+                Console.WriteLine($"ВРЕМЯ ОЖИДАНИЯ ИСТЕКЛО");
+                Console.WriteLine($"{GetStringProperty(json.RootElement, "message")}");
+                Console.WriteLine($"Готово: {GetIntProperty(json.RootElement, "readyCount")}/{GetIntProperty(json.RootElement, "totalPlayers")}");
+                _isReady = false;
+                break;
+                
+            case "code_submitted":
+                Console.WriteLine($"Код отправлен на проверку");
+                Console.WriteLine($"Задача: {GetStringProperty(json.RootElement, "taskTitle")}");
+                break;
+                
+            case "code_submitted_by_player":
+                Console.WriteLine($"Игрок {GetStringProperty(json.RootElement, "playerId")} отправил код");
+                Console.WriteLine($"Задача: {GetStringProperty(json.RootElement, "taskTitle")}");
+                break;
+                
+            case "code_result":
+                ProcessCodeResult(json.RootElement);
+                break;
+                
+            case "battle_won":
+                ProcessBattleWin(json.RootElement, true);
+                break;
+                
+            case "battle_finished":
+                ProcessBattleWin(json.RootElement, false);
+                break;
+                
+            case "left_room":
+                Console.WriteLine($"Вы покинули комнату {GetStringProperty(json.RootElement, "roomId")}");
+                _currentRoomId = Guid.Empty;
+                _isReady = false;
+                break;
+                
+            case "player_disconnected":
+                Console.WriteLine($"🔌 Игрок отключился: {GetStringProperty(json.RootElement, "playerId")}");
+                if (json.RootElement.TryGetProperty("participants", out var disconnectedParticipants) && 
+                    disconnectedParticipants.ValueKind == JsonValueKind.Number)
+                {
+                    Console.WriteLine($"👥 Осталось участников: {disconnectedParticipants.GetInt32()}");
+                }
+                break;
+                
+            case "error":
+                Console.WriteLine($"ОШИБКА: {GetStringProperty(json.RootElement, "message")}");
+                break;
+                
+            default:
+                Console.WriteLine($"Неизвестный тип сообщения: {jsonMessage}");
+                break;
+        }
+        Console.WriteLine("---");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Ошибка обработки сообщения: {ex.Message}");
+        Console.WriteLine($"Полученное сообщение: {jsonMessage}");
+    }
+}
 
-            Console.WriteLine($"\n[СЕРВЕР] {DateTime.Now:T}");
-            Console.WriteLine($"Тип: {typeProperty}");
-
-            switch (typeProperty)
+// НОВЫЙ МЕТОД: Обработка результатов проверки кода
+static void ProcessCodeResult(JsonElement element)
+{
+    Console.WriteLine($"РЕЗУЛЬТАТ ПРОВЕРКИ КОДА:");
+    
+    if (element.TryGetProperty("result", out var resultElement))
+    {
+        var status = GetStringProperty(resultElement, "status");
+        var passedTests = GetIntProperty(resultElement, "passedTests");
+        var totalTests = GetIntProperty(resultElement, "totalTests");
+        var executionTime = GetIntProperty(resultElement, "executionTime");
+        
+        Console.WriteLine($"Статус: {status}");
+        Console.WriteLine($"Пройдено тестов: {passedTests}/{totalTests}");
+        Console.WriteLine($"Время выполнения: {executionTime}мс");
+        
+        // Проверяем, выиграл ли игрок
+        if (status == "Passed" && passedTests == totalTests && totalTests > 0)
+        {
+            Console.WriteLine($"ВЫ ПРОШЛИ ВСЕ ТЕСТЫ!");
+            Console.WriteLine($"ПОЗДРАВЛЯЕМ С ПОБЕДОЙ!");
+        }
+        else if (passedTests == totalTests && totalTests > 0)
+        {
+            Console.WriteLine($"ВСЕ ТЕСТЫ ПРОЙДЕНЫ!");
+        }
+        
+        // Выводим детальную информацию о тестах
+        if (resultElement.TryGetProperty("testResults", out var testResults) && 
+            testResults.ValueKind == JsonValueKind.Array)
+        {
+            Console.WriteLine($"ДЕТАЛЬНЫЕ РЕЗУЛЬТАТЫ:");
+            var testNumber = 1;
+            foreach (var test in testResults.EnumerateArray())
             {
-                case "connected":
-                    if (json.RootElement.TryGetProperty("playerId", out var playerIdElement))
-                        _playerId = playerIdElement.GetString();
-                    Console.WriteLine($"ID игрока: {_playerId}");
-                    Console.WriteLine($"Сообщение: {GetStringProperty(json.RootElement, "message")}");
-                    break;
-                    
-                case "room_created":
-                    Console.WriteLine($"✅ Комната создана: {GetStringProperty(json.RootElement, "roomName")}");
-                    Console.WriteLine($"🆔 ID комнаты: {GetStringProperty(json.RootElement, "roomId")}");
-                    Console.WriteLine($"📊 Сложность: {GetStringProperty(json.RootElement, "difficulty")}");
-                    Console.WriteLine($"📝 Сообщение: {GetStringProperty(json.RootElement, "message")}");
-                    
-                    if (Guid.TryParse(GetStringProperty(json.RootElement, "roomId"), out var roomId))
-                    {
-                        _currentRoomId = roomId;
-                    }
-                    break;
-                    
-                case "joined_room":
-                    Console.WriteLine($"✅ Присоединились к комнате: {GetStringProperty(json.RootElement, "roomName")}");
-                    Console.WriteLine($"🆔 ID комнаты: {GetStringProperty(json.RootElement, "roomId")}");
-                    Console.WriteLine($"📝 Сообщение: {GetStringProperty(json.RootElement, "message")}");
-                    Console.WriteLine($"👥 Участников: {GetIntProperty(json.RootElement, "participants")}");
-                    Console.WriteLine($"📊 Статус: {GetStringProperty(json.RootElement, "status")}");
-                    Console.WriteLine($"🚀 Можно начать: {(GetBoolProperty(json.RootElement, "canStart") ? "ДА" : "НЕТ")}");
-                    
-                    if (Guid.TryParse(GetStringProperty(json.RootElement, "roomId"), out var joinedRoomId))
-                    {
-                        _currentRoomId = joinedRoomId;
-                    }
-                    break;
-                    
-                case "player_joined":
-                    Console.WriteLine($"🎮 Новый игрок: {GetStringProperty(json.RootElement, "playerId")}");
-                    Console.WriteLine($"👥 Теперь участников: {GetIntProperty(json.RootElement, "participants")}");
-                    Console.WriteLine($"📊 Статус комнаты: {GetStringProperty(json.RootElement, "roomStatus")}");
-                    break;
-                    
-                case "player_left":
-                    Console.WriteLine($"👋 Игрок вышел: {GetStringProperty(json.RootElement, "playerId")}");
-                    Console.WriteLine($"👥 Осталось участников: {GetIntProperty(json.RootElement, "participants")}");
-                    break;
-                    
-                case "room_status":
-                    Console.WriteLine($"📊 СТАТУС КОМНАТЫ:");
-                    Console.WriteLine($"   🆔 ID: {GetStringProperty(json.RootElement, "roomId")}");
-                    Console.WriteLine($"   📊 Статус: {GetStringProperty(json.RootElement, "status")}");
-                    Console.WriteLine($"   👥 Участников: {GetIntProperty(json.RootElement, "participantCount")}");
-                    Console.WriteLine($"   ✅ Готово: {GetIntProperty(json.RootElement, "readyCount")}");
-                    Console.WriteLine($"   🚀 Можно начать: {(GetBoolProperty(json.RootElement, "canStart") ? "ДА" : "НЕТ")}");
-                    Console.WriteLine($"   🔥 Активна: {(GetBoolProperty(json.RootElement, "isActive") ? "ДА" : "НЕТ")}");
-                    break;
-                    
-                case "game_can_start":
-                    Console.WriteLine($"🚀 КОМНАТА ГОТОВА К НАЧАЛУ!");
-                    Console.WriteLine($"📝 {GetStringProperty(json.RootElement, "message")}");
-                    Console.WriteLine($"⏰ Подтвердите готовность в течение {GetIntProperty(json.RootElement, "countdown")} секунд");
-                    Console.WriteLine("💡 Используйте команду '4' для подтверждения готовности");
-                    break;
-                    
-                case "player_ready_changed":
-                    var playerId = GetStringProperty(json.RootElement, "playerId");
-                    var isReady = GetBoolProperty(json.RootElement, "isReady");
-                    var readyCount = GetIntProperty(json.RootElement, "readyCount");
-                    var totalPlayers = GetIntProperty(json.RootElement, "totalPlayers");
-                    
-                    if (playerId == _playerId)
-                    {
-                        _isReady = isReady;
-                        Console.WriteLine($"{(isReady ? "✅" : "❌")} Вы {(isReady ? "подтвердили" : "отменили")} готовность");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"🎮 Игрок {playerId} {(isReady ? "✅ готов" : "❌ не готов")}");
-                    }
-                    Console.WriteLine($"📊 Готовы: {readyCount}/{totalPlayers} игроков");
-                    break;
-                    
-                case "player_ready_set":
-                    _isReady = GetBoolProperty(json.RootElement, "isReady");
-                    Console.WriteLine($"{(GetBoolProperty(json.RootElement, "isReady") ? "✅" : "❌")} {GetStringProperty(json.RootElement, "message")}");
-                    break;
-                    
-                case "game_started":
-                    Console.WriteLine($"🎉 ИГРА НАЧАЛАСЬ!");
-                    Console.WriteLine($"📝 {GetStringProperty(json.RootElement, "message")}");
-                    Console.WriteLine($"⏰ Время начала: {GetStringProperty(json.RootElement, "startTime")}");
-                    Console.WriteLine($"⏳ Длительность: {GetIntProperty(json.RootElement, "duration")} секунд");
-                    _isReady = false; // Сбрасываем флаг готовности
-                    break;
-                    
-                case "readiness_timeout":
-                    Console.WriteLine($"⏰ ВРЕМЯ ОЖИДАНИЯ ИСТЕКЛО");
-                    Console.WriteLine($"📝 {GetStringProperty(json.RootElement, "message")}");
-                    Console.WriteLine($"✅ Готово: {GetIntProperty(json.RootElement, "readyCount")}/{GetIntProperty(json.RootElement, "totalPlayers")}");
-                    _isReady = false;
-                    break;
-                    
-                case "code_submitted":
-                    Console.WriteLine($"📤 Код отправлен на проверку");
-                    Console.WriteLine($"📋 Задача: {GetStringProperty(json.RootElement, "problemId")}");
-                    break;
-                    
-                case "code_submitted_by_player":
-                    Console.WriteLine($"🎮 Игрок {GetStringProperty(json.RootElement, "playerId")} отправил код");
-                    Console.WriteLine($"📋 Задача: {GetStringProperty(json.RootElement, "problemId")}");
-                    break;
-                    
-                case "code_result":
-                    Console.WriteLine($"📊 РЕЗУЛЬТАТ ПРОВЕРКИ КОДА:");
-                    if (json.RootElement.TryGetProperty("result", out var resultElement))
-                    {
-                        Console.WriteLine($"   📋 Статус: {GetStringProperty(resultElement, "status")}");
-                        Console.WriteLine($"   ✅ Пройдено тестов: {GetIntProperty(resultElement, "passedTests")}/{GetIntProperty(resultElement, "totalTests")}");
-                        Console.WriteLine($"   ⏱️ Время выполнения: {GetIntProperty(resultElement, "executionTime")}мс");
-                    }
-                    break;
-                    
-                case "left_room":
-                    Console.WriteLine($"👋 Вы покинули комнату {GetStringProperty(json.RootElement, "roomId")}");
-                    _currentRoomId = Guid.Empty;
-                    _isReady = false;
-                    break;
-                    
-                case "player_disconnected":
-                    Console.WriteLine($"🔌 Игрок отключился: {GetStringProperty(json.RootElement, "playerId")}");
-                    if (json.RootElement.TryGetProperty("participants", out var disconnectedParticipants) && 
-                        disconnectedParticipants.ValueKind == JsonValueKind.Number)
-                    {
-                        Console.WriteLine($"👥 Осталось участников: {disconnectedParticipants.GetInt32()}");
-                    }
-                    break;
-                    
-                case "error":
-                    Console.WriteLine($"❌ ОШИБКА: {GetStringProperty(json.RootElement, "message")}");
-                    break;
-                    
-                default:
-                    Console.WriteLine($"📨 Неизвестный тип сообщения: {jsonMessage}");
-                    break;
+                var testStatus = GetStringProperty(test, "status");
+                var input = GetStringProperty(test, "input");
+                var expectedOutput = GetStringProperty(test, "expectedOutput");
+                var actualOutput = GetStringProperty(test, "actualOutput");
+                var testExecutionTime = GetIntProperty(test, "executionTime");
+                
+                var statusIcon = testStatus == "Passed" ? "Да" : "Нет";
+                Console.WriteLine($"      {testNumber}. {statusIcon} Тест: {input} → {actualOutput} (ожидалось: {expectedOutput}) [{testExecutionTime}мс]");
+                testNumber++;
             }
-            Console.WriteLine("---");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Ошибка обработки сообщения: {ex.Message}");
-            Console.WriteLine($"📨 Полученное сообщение: {jsonMessage}");
         }
     }
+}
 
-    // Вспомогательные методы для безопасного получения свойств
-    private static string GetStringProperty(JsonElement element, string propertyName)
+// НОВЫЙ МЕТОД: Обработка победы в битве
+static void ProcessBattleWin(JsonElement element, bool isWinner)
+{
+    var winnerId = GetStringProperty(element, "winnerId");
+    var taskTitle = GetStringProperty(element, "taskTitle");
+    var message = GetStringProperty(element, "message");
+    var timestamp = GetStringProperty(element, "timestamp");
+    
+    if (isWinner)
     {
-        if (element.TryGetProperty(propertyName, out var property))
-        {
-            return property.ValueKind switch
-            {
-                JsonValueKind.String => property.GetString(),
-                JsonValueKind.Number => property.GetInt32().ToString(),
-                JsonValueKind.True => "true",
-                JsonValueKind.False => "false",
-                _ => property.ToString()
-            };
-        }
-        return "N/A";
+        Console.WriteLine($" ВЫ ВЫИГРАЛИ БИТВУ!");
+        Console.WriteLine($"Задача: {taskTitle}");
+        Console.WriteLine($"{message}");
+        Console.WriteLine($"Время победы: {timestamp}");
+        Console.WriteLine($"Поздравляем с победой!");
+        
+        // Сбрасываем состояние комнаты
+        _currentRoomId = Guid.Empty;
+        _isReady = false;
     }
+    else
+    {
+        Console.WriteLine($"БИТВА ЗАВЕРШЕНА");
+        Console.WriteLine($"Победитель: {winnerId}");
+        Console.WriteLine($"Задача: {taskTitle}");
+        Console.WriteLine($"{message}");
+        Console.WriteLine($"Время завершения: {timestamp}");
+        
+        if (winnerId == _playerId)
+        {
+            Console.WriteLine($"ПОЗДРАВЛЯЕМ С ПОБЕДОЙ!");
+        }
+        else
+        {
+            Console.WriteLine($"Поздравляем победителя!");
+        }
+        
+        // Сбрасываем состояние комнаты
+        _currentRoomId = Guid.Empty;
+        _isReady = false;
+    }
+    
+    Console.WriteLine($"Комната автоматически закрывается...");
+}
 
-    private static int GetIntProperty(JsonElement element, string propertyName)
+// Вспомогательные методы для безопасного получения свойств
+private static string GetStringProperty(JsonElement element, string propertyName)
+{
+    if (element.TryGetProperty(propertyName, out var property))
     {
-        if (element.TryGetProperty(propertyName, out var property) && 
-            property.ValueKind == JsonValueKind.Number)
+        return property.ValueKind switch
         {
-            return property.GetInt32();
-        }
-        return 0;
+            JsonValueKind.String => property.GetString(),
+            JsonValueKind.Number => property.GetInt32().ToString(),
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
+            _ => property.ToString()
+        };
     }
+    return "N/A";
+}
 
-    private static bool GetBoolProperty(JsonElement element, string propertyName)
+private static int GetIntProperty(JsonElement element, string propertyName)
+{
+    if (element.TryGetProperty(propertyName, out var property) && 
+        property.ValueKind == JsonValueKind.Number)
     {
-        if (element.TryGetProperty(propertyName, out var property))
-        {
-            return property.ValueKind switch
-            {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.String => bool.TryParse(property.GetString(), out var result) && result,
-                _ => false
-            };
-        }
-        return false;
+        return property.GetInt32();
     }
+    return 0;
+}
+
+private static bool GetBoolProperty(JsonElement element, string propertyName)
+{
+    if (element.TryGetProperty(propertyName, out var property))
+    {
+        return property.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => bool.TryParse(property.GetString(), out var result) && result,
+            _ => false
+        };
+    }
+    return false;
+}
+
+
+ 
+
 
     static async Task CreateRoom()
     {
@@ -403,24 +500,17 @@ class Program
             Console.WriteLine("❌ Вы не находитесь в комнате. Присоединитесь к комнате сначала.");
             return;
         }
-
-        Console.Write("Введите ID задачи: ");
-        var problemId = Console.ReadLine();
+        
 
         Console.Write("Введите ваш код: ");
         var code = Console.ReadLine();
 
-        if (string.IsNullOrEmpty(problemId) || string.IsNullOrEmpty(code))
-        {
-            Console.WriteLine("❌ ОШИБКА: ID задачи и код не могут быть пустыми");
-            return;
-        }
-
+      
         var message = new
         {
             type = "SubmitCode",
             roomId = _currentRoomId,
-            problemId = problemId,
+           
             code = code
         };
 
@@ -454,11 +544,11 @@ class Program
             var bytes = Encoding.UTF8.GetBytes(json);
             await _webSocket.SendAsync(new ArraySegment<byte>(bytes), 
                 WebSocketMessageType.Text, true, CancellationToken.None);
-            Console.WriteLine($"📤 Отправлено: {json}");
+            Console.WriteLine($"Отправлено: {json}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ошибка отправки сообщения: {ex.Message}");
+            Console.WriteLine($"Ошибка отправки сообщения: {ex.Message}");
         }
     }
 }

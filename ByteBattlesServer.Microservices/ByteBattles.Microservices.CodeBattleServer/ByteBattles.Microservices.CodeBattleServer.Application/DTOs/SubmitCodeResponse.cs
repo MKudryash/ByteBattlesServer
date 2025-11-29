@@ -1,12 +1,13 @@
 using ByteBattles.Microservices.CodeBattleServer.Application.DTOs;
 using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 public class SubmitCodeResponse
 {
     public Guid Id { get; init; }
     public Guid TaskId { get; init; }
     public Guid UserId { get; init; }
-    public Guid LanguageId { get; init; }
+    public LanguageInfo LanguageId { get; init; }
     public TestStatus Status { get; set; }
     public DateTime SubmittedAt { get; init; }
     public DateTime? CompletedAt { get; init; }

@@ -2,6 +2,7 @@ using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Services;
 using ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data;
 using ByteBattles.Microservices.CodeBattleServer.Infrastructure.Repositories;
+using ByteBattles.Microservices.CodeBattleServer.Infrastructure.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

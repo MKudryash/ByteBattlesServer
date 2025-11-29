@@ -3,11 +3,12 @@ using ByteBattles.Microservices.CodeBattleServer.Application.DTOs;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Entities;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Exceptions;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
-using ByteBattles.Microservices.CodeBattleServer.Domain.Models;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Services;
 using ByteBattlesServer.Domain.enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
+
+namespace ByteBattles.Microservices.CodeBattleServer.Application.Handlers;
 
 public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, SubmitCodeResponse>
 {
@@ -33,8 +34,6 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
 
     public async Task<SubmitCodeResponse> Handle(SubmitCodeCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("🟠 [SubmitCode] Starting code submission for User: {UserId}, Room: {RoomId}, Language: {LanguageId}", 
-            request.UserId, request.RoomId, request.LanguageId);
 
         var room = await _battleRoomRepository.GetByIdAsync(request.RoomId);
 
@@ -62,7 +61,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             var executionResults = await _compilationService.ExecuteAllTestsAsync(
                 request.Code, 
                 request.Task.TestCases.ToList(), 
-                request.LanguageId);
+                request.Task.Language);
             
             _logger.LogInformation("🟢 [SubmitCode] Tests executed successfully. Results count: {ResultsCount}", 
                 executionResults.Count());
@@ -76,7 +75,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             foreach (var (testCase, executionResult) in request.Task.TestCases.Zip(executionResults))
             {
                 var testStatus = executionResult.IsSuccess && 
-                               executionResult.Output?.Trim() == testCase.Output.Trim()
+                                 executionResult.Output?.Trim() == testCase.Output.Trim()
                     ? TestStatus.Passed
                     : TestStatus.Failed;
 
@@ -115,7 +114,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
                 Id = submission.Id,
                 TaskId = submission.TaskId,
                 UserId = submission.UserId,
-                LanguageId = request.LanguageId,
+                LanguageId = request.Task.Language,
                 Status = finalStatus,
                 SubmittedAt = submission.SubmittedAt,
                 CompletedAt = DateTime.UtcNow,

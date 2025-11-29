@@ -33,6 +33,7 @@ public interface ITaskRepository
     System.Threading.Tasks.Task RemoveTestCaseAsync(TestCases testCase);
     System.Threading.Tasks.Task AddTestCasesAsync(IEnumerable<TestCases> testCases);
     
+    Task<Task?> InfoForCompilerAsync(Guid taskId);
     
     
     Task<List<Task>> SearchTask(Difficulty? difficulty,
