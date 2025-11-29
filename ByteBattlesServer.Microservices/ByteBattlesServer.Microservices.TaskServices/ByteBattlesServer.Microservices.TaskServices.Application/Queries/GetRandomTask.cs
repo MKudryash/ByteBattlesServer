@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 
-public record GetRandomTask(Difficulty Difficulty):IRequest<TaskDto?>;
+public record GetRandomTask(Difficulty Difficulty,Guid languageId):IRequest<TaskDto?>;

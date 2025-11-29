@@ -28,7 +28,7 @@ public class TaskInfoResponse
     public DateTime? UpdatedAt { get; set; }
     public virtual ICollection<TestCaseInfo> TestCases { get; set; } = new List<TestCaseInfo>();
     public virtual ICollection<LibraryInfo> Libraries { get; set; } = new List<LibraryInfo>();
-    public string CorrelationId { get; set; } = string.Empty;
+    public Guid CorrelationId { get; set; }
     public bool Success { get; set; }
     public string ErrorMessage { get; set; } = string.Empty;
 }

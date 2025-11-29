@@ -281,6 +281,245 @@ public static class BattleEndpoints
              Console.WriteLine($"Error in cleanup timer: {ex.Message}");
          }
      }
+    
+   private static async Task LeaveRoom(
+        Guid playerId, 
+        Guid roomId, 
+        IConnectionManager connectionManager,
+        IMediator mediator)
+    {
+        try
+        {
+            await connectionManager.RemoveUserFromRoom(playerId, roomId);
+        
+            // Удаляем игрока из списка участников комнаты
+            if (_roomParticipants.TryGetValue(roomId, out var participants))
+            {
+                participants.Remove(playerId);
+            
+                // Удаляем из списка готовых игроков
+                if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
+                {
+                    readyPlayers.Remove(playerId);
+                }
+
+                // УЛУЧШЕНИЕ: Проверяем, остались ли игроки в комнате
+                if (participants.Count == 0)
+                {
+                    await CloseEmptyRoom(roomId, mediator);
+                }
+                else
+                {
+                    // Если игроки остались, отправляем обновленный статус
+                    await SendRoomStatus(roomId, mediator);
+                }
+            }
+
+            var command = new LeaveRoomCommand(roomId, playerId);
+            await mediator.Send(command);
+
+            await SendToPlayer(playerId, new
+            {
+                type = "left_room",
+                roomId = roomId,
+                message = $"Вы покинули комнату {roomId}"
+            }, mediator);
+
+            // Уведомляем остальных участников комнаты
+            await BroadcastToRoom(playerId, roomId, new
+            {
+                type = "player_left",
+                playerId = playerId.ToString(),
+                roomId = roomId,
+                participants = participants?.Count ?? 0,
+                message = $"Игрок покинул комнату. Осталось участников: {participants?.Count ?? 0}"
+            }, mediator);
+
+        }
+        catch (Exception ex)
+        {
+            await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Закрытие пустой комнаты
+    private static async Task CloseEmptyRoom(Guid roomId, IMediator mediator)
+    {
+        try
+        {
+            Console.WriteLine($"🟠 Closing empty room: {roomId}");
+
+            // Отправляем уведомление о закрытии комнаты (если есть кому отправлять)
+            await BroadcastToRoom(Guid.Empty, roomId, new
+            {
+                type = "room_closed",
+                roomId = roomId,
+                message = "Комната закрыта, так как все игроки покинули её",
+                reason = "no_players"
+            }, mediator);
+
+            // Закрываем комнату через медиатор
+            var closeCommand = new CloseRoom(roomId);
+            await mediator.Send(closeCommand);
+
+            // Очищаем данные комнаты
+            CleanupRoomData(roomId);
+
+            Console.WriteLine($"🟢 Room {roomId} successfully closed and cleaned up");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error closing room {roomId}: {ex.Message}");
+            // Даже при ошибке пытаемся очистить данные
+            CleanupRoomData(roomId);
+        }
+    }
+
+    // УЛУЧШЕННЫЙ МЕТОД: Очистка данных комнаты
+    private static void CleanupRoomData(Guid roomId)
+    {
+        try
+        {
+            // Удаляем комнату из всех словарей
+            _roomParticipants.TryRemove(roomId, out _);
+            _readyPlayers.TryRemove(roomId, out _);
+            _roomTasks.TryRemove(roomId, out _);
+            
+            // Останавливаем и удаляем таймер
+            if (_roomTimers.TryRemove(roomId, out var timer))
+            {
+                timer?.Dispose();
+            }
+            
+            Console.WriteLine($"🟠 Room {roomId} data cleaned up");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error cleaning up room {roomId} data: {ex.Message}");
+        }
+    }
+
+    private static async Task HandleDisconnection(Guid playerId, IConnectionManager connectionManager, string reason, IMediator mediator)
+    {
+        Console.WriteLine($"🟠 Player {playerId} disconnected. Reason: {reason}");
+        
+        try
+        {
+            await LeaveAllRooms(playerId, connectionManager, mediator);
+            
+            // Уведомляем о дисконнекте игрока
+            await BroadcastToAllRooms(playerId, new 
+            { 
+                type = "player_disconnected", 
+                playerId = playerId.ToString(),
+                reason = reason,
+                message = "Игрок отключился от сервера"
+            }, mediator);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error handling disconnection for player {playerId}: {ex.Message}");
+        }
+        finally
+        {
+            CleanupPlayer(playerId, connectionManager);
+        }
+    }
+
+    private static async Task LeaveAllRooms(Guid playerId, IConnectionManager connectionManager, IMediator mediator)
+    {
+        try
+        {
+            var userRooms = await connectionManager.GetUserRooms(playerId);
+            Console.WriteLine($"🟠 Player {playerId} leaving {userRooms.Count} rooms");
+
+            foreach (var roomId in userRooms)
+            {
+                try
+                {
+                    await connectionManager.RemoveUserFromRoom(playerId, roomId);
+                  
+                    var command = new LeaveRoomCommand(roomId, playerId);
+                    await mediator.Send(command);
+
+                    // УЛУЧШЕНИЕ: Используем обновленную логику для проверки пустых комнат
+                    if (_roomParticipants.TryGetValue(roomId, out var participants))
+                    {
+                        participants.Remove(playerId);
+                        
+                        if (participants.Count == 0)
+                        {
+                            await CloseEmptyRoom(roomId, mediator);
+                        }
+                        else
+                        {
+                            // Уведомляем оставшихся участников
+                            await BroadcastToRoom(playerId, roomId, new 
+                            { 
+                                type = "player_disconnected", 
+                                playerId = playerId.ToString(),
+                                participants = participants.Count,
+                                message = $"Игрок отключился. Осталось участников: {participants.Count}"
+                            }, mediator);
+                            
+                            // Обновляем статус комнаты
+                            await SendRoomStatus(roomId, mediator);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"🔴 Error leaving room {roomId} for player {playerId}: {ex.Message}");
+                }
+            }
+            
+            Console.WriteLine($"🟢 Player {playerId} successfully left all rooms");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error in LeaveAllRooms for player {playerId}: {ex.Message}");
+        }
+    }
+
+    // ... остальные методы без изменений ...
+
+    private static async Task BroadcastToAllRooms(Guid senderId, object message, IMediator mediator)
+    {
+        try
+        {
+            var userRooms = await new ConnectionManager().GetUserRooms(senderId);
+            Console.WriteLine($"🟠 Broadcasting to {userRooms.Count} rooms for player {senderId}");
+
+            var broadcastTasks = userRooms
+                .Select(roomId => BroadcastToRoom(senderId, roomId, message, mediator))
+                .ToList();
+
+            await Task.WhenAll(broadcastTasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error broadcasting to all rooms for player {senderId}: {ex.Message}");
+        }
+    }
+
+    // УЛУЧШЕНИЕ: В метод CleanupPlayer добавляем логику выхода из комнат
+    private static void CleanupPlayer(Guid playerId, IConnectionManager connectionManager)
+    {
+        try
+        {
+            _sockets.TryRemove(playerId, out _);
+            _lastActivity.TryRemove(playerId, out _);
+            
+            // Убеждаемся, что игрок удален из всех комнат
+            connectionManager.RemoveConnection(playerId, "cleanup").Wait();
+            
+            Console.WriteLine($"🟢 Player {playerId} cleaned up. Remaining connections: {_sockets.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error cleaning up player {playerId}: {ex.Message}");
+        }
+    } 
 private static async Task CreateRoom(
     Guid playerId, 
     string roomName, 
@@ -535,6 +774,7 @@ private static async Task SubmitCode(
         }, mediator);
     }
 }
+
 private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo taskInfo, IMediator mediator)
 {
     try
@@ -563,9 +803,8 @@ private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo t
             timestamp = DateTime.UtcNow
         }, mediator);
 
-        // Обновляем статус комнаты в базе данных
-       // var endBattleCommand = new EndBattleCommand(roomId, winnerId);
-       // await mediator.Send(endBattleCommand);
+        var commandCompleted = new CloseRoom(roomId);
+        await mediator.Send(commandCompleted);
 
         // Очищаем данные комнаты
         CleanupRoom(roomId);
@@ -626,7 +865,7 @@ private static async Task SetPlayerReady(
             return;
         }
 
-        // ПРОВЕРКА ИСПРАВЛЕНА: Используем данные из памяти, а не из БД
+        
         var participantCount = _roomParticipants[roomId].Count;
         var canStart = participantCount >= 2;
         
@@ -673,14 +912,14 @@ private static async Task SetPlayerReady(
             totalPlayers = _roomParticipants[roomId].Count
         }, mediator);
 
-        // Проверяем, все ли игроки готовы
+        
         if (_readyPlayers[roomId].Count == _roomParticipants[roomId].Count && 
             _roomParticipants[roomId].Count >= 2)
         {
             await StartGame(roomId, mediator);
         }
         
-        // Запускаем/перезапускаем таймер ожидания готовности
+        
         if (_readyPlayers[roomId].Count > 0)
         {
             StartReadinessTimer(roomId, mediator);
@@ -691,19 +930,11 @@ private static async Task SetPlayerReady(
         await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
     }
 }
-    private static void CleanupPlayer(Guid playerId, IConnectionManager connectionManager)
-     {
-         _sockets.TryRemove(playerId, out _);
-         _lastActivity.TryRemove(playerId, out _);
-         connectionManager.RemoveConnection(playerId, "cleanup").Wait();
-         
-         Console.WriteLine($"Player {playerId} cleaned up. Remaining connections: {_sockets.Count}");
-     }
 
    
     private static void StartReadinessTimer(Guid roomId, IMediator mediator)
     {
-        // Останавливаем предыдущий таймер если он есть
+        
         if (_roomTimers.TryRemove(roomId, out var oldTimer))
         {
             oldTimer?.Dispose();
@@ -728,12 +959,12 @@ private static async Task SetPlayerReady(
             {
                 if (readyPlayers.Count == participants.Count && participants.Count >= 2)
                 {
-                    // Все игроки готовы - начинаем игру
+                   
                     await StartGame(roomId, mediator);
                 }
                 else
                 {
-                    // Не все готовы - отменяем
+                   
                     await BroadcastToRoom(Guid.Empty, roomId, new
                     {
                         type = "readiness_timeout",
@@ -743,11 +974,11 @@ private static async Task SetPlayerReady(
                         totalPlayers = participants.Count
                     }, mediator);
 
-                    // Сбрасываем статусы готовности
+                  
                     readyPlayers.Clear();
                 }
 
-                // Очищаем таймер
+                
                 _roomTimers.TryRemove(roomId, out _);
             }
         }
@@ -761,9 +992,6 @@ private static async Task SetPlayerReady(
     {
         try
         {
-            // Здесь должна быть логика начала игры
-            // Например, выбор задачи, установка таймера и т.д.
-
             await BroadcastToRoom(Guid.Empty, roomId, new
             {
                 type = "game_started",
@@ -773,13 +1001,13 @@ private static async Task SetPlayerReady(
                 duration = 1800 // 30 минут в секундах
             }, mediator);
 
-            // Очищаем статусы готовности
+            
             if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
             {
                 readyPlayers.Clear();
             }
 
-            // Останавливаем таймер готовности
+            
             if (_roomTimers.TryRemove(roomId, out var timer))
             {
                 timer?.Dispose();
@@ -824,67 +1052,7 @@ private static async Task SetPlayerReady(
     }
 
 
-    private static async Task LeaveRoom(
-        Guid playerId, 
-        Guid roomId, 
-        IConnectionManager connectionManager,
-        IMediator mediator)
-    {
-        try
-        {
-            await connectionManager.RemoveUserFromRoom(playerId, roomId);
-        
-            // Удаляем из участников комнаты
-            if (_roomParticipants.TryGetValue(roomId, out var participants))
-            {
-                participants.Remove(playerId);
-            
-                // Удаляем из готовых игроков
-                if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
-                {
-                    readyPlayers.Remove(playerId);
-                }
 
-                if (participants.Count == 0)
-                {
-                    _roomParticipants.TryRemove(roomId, out _);
-                    _readyPlayers.TryRemove(roomId, out _);
-                    _roomTasks.TryRemove(roomId, out _); // Очищаем задачу
-                
-                    // Останавливаем таймер если комната пустая
-                    if (_roomTimers.TryRemove(roomId, out var timer))
-                    {
-                        timer?.Dispose();
-                    }
-                }
-            }
-
-            var command = new LeaveRoomCommand(roomId, playerId);
-            await mediator.Send(command);
-
-            await SendToPlayer(playerId, new
-            {
-                type = "left_room",
-                roomId = roomId,
-                message = $"Вы покинули комнату {roomId}"
-            }, mediator);
-
-            // Уведомляем других участников комнаты и отправляем обновленный статус
-            await BroadcastToRoom(playerId, roomId, new
-            {
-                type = "player_left",
-                playerId = playerId.ToString(),
-                roomId = roomId,
-                participants = participants?.Count ?? 0
-            }, mediator);
-
-            await SendRoomStatus(roomId, mediator);
-        }
-        catch (Exception ex)
-        {
-            await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
-        }
-    }
 
     private static async Task SendToPlayer(Guid playerId, object message, IMediator mediator)
     {
@@ -938,61 +1106,5 @@ private static async Task SetPlayerReady(
 
         return Guid.Parse(userIdClaim);
     }
-    private static async Task HandleDisconnection(Guid playerId, IConnectionManager connectionManager, string reason, IMediator mediator)
-     {
-         Console.WriteLine($"Player {playerId} disconnected. Reason: {reason}");
-         await LeaveAllRooms(playerId, connectionManager,  mediator);
-         
-         // Уведомляем о дисконнекте
-         await BroadcastToAllRooms(playerId, new 
-         { 
-             type = "player_disconnected", 
-             playerId = playerId.ToString(),
-             reason = reason
-         },mediator);
-     }
-    private static async Task LeaveAllRooms(Guid playerId, IConnectionManager connectionManager,   IMediator mediator)
-     {
-         var userRooms = await connectionManager.GetUserRooms(playerId);
-         foreach (var roomId in userRooms)
-         {
-             await connectionManager.RemoveUserFromRoom(playerId, roomId);
-          
-             var command = new LeaveRoomCommand(roomId, playerId);
-             await mediator.Send(command);
-
-             
-             if (_roomParticipants.TryGetValue(roomId, out var participants))
-             {
-                 
-                 participants.Remove(playerId);
-                 if (participants.Count == 0)
-                 {
-                     _roomParticipants.TryRemove(roomId, out _);
-                     Console.WriteLine($"Room {roomId} is now empty and removed");
-                 }
-                 else
-                 {
-                     // Уведомляем оставшихся участников
-                     await BroadcastToRoom(playerId, roomId, new 
-                     { 
-                         type = "player_disconnected", 
-                         playerId = playerId.ToString(),
-                         participants = participants.Count
-                     },mediator);
-                 }
-             }
-         }
-         
-         Console.WriteLine($"Player {playerId} left all rooms");
-     }
-
-     private static async Task BroadcastToAllRooms(Guid senderId, object message,   IMediator mediator)
-     {
-         var userRooms = await new ConnectionManager().GetUserRooms(senderId);
-         foreach (var roomId in userRooms)
-         {
-             await BroadcastToRoom(senderId, roomId, message,mediator);
-         }
-     }
+    
 }

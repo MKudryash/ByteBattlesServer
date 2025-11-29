@@ -70,7 +70,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         name: "FK_refresh_tokens_users_UserId",
                         column: x => x.UserId,
                         principalTable: "users",
-                        principalColumn: "Id",
+                        principalColumn: "LanguageId",
                         onDelete: ReferentialAction.Cascade);
                 });
 

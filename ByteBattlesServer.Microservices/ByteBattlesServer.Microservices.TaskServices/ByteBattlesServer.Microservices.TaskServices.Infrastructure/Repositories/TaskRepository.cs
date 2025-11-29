@@ -16,7 +16,7 @@ public class TaskRepository : ITaskRepository
         _dbContext = dbContext;
     }
 
-    public async Task<Task> GetRandomByDifficultyAsync(Difficulty difficulty)
+    public async Task<Task> GetRandomByDifficultyAsync(Difficulty difficulty,Guid languageId)
     {
         return await _dbContext.Tasks
             .Where(t => t.Difficulty == difficulty)
@@ -26,6 +26,7 @@ public class TaskRepository : ITaskRepository
             .ThenInclude(l => l.Library)
             .Include(t => t.TestCases)
             .OrderBy(t => EF.Functions.Random())
+            .Where(t=> t.TaskLanguages.Where(tl => tl.Language.Id == languageId).Any())
             .FirstOrDefaultAsync();
     }
     public async Task<Task> GetByIdAsync(Guid id)

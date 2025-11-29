@@ -12,7 +12,7 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
     private readonly IMessageBus _messageBus;
     private readonly IMemoryCache _cache;
     private readonly ILogger<RabbitMQTaskInfoService> _logger;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
+    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
     private readonly string _responseQueueName;
     private bool _disposed = false;
     private bool _isSubscribed = false;
@@ -27,28 +27,28 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
         _cache = cache;
         _logger = logger;
         
-        // Исправлено имя очереди для ясности
-        _responseQueueName = $"task.info.responses.{Guid.NewGuid():N}";
+        // Updated queue name pattern
+        _responseQueueName = $"solution.task.responses.{Guid.NewGuid():N}";
         
         SubscribeToResponses();
     }
 
-    public async Task<TaskInfo> GetTaskInfoAsync(Guid taskId) // Исправлено имя метода
+    public async Task<TaskInfo> GetTaskInfoAsync(Guid taskId)
     {
         var cacheKey = $"task_info_{taskId}";
         
-        // Пробуем получить из кэша
+        // Try cache first
         if (_cache.TryGetValue(cacheKey, out TaskInfo cachedInfo))
         {
-            _logger.LogDebug("Returning cached task info for task {TaskId}", taskId);
+            _logger.LogDebug("🟣 [TaskInfoService] Returning cached task info for task {TaskId}", taskId);
             return cachedInfo;
         }
 
         var request = new TaskInfoRequest
         {
-            TaskId = taskId, // Исправлено свойство
+            TaskId = taskId,
             ReplyToQueue = _responseQueueName,
-            CorrelationId = Guid.NewGuid().ToString()
+            CorrelationId = Guid.NewGuid()
         };
 
         var tcs = new TaskCompletionSource<TaskInfoResponse>();
@@ -61,17 +61,18 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
             _logger.LogInformation("🟠 [TaskInfoService] Sending TaskInfoRequest for TaskId: {TaskId}, CorrelationId: {CorrelationId}", 
                 taskId, request.CorrelationId);
 
+            // Publish to solution exchange
             _messageBus.Publish(
                 request, 
-                "codebattles.exchange", 
-                "codebattles.info.request");
+                "solution.tasks.exchange",  // Updated exchange
+                "task.info.request");
 
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                _logger.LogWarning("❌ [TaskInfoService] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
+                _logger.LogWarning("🔴 [TaskInfoService] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
                     request.CorrelationId);
                 throw new TimeoutException("Task info request timeout");
             }
@@ -88,7 +89,7 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
 
             var taskInfo = new TaskInfo
             {
-                Id = response.Id, // Исправлено свойство
+                Id = response.Id,
                 Title = response.Title ?? string.Empty,
                 Description = response.Description ?? string.Empty,
                 Author = response.Author ?? string.Empty,
@@ -103,7 +104,7 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
                 Language = response.Language
             };
 
-            // Кэшируем на 10 минут
+            // Cache for 10 minutes
             _cache.Set(cacheKey, taskInfo, TimeSpan.FromMinutes(10));
             
             return taskInfo;
@@ -127,12 +128,12 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
                 _logger.LogInformation("🟠 [TaskInfoService] Subscribing to task info responses on queue: {QueueName}", _responseQueueName);
 
                 _messageBus.Subscribe<TaskInfoResponse>(
-                    "codebattles.exchange",
+                    "solution.tasks.exchange",  // Updated exchange
                     _responseQueueName,
-                    "codebattles.info.response",
+                    "task.info.response", 
                     async (response) =>
                     {
-                        _logger.LogDebug("🟣 [TaskInfoService] Received task info response for correlation {CorrelationId}, Success: {Success}", 
+                        _logger.LogInformation("🟣 [TaskInfoService] Received task info response for correlation {CorrelationId}, Success: {Success}", 
                             response?.CorrelationId, response?.Success);
 
                         if (response == null)
@@ -144,7 +145,7 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
                         if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
                         {
                             tcs.TrySetResult(response);
-                            _logger.LogDebug("✅ [TaskInfoService] Successfully processed response for correlation {CorrelationId}", 
+                            _logger.LogInformation("✅ [TaskInfoService] Successfully processed response for correlation {CorrelationId}", 
                                 response.CorrelationId);
                         }
                         else
@@ -177,7 +178,6 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
     {
         if (!_disposed)
         {
-            // Завершаем все ожидающие запросы
             foreach (var pendingRequest in _pendingRequests.Values)
             {
                 pendingRequest.TrySetCanceled();

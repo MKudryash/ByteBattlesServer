@@ -52,7 +52,7 @@ namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data.Mi
                         name: "FK_SolutionAttempts_Solutions_SolutionId",
                         column: x => x.SolutionId,
                         principalTable: "Solutions",
-                        principalColumn: "Id",
+                        principalColumn: "LanguageId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -79,7 +79,7 @@ namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data.Mi
                         name: "FK_TestResults_Solutions_SolutionId",
                         column: x => x.SolutionId,
                         principalTable: "Solutions",
-                        principalColumn: "Id",
+                        principalColumn: "LanguageId",
                         onDelete: ReferentialAction.Cascade);
                 });
 

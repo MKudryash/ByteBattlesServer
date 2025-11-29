@@ -12,7 +12,7 @@ public class BattleRoom : Entity
     
     public Difficulty Difficulty { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    public RoomStatus Status { get; private set; }
+    public RoomStatus Status { get; set; }
     
     private readonly List<RoomParticipant> _participants = new();
     public IReadOnlyCollection<RoomParticipant> Participants => _participants.AsReadOnly();

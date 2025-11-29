@@ -24,7 +24,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.RefreshToken", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("LanguageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
@@ -57,7 +57,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.HasKey("LanguageId");
 
                     b.HasIndex("Token")
                         .IsUnique();
@@ -69,7 +69,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.Role", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("LanguageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -86,7 +86,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("LanguageId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -96,7 +96,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.AuthService.Domain.Entities.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("LanguageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
@@ -127,7 +127,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                    b.HasKey("LanguageId");
 
                     b.HasIndex("RoleId");
 

@@ -59,14 +59,14 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                 name: "room_participants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    LanguageId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoomId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_room_participants", x => x.Id);
+                    table.PrimaryKey("PK_room_participants", x => x.LanguageId);
                     table.ForeignKey(
                         name: "FK_room_participants_battle_rooms_RoomId",
                         column: x => x.RoomId,

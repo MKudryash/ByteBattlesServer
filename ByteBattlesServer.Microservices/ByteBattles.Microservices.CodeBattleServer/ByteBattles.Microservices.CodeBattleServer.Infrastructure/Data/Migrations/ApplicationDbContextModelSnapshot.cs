@@ -94,7 +94,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                 {
                     b.OwnsMany("ByteBattles.Microservices.CodeBattleServer.Domain.Entities.RoomParticipant", "Participants", b1 =>
                         {
-                            b1.Property<Guid>("Id")
+                            b1.Property<Guid>("LanguageId")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("uuid");
 
@@ -107,7 +107,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
 
-                            b1.HasKey("Id");
+                            b1.HasKey("LanguageId");
 
                             b1.HasIndex("RoomId");
 

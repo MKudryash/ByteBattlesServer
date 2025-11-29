@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251129114936_InitialCreate")]
+    [Migration("20251129171354_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -97,7 +97,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                 {
                     b.OwnsMany("ByteBattles.Microservices.CodeBattleServer.Domain.Entities.RoomParticipant", "Participants", b1 =>
                         {
-                            b1.Property<Guid>("Id")
+                            b1.Property<Guid>("LanguageId")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("uuid");
 
@@ -110,7 +110,7 @@ namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Data.Migrati
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
 
-                            b1.HasKey("Id");
+                            b1.HasKey("LanguageId");
 
                             b1.HasIndex("RoomId");
 

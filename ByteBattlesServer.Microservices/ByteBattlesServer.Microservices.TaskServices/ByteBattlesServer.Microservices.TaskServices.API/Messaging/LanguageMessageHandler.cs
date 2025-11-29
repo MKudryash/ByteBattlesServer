@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
@@ -8,7 +9,7 @@ public class LanguageMessageHandler : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly IMessageBus _messageBus;
     private readonly ILogger<LanguageMessageHandler> _logger;
-
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
     public LanguageMessageHandler(
         IServiceProvider serviceProvider,
         IMessageBus messageBus,

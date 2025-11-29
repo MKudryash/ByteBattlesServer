@@ -6,177 +6,180 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.API.Messaging;
 
-public class TaskInfoTRandomTaskMessageHandler : BackgroundService
+public class RandomTaskMessageHandler : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IMessageBus _messageBus;
-    private readonly ILogger<TaskInfoTRandomTaskMessageHandler> _logger;
+    private readonly ILogger<RandomTaskMessageHandler> _logger;
 
-    public TaskInfoTRandomTaskMessageHandler(
+    public RandomTaskMessageHandler(
         IServiceProvider serviceProvider,
         IMessageBus messageBus,
-        ILogger<TaskInfoTRandomTaskMessageHandler> logger)
+        ILogger<RandomTaskMessageHandler> logger)
     {
         _serviceProvider = serviceProvider;
         _messageBus = messageBus;
         _logger = logger;
     }
 
-    public async Task HandleTaskInfoRequest(TaskInfoRequest request)
+private async Task HandleRandomTaskRequest(TaskInfoRequest request)
+{
+    _logger.LogInformation("🟠 [TaskServices] Received RandomTaskRequest for LanguageId: {LanguageId}, Difficulty: {Difficulty}", 
+        request.LanguageId, request.Difficulty);
+
+    using var scope = _serviceProvider.CreateScope();
+    var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+    try
     {
-        _logger.LogInformation("🟠 [TaskServices] Received TaskInfoRequest for LanguageId: {LanguageId}, Difficulty: {Difficulty}", 
-            request.Id, request.Difficulty);
+        // Get language first
+        var languageQuery = new GetLanguageByIdQuery(request.LanguageId);
+        var language = await mediator.Send(languageQuery);
 
-        using var scope = _serviceProvider.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-
-        try
+        if (language == null)
         {
-            var query = new GetLanguageByIdQuery(request.Id);
-            var language = await mediator.Send(query);
-
-            if (language == null)
-            {
-                _logger.LogWarning("🔴 [TaskServices] Language not found for ID: {LanguageId}", request.Id);
-                var errorResponse = new TaskInfoResponse()
-                {
-                    Id = request.Id,
-                    CorrelationId = request.CorrelationId,
-                    Success = false,
-                    ErrorMessage = $"Not found language by {request.Id}"
-                };
-                
-                _messageBus.Publish(
-                    errorResponse,
-                    "codebattles.exchange",
-                    "codebattles.info.response");
-                return;
-            }
-
-            var queryTask = new GetRandomTask(request.Difficulty);
-            var task = await mediator.Send(queryTask);
-            
-            if (task == null)
-            {
-                _logger.LogWarning("🔴 [TaskServices] Task not found for difficulty: {Difficulty}", request.Difficulty);
-                var errorResponse = new TaskInfoResponse()
-                {
-                    Id = request.Id,
-                    CorrelationId = request.CorrelationId,
-                    Success = false,
-                    ErrorMessage = $"Not found task for difficulty {request.Difficulty}"
-                };
-                
-                _messageBus.Publish(
-                    errorResponse,
-                    "codebattles.exchange",
-                    "codebattles.info.response");
-                return;
-            }
-
-            // Добавляем проверки на null для всех критических свойств
-            if (task.TestCases == null)
-            {
-                _logger.LogWarning("⚠️ [TaskServices] TestCases is null for TaskId: {TaskId}", task.Id);
-                task.TestCases = new List<TestCaseDto>(); // Инициализируем пустым списком
-            }
-
-            if (task.Libraries == null)
-            {
-                _logger.LogWarning("⚠️ [TaskServices] Libraries is null for TaskId: {TaskId}", task.Id);
-                task.Libraries = new List<LibraryDto>(); // Инициализируем пустым списком
-            }
-
-            _logger.LogInformation("🟢 [TaskServices] Task found: {TaskId}, TestCases count: {TestCasesCount}, Libraries count: {LibrariesCount}", 
-                task.Id, task.TestCases.Count, task.Libraries.Count);
-
-            // Безопасное создание response с проверками на null
-            var response = new TaskInfoResponse()
-            {
-                Id = task.Id,
-                Title = task.Title ?? string.Empty,
-                Description = task.Description ?? string.Empty,
-                Author = task.Author ?? string.Empty,
-                Difficulty = task.Difficulty,
-                FunctionName = task.FunctionName ?? string.Empty,
-                Parameters = task.Parameters ?? string.Empty,
-                PatternFunction = task.PatternFunction ?? string.Empty,
-                PatternMain = task.PatternMain ?? string.Empty,
-                ReturnType = task.ReturnType ?? string.Empty,
-                TestCases = task.TestCases?.Select(x => new TestCaseInfo()
-                {
-                    Input = x.Input ?? string.Empty,
-                    Output = x.Output ?? string.Empty
-                }).ToList() ?? new List<TestCaseInfo>(),
-                Libraries = task.Libraries?.Select(x => new LibraryInfo()
-                {
-                    Id = x.Id,
-                    NameLibrary = x.Name ?? string.Empty,
-                    Description = x.Description ?? string.Empty
-                }).ToList() ?? new List<LibraryInfo>(),
-                Language = new LanguageInfo()
-                {
-                    Id = language.Id,
-                    Title = language.Title ?? string.Empty,
-                    ShortTitle = language.ShortTitle ?? string.Empty,
-                    FileExtension = language.FileExtension ?? string.Empty,
-                    CompilerCommand = language.CompilerCommand ?? string.Empty,
-                    ExecutionCommand = language.ExecutionCommand ?? string.Empty,
-                    SupportsCompilation = language.SupportsCompilation,
-                },
-                CorrelationId = request.CorrelationId,
-                Success = true
-            };
-
-            _logger.LogInformation("🟢 [TaskServices] Sending TaskInfoResponse for TaskId: {TaskId}", task.Id);
-
-            _messageBus.Publish(
-                response,
-                "codebattles.exchange",
-                "codebattles.info.response");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "🔴 [TaskServices] Error processing TaskInfoRequest for LanguageId: {LanguageId}", request.Id);
-
+            _logger.LogWarning("🔴 [TaskServices] Language not found for ID: {LanguageId}", request.LanguageId);
             var errorResponse = new TaskInfoResponse()
             {
-                Id = request.Id,
+                Id = Guid.Empty,
                 CorrelationId = request.CorrelationId,
                 Success = false,
-                ErrorMessage = ex.Message
+                ErrorMessage = $"Language not found with id {request.LanguageId}"
             };
-
+            
+            // FIX: Use the same exchange and correct routing key
             _messageBus.Publish(
-                errorResponse, 
-                "codebattles.exchange", 
-                "codebattles.info.response");
+                errorResponse,
+                "codebattles.random.exchange",  // Same exchange as sender
+                "task.random.response");        // Correct routing key for responses
+            return;
         }
+
+        // Get random task
+        var taskQuery = new GetRandomTask(request.Difficulty, request.LanguageId);
+        var task = await mediator.Send(taskQuery);
+        
+        if (task == null)
+        {
+            _logger.LogWarning("🔴 [TaskServices] Task not found for difficulty: {Difficulty} and language: {LanguageId}", 
+                request.Difficulty, request.LanguageId);
+            var errorResponse = new TaskInfoResponse()
+            {
+                Id = Guid.Empty,
+                CorrelationId = request.CorrelationId,
+                Success = false,
+                ErrorMessage = $"No tasks found for difficulty {request.Difficulty} and language {request.LanguageId}"
+            };
+            
+            // FIX: Use the same exchange and correct routing key
+            _messageBus.Publish(
+                errorResponse,
+                "codebattles.random.exchange",  // Same exchange as sender
+                "task.random.response");        // Correct routing key for responses
+            return;
+        }
+
+        // Safe mapping with null checks
+        var response = CreateTaskInfoResponse(task, language, request.CorrelationId);
+        
+        _logger.LogInformation("🟢 [TaskServices] Sending RandomTaskResponse for TaskId: {TaskId}", task.Id);
+
+        // FIX: Use the same exchange and correct routing key
+        _messageBus.Publish(
+            response,
+            "codebattles.random.exchange",  // Same exchange as sender
+            "task.random.response");        // Correct routing key for responses
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "🔴 [TaskServices] Error processing RandomTaskRequest for LanguageId: {LanguageId}", request.LanguageId);
+
+        var errorResponse = new TaskInfoResponse()
+        {
+            Id = Guid.Empty,
+            CorrelationId = request.CorrelationId,
+            Success = false,
+            ErrorMessage = ex.Message
+        };
+
+        // FIX: Use the same exchange and correct routing key
+        _messageBus.Publish(
+            errorResponse, 
+            "codebattles.random.exchange",  // Same exchange as sender
+            "task.random.response");        // Correct routing key for responses
+    }
+}
+
+    private TaskInfoResponse CreateTaskInfoResponse(TaskDto task, LanguageDto language, Guid correlationId)
+    {
+        // Initialize collections if null
+        task.TestCases ??= new List<TestCaseDto>();
+        task.Libraries ??= new List<LibraryDto>();
+
+        _logger.LogInformation("🟢 [TaskServices] Random task found: {TaskId}, TestCases count: {TestCasesCount}, Libraries count: {LibrariesCount}", 
+            task.Id, task.TestCases.Count, task.Libraries.Count);
+
+        return new TaskInfoResponse()
+        {
+            Id = task.Id,
+            Title = task.Title ?? string.Empty,
+            Description = task.Description ?? string.Empty,
+            Author = task.Author ?? string.Empty,
+            Difficulty = task.Difficulty,
+            FunctionName = task.FunctionName ?? string.Empty,
+            Parameters = task.Parameters ?? string.Empty,
+            PatternFunction = task.PatternFunction ?? string.Empty,
+            PatternMain = task.PatternMain ?? string.Empty,
+            ReturnType = task.ReturnType ?? string.Empty,
+            TestCases = task.TestCases.Select(x => new TestCaseInfo()
+            {
+                Input = x.Input ?? string.Empty,
+                Output = x.Output ?? string.Empty
+            }).ToList(),
+            Libraries = task.Libraries.Select(x => new LibraryInfo()
+            {
+                Id = x.Id,
+                NameLibrary = x.Name ?? string.Empty,
+                Description = x.Description ?? string.Empty
+            }).ToList(),
+            Language = new LanguageInfo()
+            {
+                Id = language.Id,
+                Title = language.Title ?? string.Empty,
+                ShortTitle = language.ShortTitle ?? string.Empty,
+                FileExtension = language.FileExtension ?? string.Empty,
+                CompilerCommand = language.CompilerCommand ?? string.Empty,
+                ExecutionCommand = language.ExecutionCommand ?? string.Empty,
+                SupportsCompilation = language.SupportsCompilation,
+            },
+            CorrelationId = correlationId,
+            Success = true
+        };
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("🟠 [TaskServices] Starting TaskInfo background service");
+        _logger.LogInformation("🟠 [TaskServices] Starting RandomTaskMessageHandler background service");
 
         try
         {
             _messageBus.Subscribe<TaskInfoRequest>(
-                "codebattles.exchange",
-                "codebattles.task.requests",
-                "codebattles.info.request",
-                HandleTaskInfoRequest);
+                "codebattles.random.exchange",  // Отдельный exchange для случайных задач
+                "codebattles.random.requests.queue",
+                "task.random.request",  // Специфичный routing key
+                HandleRandomTaskRequest);
 
-            _logger.LogInformation("🟢 [TaskServices] TaskInfo subscriptions started successfully");
+            _logger.LogInformation("🟢 [TaskServices] RandomTaskMessageHandler subscriptions started successfully");
             
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
         catch (TaskCanceledException)
         {
-            _logger.LogInformation("🟠 [TaskServices] TaskInfo background service is stopping");
+            _logger.LogInformation("🟠 [TaskServices] RandomTaskMessageHandler background service is stopping");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "🔴 [TaskServices] Error in TaskInfo background service");
+            _logger.LogError(ex, "🔴 [TaskServices] Error in RandomTaskMessageHandler background service");
             throw;
         }
     }

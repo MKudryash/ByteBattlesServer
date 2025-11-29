@@ -47,8 +47,8 @@ public class BattleRoomConfiguration : IEntityTypeConfiguration<BattleRoom>
             participant.WithOwner().HasForeignKey("RoomId");
             
             // Явно определяем первичный ключ для owned entity
-            participant.Property<Guid>("Id");
-            participant.HasKey("Id");
+            participant.Property<Guid>("LanguageId");
+            participant.HasKey("LanguageId");
             
             participant.Property(p => p.UserId)
                 .IsRequired(); 

@@ -17,7 +17,7 @@ public class GetTaskRandomHandler:IRequestHandler<GetRandomTask, TaskDto?>
 
     public async Task<TaskDto?> Handle(GetRandomTask request, CancellationToken cancellationToken)
     {
-        var task = await _repository.GetRandomByDifficultyAsync(request.Difficulty);
+        var task = await _repository.GetRandomByDifficultyAsync(request.Difficulty,request.languageId);
 
         return TaskMapping.MapToDtoAllInfo(task);
     }

@@ -13,7 +13,7 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
     private readonly IMessageBus _messageBus;
     private readonly IMemoryCache _cache;
     private readonly ILogger<RabbitMQTaskLanguageService> _logger;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
+    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<TaskInfoResponse>> _pendingRequests = new();
     private readonly string _responseQueueName;
     private bool _disposed = false;
 
@@ -37,10 +37,10 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
         
         var request = new TaskInfoRequest
         {
-            Id = languageId,
+            LanguageId = languageId,
             Difficulty = difficulty,
             ReplyToQueue = _responseQueueName,
-            CorrelationId = Guid.NewGuid().ToString()
+            CorrelationId = Guid.NewGuid()
         };
 
         var tcs = new TaskCompletionSource<TaskInfoResponse>();
@@ -54,8 +54,8 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
             // Исправляем exchange и routing key
             _messageBus.Publish(
                 request, 
-                "codebattles.exchange", 
-                "codebattles.info.request");
+                "codebattles.random.exchange",  // Тот же exchange
+                "task.random.request");
 
             // Уменьшим таймаут для тестирования
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(10));
@@ -109,9 +109,9 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
         try
         {
             _messageBus.Subscribe<TaskInfoResponse>(
-                "codebattles.exchange",
+                "codebattles.random.exchange",  // Тот же exchange
                 _responseQueueName,
-                "codebattles.info.response",
+                "task.random.response",
                 async (response) =>
                 {
                     _logger.LogInformation("🟠 [CodeExecution] Received TaskInfoResponse for CorrelationId: {CorrelationId}, Success: {Success}", 
