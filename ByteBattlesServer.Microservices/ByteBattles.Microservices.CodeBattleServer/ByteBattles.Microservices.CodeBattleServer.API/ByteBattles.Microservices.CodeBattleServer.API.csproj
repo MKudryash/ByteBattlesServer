@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,6 +24,12 @@
       <ProjectReference Include="..\..\ByteBattlesServer.Microservices.Middleware\ByteBattlesServer.Microservices.Middleware.csproj" />
       <ProjectReference Include="..\ByteBattles.Microservices.CodeBattleServer.Application\ByteBattles.Microservices.CodeBattleServer.Application.csproj" />
       <ProjectReference Include="..\ByteBattles.Microservices.CodeBattleServer.Infrastructure\ByteBattles.Microservices.CodeBattleServer.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
 </Project>

@@ -1,8 +1,11 @@
+using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+
 namespace ByteBattlesServer.SharedContracts.IntegrationEvents;
 
-public class LanguageInfoRequest
+public class TaskInfoRequest
 {
-    public Guid LanguageId { get; set; }
+    public Guid Id { get; set; }
+    public Difficulty Difficulty { get; set; }
     public string ReplyToQueue { get; set; } = string.Empty;
     public string CorrelationId { get; set; } = Guid.NewGuid().ToString();
 }

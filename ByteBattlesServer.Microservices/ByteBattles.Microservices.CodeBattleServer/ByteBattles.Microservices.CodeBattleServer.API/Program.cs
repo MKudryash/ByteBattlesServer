@@ -10,6 +10,7 @@ using ByteBattlesServer.SharedContracts.Jwt;
 using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -41,7 +42,13 @@ Console.WriteLine($"JWT Issuer: {jwtSettings.Issuer}");
 Console.WriteLine($"JWT Audience: {jwtSettings.Audience}");
 Console.WriteLine($"JWT Secret length: {jwtSettings.Secret.Length}");
 
+builder.Services.Configure<RabbitMQSettings>(
+    builder.Configuration.GetSection("RabbitMQ"));
 
+builder.Services.AddSingleton(sp => 
+    sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value);
+
+builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 
 // Добавление сервисов
 builder.Services.AddApplication();

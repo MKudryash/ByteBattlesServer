@@ -1,11 +1,10 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
-using ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
 using MediatR;
 
-namespace ByteBattlesServer.Microservices.TaskServices.Application.Queries;
+namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 
 public class GetLibraryQueryHandler : IRequestHandler<GetLibraryQuery, List<LibraryDto>>
 {

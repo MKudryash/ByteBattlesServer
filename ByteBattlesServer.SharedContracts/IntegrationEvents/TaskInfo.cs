@@ -2,21 +2,7 @@ using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 
 namespace ByteBattlesServer.SharedContracts.IntegrationEvents;
 
-public class LanguageInfoResponse
-{
-    public Guid LanguageId { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string ShortTitle { get; set; } = string.Empty;
-    public string FileExtension { get; set; } = string.Empty;
-    public string CompilerCommand { get; set; } = string.Empty;
-    public string ExecutionCommand { get; set; } = string.Empty;
-    public bool SupportsCompilation { get; set; }
-    public string CorrelationId { get; set; } = string.Empty;
-    public bool Success { get; set; }
-    public string ErrorMessage { get; set; } = string.Empty;
-}
-
-public class TaskInfoResponse
+public class TaskInfo
 {
     public Guid Id { get; set; }
     public string? Title { get; set; }
@@ -41,7 +27,4 @@ public class TaskInfoResponse
     public DateTime? UpdatedAt { get; set; }
     public virtual ICollection<TestCaseInfo> TestCases { get; set; } = new List<TestCaseInfo>();
     public virtual ICollection<LibraryInfo> Libraries { get; set; } = new List<LibraryInfo>();
-    public string CorrelationId { get; set; } = string.Empty;
-    public bool Success { get; set; }
-    public string ErrorMessage { get; set; } = string.Empty;
 }

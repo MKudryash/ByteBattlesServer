@@ -8,7 +8,7 @@ public class BattleRoom : Entity
 {
     public string Name { get; private set; }
     public Guid LanguageId { get; private set; }
-    public Guid TaskId { get; private set; }
+    public Guid TaskId { get; set; }
     
     public Difficulty Difficulty { get; private set; }
     public DateTime CreatedAt { get; private set; }

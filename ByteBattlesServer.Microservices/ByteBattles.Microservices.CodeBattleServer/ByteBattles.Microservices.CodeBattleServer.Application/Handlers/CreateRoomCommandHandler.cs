@@ -10,21 +10,30 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Respo
 {
     private readonly IBattleRoomRepository  _battleRoomRepository;
     private readonly IUnitOfWork  _unitOfWork;
+    private readonly ITaskLanguageService _taskLanguageService;
 
-    public CreateRoomCommandHandler(IBattleRoomRepository repository, IUnitOfWork unitOfWork)
+    public CreateRoomCommandHandler(IBattleRoomRepository repository, IUnitOfWork unitOfWork, ITaskLanguageService taskLanguageService)
     {
         _battleRoomRepository =  repository;
         _unitOfWork = unitOfWork;
+        _taskLanguageService = taskLanguageService;
     }
 
     public async Task<ResponseCreateRoom> Handle(CreateRoomCommand request, CancellationToken cancellationToken)
     {
         
-        //Сначала проверка LanguageId
+        //Сначала проверка LanguageId с возвратом task
         
+        var task = await _taskLanguageService.GetTaskInfoAsync(request.LanguageId, request.Difficulty);
+
+        if (task == null)
+        {
+            throw new ArgumentException($"Language with ID {request.LanguageId} not found");
+        }
+
         var room = new BattleRoom(request.Name, request.LanguageId,request.Difficulty);
         
-        
+        room.TaskId = task.Id;
         
         room.AddParticipant(request.UserId);
         await _battleRoomRepository.AddAsync(room);

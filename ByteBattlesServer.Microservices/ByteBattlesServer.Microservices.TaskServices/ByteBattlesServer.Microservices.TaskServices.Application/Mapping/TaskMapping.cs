@@ -14,7 +14,7 @@ public class TaskMapping
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty.ToString(),
+            Difficulty = task.Difficulty,
             Author = task.Author,
             FunctionName = task.FunctionName,
             PatternMain = task.PatternMain,
@@ -57,7 +57,7 @@ public class TaskMapping
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty.ToString(),
+            Difficulty = task.Difficulty,
             Author = task.Author,
             FunctionName = task.FunctionName,
             PatternMain = task.PatternMain,
@@ -84,7 +84,7 @@ public class TaskMapping
                 LanguageId = tl.IdLanguage,
                 LanguageTitle = tl.Language.Title,
                 LanguageShortTitle = tl.Language.ShortTitle,
-            }).ToList()
+            }).ToList(),
         };
     }
 }

@@ -17,7 +17,8 @@ public static class DependencyInjection
         services.AddScoped<IBattleRoomRepository, BattleRoomRepository>();
         services.AddScoped<ICodeSubmissionRepository, CodeSubmissionRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+        services.AddScoped<ITaskLanguageService, RabbitMQTaskLanguageService>();
+        services.AddMemoryCache();
 
         return services;
     }
