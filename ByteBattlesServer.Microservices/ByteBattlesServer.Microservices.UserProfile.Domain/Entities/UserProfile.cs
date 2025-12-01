@@ -151,39 +151,9 @@ public class UserProfile : Entity
 
 
 
-    public void AddBattleResult(BattleResult battleResult)
-    {
-        _battleHistory.Add(battleResult);
-        Stats.UpdateStats(battleResult);
-        
-        // Добавляем активность о битве
-        var activityDescription = $"Результат: {battleResult.Result}, Опыт: {battleResult.ExperienceGained}";
-        /*AddRecentActivity(ActivityType.Battle, 
-            $"Завершена битва", 
-            activityDescription,
-            battleResult.ExperienceGained);*/
-            
-        UpdateLevel();
-        UpdateTimestamps();
-    }
+  
 
-    public void AddAchievement(Achievement achievement)
-    {
-        if (!_achievements.Any(a => a.AchievementId == achievement.Id))
-        {
-            var userAchievement = new UserAchievement(Id, achievement.Id);
-            _achievements.Add(userAchievement);
-            
-            // Добавляем активность о достижении
-            /*AddRecentActivity(ActivityType.Achievement, 
-                "Получено достижение", 
-                achievement.Description);*/
-                
-            UpdateTimestamps();
-        }
-    }
-
-    private void UpdateLevel()
+    public void UpdateLevel()
     {
         Level = UserLevelCalculator.CalculateLevel(Stats.TotalExperience);
     }

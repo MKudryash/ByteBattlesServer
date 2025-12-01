@@ -781,8 +781,56 @@ private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo t
     {
         Console.WriteLine($"🎉 Player {winnerId} won the battle in room {roomId}!");
 
+        if (!_roomParticipants.TryGetValue(roomId, out var participants))
+        {
+            Console.WriteLine($"❌ No participants found for room {roomId}");
+            return;
+        }
+
+        // 1. Сначала получаем имя победителя для оппонентов
+        var winnerName = "Winner"; // Замените на реальное имя победителя если есть
+        
+        // 2. Создаем задачи для обработки результатов БЕЗ параллельного выполнения через DbContext
+        var battleResults = new List<(Guid participantId, bool isWinner)>();
+
+        // Сначала собираем все данные
+        foreach (var participantId in participants)
+        {
+            bool isWinner = participantId == winnerId;
+            battleResults.Add((participantId, isWinner));
+        }
+
+        // 3. Выполняем последовательно для избежания конфликтов DbContext
+        foreach (var (participantId, isWinner) in battleResults)
+        {
+            try
+            {
+                var userStatsCommand = new SubmitUserStatsCommand(
+                    participantId,
+                    isWinner,
+                    taskInfo,
+                    new TimeSpan(0, 0, 2, 0), // Пример: 2 минуты
+                    roomId, // Используем roomId как battleId
+                    isWinner ? "Opponent" : winnerName
+                );
+                
+                // ВАЖНО: Выполняем последовательно с await
+                await mediator.Send(userStatsCommand);
+                Console.WriteLine($"✅ Battle result saved for player {participantId}, winner: {isWinner}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error saving battle result for player {participantId}: {ex.Message}");
+            }
+        }
+
+        Console.WriteLine($"✅ All battle results processed for room {roomId}");
+
+        // 4. Отправляем уведомления
+        var notificationTasks = new List<Task>();
+        
         // Уведомляем победителя
-        await SendToPlayer(winnerId, new
+        notificationTasks.Add(SendToPlayer(winnerId, new
         {
             type = "battle_won",
             roomId = roomId,
@@ -790,10 +838,10 @@ private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo t
             message = "🎉 Поздравляем! Вы выиграли битву!",
             winnerId = winnerId.ToString(),
             timestamp = DateTime.UtcNow
-        }, mediator);
+        }, mediator));
 
         // Уведомляем всех участников комнаты о победе
-        await BroadcastToRoom(winnerId, roomId, new
+        notificationTasks.Add(BroadcastToRoom(winnerId, roomId, new
         {
             type = "battle_finished",
             roomId = roomId,
@@ -801,19 +849,47 @@ private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo t
             taskTitle = taskInfo.Title,
             message = $"Игрок {winnerId} выиграл битву!",
             timestamp = DateTime.UtcNow
-        }, mediator);
+        }, mediator));
 
-        var commandCompleted = new CloseRoom(roomId);
-        await mediator.Send(commandCompleted);
+        // Уведомления проигравшим
+        foreach (var participantId in participants.Where(p => p != winnerId))
+        {
+            notificationTasks.Add(SendToPlayer(participantId, new
+            {
+                type = "battle_lost",
+                roomId = roomId,
+                taskTitle = taskInfo.Title,
+                message = "К сожалению, вы проиграли эту битву.",
+                winnerId = winnerId.ToString(),
+                timestamp = DateTime.UtcNow
+            }, mediator));
+        }
 
-        // Очищаем данные комнаты
+        // Ждем завершения всех уведомлений
+        await Task.WhenAll(notificationTasks);
+
+        // 5. Закрываем комнату через отдельную команду
+        try
+        {
+            var commandCompleted = new CloseRoom(roomId);
+            await mediator.Send(commandCompleted);
+            Console.WriteLine($"✅ Room {roomId} closed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error closing room {roomId}: {ex.Message}");
+        }
+
+        // 6. Очищаем данные комнаты в конце
         CleanupRoom(roomId);
 
-        Console.WriteLine($"Battle in room {roomId} finished. Winner: {winnerId}");
+        Console.WriteLine($"✅ Battle in room {roomId} finished. Winner: {winnerId}");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error handling player win: {ex.Message}");
+        Console.WriteLine($"❌ Error handling player win: {ex.Message}");
+        // Очищаем комнату даже при ошибке
+        CleanupRoom(roomId);
     }
 }
 private static void CleanupRoom(Guid roomId)
@@ -1091,20 +1167,52 @@ private static async Task SetPlayerReady(
             WebSocketMessageType.Text, true, CancellationToken.None);
     }
 
-    private static Guid GetUserIdFromContext(HttpContext context)
+private static Guid GetUserIdFromContext(HttpContext context)
+{
+    // Проверяем аутентификацию
+    if (!context.User.Identity?.IsAuthenticated ?? true)
     {
-        var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? context.User.FindFirst("sub")?.Value
-                          ?? context.User.FindFirst("userId")?.Value;
+        // Для тестирования - генерируем test ID
+        Console.WriteLine("⚠️ User not authenticated. Using test user ID.");
+        var testUserId = Guid.NewGuid();
+        return testUserId;
+    }
 
-        if (string.IsNullOrEmpty(userIdClaim))
+    // Получаем userId из claims
+    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                      ?? context.User.FindFirst("sub")?.Value
+                      ?? context.User.FindFirst("userId")?.Value
+                      ?? context.User.FindFirst(ClaimTypes.Name)?.Value; // Email как fallback
+
+    if (string.IsNullOrEmpty(userIdClaim))
+    {
+        // Логируем все доступные claims для отладки
+        var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
+        Console.WriteLine($"⚠️ User authenticated but no userId claim found. Claims: {string.Join(", ", allClaims)}");
+        
+        // Для тестирования - используем email как ID
+        var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
+        if (!string.IsNullOrEmpty(email))
         {
-            var testUserId = Guid.NewGuid();
-            Console.WriteLine($"Generated test user ID: {testUserId}");
-            return testUserId;
+            // Генерируем стабильный Guid из email
+            var testId = Guid.Parse(email.GetHashCode().ToString("X").PadLeft(32, '0').Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-"));
+            Console.WriteLine($"⚠️ Using email-based test ID: {testId} from email: {email}");
+            return testId;
         }
+        
+        throw new UnauthorizedAccessException("User ID not found in claims");
+    }
 
-        return Guid.Parse(userIdClaim);
+    if (Guid.TryParse(userIdClaim, out var userId))
+    {
+        Console.WriteLine($"✅ User authenticated with ID: {userId}");
+        return userId;
     }
     
+    // Если userId не Guid (например, строка), конвертируем
+    var stableGuid = Guid.Parse(userIdClaim.GetHashCode().ToString("X").PadLeft(32, '0').Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-"));
+    Console.WriteLine($"⚠️ User ID is not GUID format. Converted '{userIdClaim}' to stable GUID: {stableGuid}");
+    
+    return stableGuid;
+}
 }

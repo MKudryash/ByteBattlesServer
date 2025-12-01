@@ -13,4 +13,6 @@ public class UserStatsCommandDto
     public string problemTitle { get; set; }
     public string language { get; set; }
     public ActivityType activityType { get; set; }
+    public Guid? BattleId { get; set; }
+    public string? NameOpponent { get; set; }
 }

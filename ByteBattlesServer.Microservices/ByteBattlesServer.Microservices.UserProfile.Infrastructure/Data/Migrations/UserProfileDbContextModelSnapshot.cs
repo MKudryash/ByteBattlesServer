@@ -103,8 +103,8 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(100)")
                         .HasColumnName("opponent_name");
 
-                    b.Property<int>("ProblemSolved")
-                        .HasColumnType("integer")
+                    b.Property<Guid>("ProblemSolved")
+                        .HasColumnType("uuid")
                         .HasColumnName("problems_solved");
 
                     b.Property<string>("Result")
@@ -121,8 +121,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                     b.HasIndex("BattleDate");
 
-                    b.HasIndex("BattleId")
-                        .IsUnique();
+                    b.HasIndex("BattleId");
 
                     b.HasIndex("UserProfileId");
 

@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Migrations
+namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(UserProfileDbContext))]
-    [Migration("20251201124312_Initial")]
-    partial class Initial
+    [Migration("20251201142328_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,8 +106,8 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("opponent_name");
 
-                    b.Property<int>("ProblemSolved")
-                        .HasColumnType("integer")
+                    b.Property<Guid>("ProblemSolved")
+                        .HasColumnType("uuid")
                         .HasColumnName("problems_solved");
 
                     b.Property<string>("Result")
@@ -124,8 +124,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Migrations
 
                     b.HasIndex("BattleDate");
 
-                    b.HasIndex("BattleId")
-                        .IsUnique();
+                    b.HasIndex("BattleId");
 
                     b.HasIndex("UserProfileId");
 

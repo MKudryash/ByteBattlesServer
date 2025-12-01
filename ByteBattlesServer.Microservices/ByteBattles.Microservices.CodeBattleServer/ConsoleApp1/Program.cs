@@ -11,12 +11,31 @@ class Program
     private static string _playerId;
     private static Guid _currentRoomId;
     private static bool _isReady = false;
+    private static string _jwtToken = ""; // Добавляем поле для токена
 
     static async Task Main(string[] args)
     {
+        Console.WriteLine("=== Code Battle Client ===");
+        
+        // 1. Получаем JWT токен (или используем тестовый)
+        await GetJwtToken();
+        
+        if (string.IsNullOrEmpty(_jwtToken))
+        {
+            Console.WriteLine("❌ Не удалось получить JWT токен. Выход.");
+            return;
+        }
+        
+        // 2. Подключаемся к WebSocket с токеном
         Console.WriteLine("Подключение к серверу битв...");
         
-        await _webSocket.ConnectAsync(new Uri("ws://localhost:50312/api/battle"), CancellationToken.None);
+        // Добавляем токен в query string
+        var uri = new Uri($"ws://localhost:50312/api/battle?access_token={_jwtToken}");
+        
+        // Или добавляем в заголовки (зависит от сервера)
+        _webSocket.Options.SetRequestHeader("Authorization", $"Bearer {_jwtToken}");
+        
+        await _webSocket.ConnectAsync(uri, CancellationToken.None);
         Console.WriteLine("Подключено!");
 
         // Запускаем задачу для получения сообщений
@@ -29,6 +48,40 @@ class Program
         }
 
         await receiveTask;
+    }
+    static async Task GetJwtToken()
+    {
+        Console.WriteLine("\n=== Аутентификация ===");
+        Console.WriteLine("1 - Ввести существующий JWT токен");
+        Console.WriteLine("2 - Использовать тестовый токен");
+        Console.WriteLine("3 - Войти через API (email/password)");
+        Console.Write("Ваш выбор: ");
+        
+        var choice = Console.ReadLine();
+        
+        switch (choice)
+        {
+            case "1":
+                Console.Write("Введите JWT токен: ");
+                _jwtToken = Console.ReadLine();
+                if (!string.IsNullOrEmpty(_jwtToken))
+                {
+                    Console.WriteLine("✅ Токен получен");
+                }
+                break;
+                
+            case "2":
+                // Тестовый токен (замените на реальный)
+                _jwtToken = "your-test-jwt-token-here";
+                Console.WriteLine($"⚠️ Используется тестовый токен: {_jwtToken.Substring(0, Math.Min(20, _jwtToken.Length))}...");
+                break;
+            
+                
+            default:
+                Console.WriteLine("⚠️ Используется тестовый токен");
+                _jwtToken = "test-jwt-token";
+                break;
+        }
     }
 
     static async Task ShowMainMenu()

@@ -25,7 +25,9 @@ public class SubmitUserStatsHandler: IRequestHandler<SubmitUserStatsCommand, Sub
             TaskId = request.Task.Id,
             ProblemTitle = request.Task.Title?? "Задача решена",
             Language = request.Task.Language.Title,
-            ActivityType = ActivityType.ProblemSolved
+            ActivityType = ActivityType.Battle,
+            BattleId = request.BattleId,
+            BattleOponent = request.name
         };
         _messageBus.Publish(
             userUpdateStats,

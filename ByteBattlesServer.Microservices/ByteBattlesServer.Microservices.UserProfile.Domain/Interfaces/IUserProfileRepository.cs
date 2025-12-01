@@ -1,4 +1,6 @@
 using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
 
@@ -35,5 +37,13 @@ public interface IUserProfileRepository
         double? averageRating = null, int? totalSubmissions = null);
     Task<bool> ExistsByEmailAsync(string email);
     Task<Entities.UserProfile> GetByEmailAsync(string email);
+    
+    
+    //Битвы
+
+
+    Task AddBattleResultAsync(BattleResult battleResult);
+ 
+
     
 }

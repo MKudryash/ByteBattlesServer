@@ -64,7 +64,9 @@ public class UserStatsEventHandler : BackgroundService
                 arg.TaskId,
                 arg.ProblemTitle,
                 arg.Language,
-                arg.ActivityType
+                arg.ActivityType,
+                arg.BattleId,
+                arg.BattleOponent
                 );
 
             var result = await mediator.Send(command);

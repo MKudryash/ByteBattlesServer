@@ -1,7 +1,9 @@
 using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Repositories;
 
@@ -204,5 +206,10 @@ public class UserProfileRepository : IUserProfileRepository
             .Include(up => up.TeacherStats)
             .Include(up => up.Settings)
             .FirstOrDefaultAsync(up => up.Email == email);
+    }
+
+    public async Task AddBattleResultAsync(BattleResult battleResult)
+    {
+        await _context.BattleResults.AddAsync(battleResult);
     }
 }

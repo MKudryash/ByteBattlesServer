@@ -15,5 +15,7 @@ public record UpdateUserStatsCommand(
     Guid taskId,
     string problemTitle,
     string language,
-    ActivityType activityType
+    ActivityType activityType,
+    Guid? battleId,
+    string battleOpponent
 ) : IRequest<UserProfileDto>;

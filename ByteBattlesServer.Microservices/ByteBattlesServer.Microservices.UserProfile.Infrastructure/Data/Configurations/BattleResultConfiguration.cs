@@ -62,8 +62,7 @@ public class BattleResultConfiguration : IEntityTypeConfiguration<BattleResult>
 
         // Indexes
         builder.HasIndex(br => br.UserProfileId);
-        builder.HasIndex(br => br.BattleId)
-            .IsUnique();
+        builder.HasIndex(br => br.BattleId);
         builder.HasIndex(br => br.BattleDate);
     }
 }

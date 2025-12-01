@@ -12,6 +12,8 @@ public class UserStatsIntegrationEvent
     public string ProblemTitle { get; set; } = "";
     public string Language { get; set; } = "";
     public ActivityType  ActivityType { get; set; }
+    public Guid BattleId { get; set; }
+    public string BattleOponent { get; set; } = "";
 }
 
 public enum ActivityType
