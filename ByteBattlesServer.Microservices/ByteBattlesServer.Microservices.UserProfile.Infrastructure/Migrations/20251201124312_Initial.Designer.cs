@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
+namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Migrations
 {
     [DbContext(typeof(UserProfileDbContext))]
-    [Migration("20251201115457_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251201124312_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

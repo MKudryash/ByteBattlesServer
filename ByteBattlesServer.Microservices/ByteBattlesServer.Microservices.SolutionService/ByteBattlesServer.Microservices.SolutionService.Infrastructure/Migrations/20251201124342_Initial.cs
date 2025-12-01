@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data.Migrations
+namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,7 +52,7 @@ namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data.Mi
                         name: "FK_SolutionAttempts_Solutions_SolutionId",
                         column: x => x.SolutionId,
                         principalTable: "Solutions",
-                        principalColumn: "LanguageId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -79,7 +79,7 @@ namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Data.Mi
                         name: "FK_TestResults_Solutions_SolutionId",
                         column: x => x.SolutionId,
                         principalTable: "Solutions",
-                        principalColumn: "LanguageId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 

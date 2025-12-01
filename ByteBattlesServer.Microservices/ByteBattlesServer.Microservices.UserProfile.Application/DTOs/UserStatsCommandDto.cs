@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 

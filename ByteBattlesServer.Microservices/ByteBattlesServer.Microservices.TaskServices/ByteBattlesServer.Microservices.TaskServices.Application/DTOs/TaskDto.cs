@@ -1,4 +1,6 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 
@@ -7,7 +9,7 @@ public class TaskDto
   public Guid Id { get; set; }
   public  string Title { get; set; }
   public  string Description { get; set; }
-  public  Difficulty Difficulty { get; set; }
+  public  TaskDifficulty Difficulty { get; set; }
   public  string Author { get; set; }
   public  string FunctionName { get; set; }
   public  string PatternMain { get; set; }

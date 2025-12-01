@@ -1,4 +1,5 @@
 using ByteBattles.Microservices.CodeBattleServer.Domain.Enums;
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 
 namespace ByteBattles.Microservices.CodeBattleServer.Domain.Entities;
@@ -10,7 +11,7 @@ public class BattleRoom : Entity
     public Guid LanguageId { get; private set; }
     public Guid TaskId { get; set; }
     
-    public Difficulty Difficulty { get; private set; }
+    public TaskDifficulty Difficulty { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public RoomStatus Status { get; set; }
     
@@ -22,7 +23,7 @@ public class BattleRoom : Entity
 
     private BattleRoom() { }
 
-    public BattleRoom(string name, Guid languageId,  Difficulty difficulty)
+    public BattleRoom(string name, Guid languageId,  TaskDifficulty difficulty)
     {
         Name = name;
         LanguageId = languageId;

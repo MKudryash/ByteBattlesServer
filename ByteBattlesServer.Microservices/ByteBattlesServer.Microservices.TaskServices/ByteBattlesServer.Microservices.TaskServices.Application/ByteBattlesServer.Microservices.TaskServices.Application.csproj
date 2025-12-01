@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.TaskServices.Domain\ByteBattlesServer.Microservices.TaskServices.Domain.csproj" />
     </ItemGroup>
 

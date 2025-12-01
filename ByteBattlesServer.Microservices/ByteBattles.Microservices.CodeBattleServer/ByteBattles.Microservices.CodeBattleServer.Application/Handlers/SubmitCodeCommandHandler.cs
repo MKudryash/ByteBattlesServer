@@ -5,6 +5,7 @@ using ByteBattles.Microservices.CodeBattleServer.Domain.Exceptions;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Services;
 using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -108,6 +109,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             _logger.LogInformation("🟢 [SubmitCode] Test results: {PassedTests}/{TotalTests} passed, Status: {Status}", 
                 passedTests, totalTests, finalStatus);
 
+            
             // Создаем response
             var response = new SubmitCodeResponse
             {
@@ -145,6 +147,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             _logger.LogInformation("🟢 [SubmitCode] Code submission completed successfully. Submission ID: {SubmissionId}", 
                 submission.Id);
 
+            
             return response;
         }
         catch (Exception ex)

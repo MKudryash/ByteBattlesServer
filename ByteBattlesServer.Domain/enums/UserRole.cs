@@ -6,6 +6,6 @@ namespace ByteBattlesServer.Domain.enums;
 public enum UserRole
 {
     student,
-    teacher ,
-    admin 
+    teacher,
+    admin
 }

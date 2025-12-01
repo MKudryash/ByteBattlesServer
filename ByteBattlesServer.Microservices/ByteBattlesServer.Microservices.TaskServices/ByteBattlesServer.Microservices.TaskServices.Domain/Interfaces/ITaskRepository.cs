@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using Task = ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task;
@@ -16,7 +17,7 @@ public interface ITaskRepository
     Task<Task> GetByIdAsyncWithTasks(Guid id);
     System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty();
 
-    Task<Task> GetRandomByDifficultyAsync(Difficulty difficulty,Guid languageId);
+    Task<Task> GetRandomByDifficultyAsync(TaskDifficulty difficulty,Guid languageId);
     
     Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId);
     Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId);
@@ -36,11 +37,11 @@ public interface ITaskRepository
     Task<Task?> InfoForCompilerAsync(Guid taskId);
     
     
-    Task<List<Task>> SearchTask(Difficulty? difficulty,
+    Task<List<Task>> SearchTask(TaskDifficulty? difficulty,
         Guid? languageId,
         string? searchTerm); 
     
-    Task<List<Task>> SearchTasksPagedAsync(Difficulty? difficulty,
+    Task<List<Task>> SearchTasksPagedAsync(TaskDifficulty? difficulty,
         Guid? languageId,
         string? searchTerm, int page, int pageSize);
 }

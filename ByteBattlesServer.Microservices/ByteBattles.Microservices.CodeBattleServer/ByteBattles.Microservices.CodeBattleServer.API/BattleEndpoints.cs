@@ -530,7 +530,7 @@ private static async Task CreateRoom(
 {
     try
     {
-        if (!Enum.TryParse<Difficulty>(difficultyString, true, out var difficulty))
+        if (!Enum.TryParse<TaskDifficulty>(difficultyString, true, out var difficulty))
         {
             await SendToPlayer(playerId, new { 
                 type = "error", 

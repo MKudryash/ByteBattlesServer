@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using ByteBattles.Microservices.CodeBattleServer.Domain.Interfaces;
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
@@ -32,7 +33,7 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
         SubscribeToResponses();
     }
 
-    public async Task<TaskInfo> GetTaskInfoAsync(Guid languageId, Difficulty difficulty)
+    public async Task<TaskInfo> GetTaskInfoAsync(Guid languageId, TaskDifficulty difficulty)
     {
         
         var request = new TaskInfoRequest

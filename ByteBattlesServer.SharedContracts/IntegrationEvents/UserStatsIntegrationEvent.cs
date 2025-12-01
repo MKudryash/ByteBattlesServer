@@ -1,3 +1,5 @@
+using ByteBattlesServer.Domain.enums;
+
 namespace ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 public class UserStatsIntegrationEvent

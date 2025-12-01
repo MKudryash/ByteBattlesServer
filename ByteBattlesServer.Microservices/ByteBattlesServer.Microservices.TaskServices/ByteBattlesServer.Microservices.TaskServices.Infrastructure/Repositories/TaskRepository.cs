@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -16,7 +17,7 @@ public class TaskRepository : ITaskRepository
         _dbContext = dbContext;
     }
 
-    public async Task<Task> GetRandomByDifficultyAsync(Difficulty difficulty,Guid languageId)
+    public async Task<Task> GetRandomByDifficultyAsync(TaskDifficulty difficulty,Guid languageId)
     {
         return await _dbContext.Tasks
             .Where(t => t.Difficulty == difficulty)
@@ -144,7 +145,7 @@ public class TaskRepository : ITaskRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<List<Task>> SearchTask(Difficulty? difficulty, Guid? languageId, string? searchTerm)
+    public async Task<List<Task>> SearchTask(TaskDifficulty? difficulty, Guid? languageId, string? searchTerm)
     {
         var query = BuildSearchQuery(difficulty, languageId, searchTerm);
         
@@ -153,7 +154,7 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
 
-    public async Task<List<Task>> SearchTasksPagedAsync(Difficulty? difficulty, Guid? languageId, string? searchTerm, int page, int pageSize)
+    public async Task<List<Task>> SearchTasksPagedAsync(TaskDifficulty? difficulty, Guid? languageId, string? searchTerm, int page, int pageSize)
     {
         var query = BuildSearchQuery(difficulty, languageId, searchTerm);
 
@@ -164,7 +165,7 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
     private IQueryable<Task> BuildSearchQuery(
-        Difficulty? difficulty,
+        TaskDifficulty? difficulty,
         Guid? languageId,
         string? searchTerm)
     {

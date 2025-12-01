@@ -1,4 +1,6 @@
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.Domain;
+using ByteBattlesServer.Domain.enums;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 
@@ -8,7 +10,7 @@ public class Task:Entity
 
     public string? Description { get; set; }
     
-    public Difficulty Difficulty { get; private set; }
+    public TaskDifficulty Difficulty { get; private set; }
 
     public string? Author { get; private set; }
 
@@ -43,13 +45,13 @@ public class Task:Entity
         Description = description;
         if (!string.IsNullOrWhiteSpace(difficulty))
         {
-            if (Enum.TryParse<Difficulty>(difficulty.Trim(), true, out var parsedDifficulty))
+            if (Enum.TryParse<TaskDifficulty>(difficulty.Trim(), true, out var parsedDifficulty))
             {
                 Difficulty = parsedDifficulty;
             }
             else
             {
-                Difficulty = Difficulty.Easy;
+                Difficulty = TaskDifficulty.Easy;
             }
         }
         Author = author;
@@ -78,7 +80,7 @@ public class Task:Entity
             Description =description.Trim();
         if (!string.IsNullOrWhiteSpace(difficulty))
         {
-            if (Enum.TryParse<Difficulty>(difficulty.Trim(), true, out var parsedDifficulty))
+            if (Enum.TryParse<TaskDifficulty>(difficulty.Trim(), true, out var parsedDifficulty))
             {
                 Difficulty = parsedDifficulty;
             }
