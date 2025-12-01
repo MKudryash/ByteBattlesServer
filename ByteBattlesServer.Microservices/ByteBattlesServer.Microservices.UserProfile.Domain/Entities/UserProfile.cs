@@ -107,31 +107,9 @@ public class UserProfile : Entity
         AvatarUrl = avatarUrl;
         UpdateTimestamps();
     }
-    public void AddRecentActivity(ActivityType type, string title, string description, int experienceGained = 0)
-    {
-        var activity = new RecentActivity(Id, type, title, description, experienceGained);
-        _recentActivities.Add(activity);
-        
-        if (_recentActivities.Count > 50)
-        {
-            _recentActivities.RemoveAt(0);
-        }
-        
-        UpdateTimestamps();
-    }
 
-    public void AddRecentProblem(Guid problemId, string title, TaskDifficulty difficulty, string language)
-    {
-        var recentProblem = new RecentProblem(Id, problemId, title, difficulty, language);
-        _recentProblems.Add(recentProblem);
-        
-        if (_recentProblems.Count > 20)
-        {
-            _recentProblems.RemoveAt(0);
-        }
-        
-        UpdateTimestamps();
-    }
+
+ 
 
     public void UpdateSettings(
         string? preferredLanguage = null,
@@ -159,32 +137,12 @@ public class UserProfile : Entity
     }
 
     public void UpdateProblemStats(bool isSuccessful, TaskDifficulty difficulty, 
-        TimeSpan executionTime, Guid taskId, string problemTitle, string language)
+        TimeSpan executionTime, Guid taskId)
     {
-        if (Stats == null)
-        {
-            Stats = new UserStats();
-        }
+       
         
         Stats.UpdateProblemStats(isSuccessful, difficulty, executionTime, taskId);
         
-        if (isSuccessful)
-        {
-            AddRecentProblem(taskId, problemTitle, difficulty, language);
-            
-            var expGained = difficulty switch
-            {
-                TaskDifficulty.Easy => 10,
-                TaskDifficulty.Medium => 25,
-                TaskDifficulty.Hard => 50,
-                _ => 0
-            };
-            
-            AddRecentActivity(ActivityType.ProblemSolved, 
-                $"Решена задача: {problemTitle}", 
-                $"Сложность: {difficulty}, Язык: {language}",
-                expGained);
-        }
         
         UpdateLevel();
         UpdateTimestamps();
@@ -200,10 +158,10 @@ public class UserProfile : Entity
         
         // Добавляем активность о битве
         var activityDescription = $"Результат: {battleResult.Result}, Опыт: {battleResult.ExperienceGained}";
-        AddRecentActivity(ActivityType.Battle, 
+        /*AddRecentActivity(ActivityType.Battle, 
             $"Завершена битва", 
             activityDescription,
-            battleResult.ExperienceGained);
+            battleResult.ExperienceGained);*/
             
         UpdateLevel();
         UpdateTimestamps();
@@ -217,9 +175,9 @@ public class UserProfile : Entity
             _achievements.Add(userAchievement);
             
             // Добавляем активность о достижении
-            AddRecentActivity(ActivityType.Achievement, 
+            /*AddRecentActivity(ActivityType.Achievement, 
                 "Получено достижение", 
-                achievement.Description);
+                achievement.Description);*/
                 
             UpdateTimestamps();
         }
@@ -230,13 +188,9 @@ public class UserProfile : Entity
         Level = UserLevelCalculator.CalculateLevel(Stats.TotalExperience);
     }
     
-    private void UpdateTimestamps()
+    public void UpdateTimestamps()
     {
         UpdatedAt = DateTime.UtcNow;
     }
     
-    public void SetUpdatedAt(DateTime updatedAt)
-    {
-        UpdatedAt = updatedAt;
-    }
 }

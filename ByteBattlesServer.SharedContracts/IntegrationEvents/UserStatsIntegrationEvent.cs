@@ -9,4 +9,12 @@ public class UserStatsIntegrationEvent
     public Guid TaskId { get; set; }
     public string ProblemTitle { get; set; } = "";
     public string Language { get; set; } = "";
+    public ActivityType  ActivityType { get; set; }
+}
+
+public enum ActivityType
+{
+    Battle = 0,
+    ProblemSolved = 1,
+    Achievement = 2
 }

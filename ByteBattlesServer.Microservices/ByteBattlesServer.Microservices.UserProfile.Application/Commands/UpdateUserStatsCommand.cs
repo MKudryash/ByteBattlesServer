@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
@@ -12,5 +13,6 @@ public record UpdateUserStatsCommand(
     TimeSpan executionTime,
     Guid taskId,
     string problemTitle,
-    string language
+    string language,
+    ActivityType activityType
 ) : IRequest<UserProfileDto>;

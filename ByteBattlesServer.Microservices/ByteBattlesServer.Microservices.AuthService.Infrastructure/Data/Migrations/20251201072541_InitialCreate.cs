@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRecentActivitiesAndRecentProblems : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -70,7 +70,7 @@ namespace ByteBattlesServer.Microservices.AuthService.Infrastructure.Data.Migrat
                         name: "FK_refresh_tokens_users_UserId",
                         column: x => x.UserId,
                         principalTable: "users",
-                        principalColumn: "LanguageId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 

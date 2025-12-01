@@ -6,6 +6,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
 
 public interface IUserProfileRepository
 {
+    
     // Базовые методы
     Task<Entities.UserProfile> GetByIdAsync(Guid id);
     Task<Entities.UserProfile> GetByIdTeacherAsync(Guid id);

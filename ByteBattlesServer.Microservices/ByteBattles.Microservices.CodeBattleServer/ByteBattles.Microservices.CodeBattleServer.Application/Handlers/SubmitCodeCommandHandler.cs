@@ -56,7 +56,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             
             _logger.LogInformation("🟠 [SubmitCode] Executing tests for task: {TaskId}, Test cases: {TestCaseCount}", 
                 request.Task.Id, request.Task.TestCases.Count());
-
+            Console.WriteLine("Tests"+  request.Task.TestCases.ToList());
             // Выполняем тесты
             var executionResults = await _compilationService.ExecuteAllTestsAsync(
                 request.Code, 

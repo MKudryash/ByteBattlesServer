@@ -3,6 +3,7 @@ using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -32,19 +33,40 @@ public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsComman
         {
             throw new UserProfileNotFoundException(request.UserId);
         }
-        if (userProfile.Stats == null)
+
+        if (!userProfile.Stats.HasSolvedTask(request.taskId))
         {
-            userProfile.Stats = new UserStats();
+            userProfile.UpdateProblemStats(request.isSuccessful,request.difficulty,
+                request.executionTime,request.taskId);
+            _userProfileRepository.Update(userProfile);
+        
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
-        
-        userProfile.UpdateProblemStats(request.isSuccessful,request.difficulty,
-            request.executionTime,request.taskId,request.problemTitle, request.language);
-        
+
+       
+        var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);
         userProfile.UpdatedAt = DateTime.UtcNow;
-        _userProfileRepository.Update(userProfile);
+    
         
+        
+        var expGained = request.difficulty switch
+        {
+            TaskDifficulty.Easy => 10,
+            TaskDifficulty.Medium => 25,
+            TaskDifficulty.Hard => 50,
+            _ => 0
+        };
+        var activity = new RecentActivity(userProfile.Id, request.activityType,$"Решена задача: {request.problemTitle}",
+            $"Сложность: {request.difficulty}, Язык: {request.language}",expGained);
+       await _userProfileRepository.AddRecentActivityAsync(activity);
+       
+       await _unitOfWork.SaveChangesAsync(cancellationToken);
+   
+        
+        
+        
+        await _userProfileRepository.AddRecentProblemAsync(recentProblem);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
          return new UserProfileDto
         {
             Id = userProfile.Id,

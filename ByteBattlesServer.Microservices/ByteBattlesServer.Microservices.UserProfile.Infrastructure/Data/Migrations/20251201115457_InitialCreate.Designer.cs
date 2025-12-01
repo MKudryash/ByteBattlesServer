@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(UserProfileDbContext))]
-    [Migration("20251120183206_AddRecentActivitiesAndRecentProblems")]
-    partial class AddRecentActivitiesAndRecentProblems
+    [Migration("20251201115457_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -513,8 +513,8 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnName("medium_problems_solved");
 
                     b.Property<string>("SolvedTaskIds")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("solved_task_ids");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("SuccessfulSubmissions")
                         .ValueGeneratedOnAdd()

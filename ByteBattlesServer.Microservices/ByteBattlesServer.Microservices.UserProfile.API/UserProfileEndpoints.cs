@@ -119,7 +119,7 @@ public static class UserProfileEndpoints
             {
                 var userId = GetUserIdFromClaims(httpContext);
                 var command = new UpdateUserStatsCommand(
-                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId, dto.problemTitle, dto.language);
+                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId, dto.problemTitle, dto.language,dto.activityType);
                     
                 await mediator.Send(command);
                 return Results.Ok(new { message = "Settings updated successfully" });

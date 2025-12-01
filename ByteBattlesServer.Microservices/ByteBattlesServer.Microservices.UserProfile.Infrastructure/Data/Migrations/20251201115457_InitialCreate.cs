@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRecentActivitiesAndRecentProblems : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -217,7 +217,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     total_submissions = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     successful_submissions = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     total_execution_time = table.Column<long>(type: "bigint", nullable: false, defaultValue: 0L),
-                    solved_task_ids = table.Column<string>(type: "jsonb", nullable: true)
+                    SolvedTaskIds = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

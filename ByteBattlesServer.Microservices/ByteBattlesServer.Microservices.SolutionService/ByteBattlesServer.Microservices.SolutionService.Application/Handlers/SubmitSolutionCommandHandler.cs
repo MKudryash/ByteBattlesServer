@@ -62,11 +62,34 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
 
             if (task.Language != null)
             {
-                var executionResults = await _compilationService.ExecuteAllTestsAsync(request.Code,
-                    task.TestCases.Select(x => new TestCaseDto(x.Id, x.Input, x.Output, x.Hidden)
-                    ).ToList(),
+                var testCasesForResult =  task.TestCases.Select(x => new TestCaseDto(x.Id, x.Input, x.Output, x.Hidden)).ToList();
+                Console.WriteLine("Tests"+ testCasesForResult.Count);
+                
+                var executionResults = await _compilationService.ExecuteAllTestsAsync(
+                    request.Code,
+                    testCasesForResult,
                     task.Language);
+                if (executionResults == null || !executionResults.Any())
+                {
+                   Console.WriteLine("❌ [Solution] No execution results received from compiler");
+                    throw new InvalidOperationException("No test results received from compiler");
+                }
+    
+                // ПРОВЕРЬТЕ КОЛИЧЕСТВО:
+                Console.WriteLine($"📊 Received {executionResults.Count} execution results, expected {task.TestCases.Count}");
+    
+                // БЕЗОПАСНЫЙ ДОСТУП:
+                var firstResult = executionResults.FirstOrDefault();
+                if (firstResult != null)
+                {
+                    Console.WriteLine($"First result IsSuccess: {firstResult.IsSuccess}");
+                }
+                else
+                {
+                    Console.WriteLine("No execution results available");
+                }
 
+                Console.WriteLine(executionResults.FirstOrDefault().IsSuccess);
                 int passedTests = 0;
                 var totalExecutionTime = TimeSpan.Zero;
 
@@ -74,6 +97,14 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
                 // 6. Process test results
                 foreach (var (testCaseDto, executionResult) in task.TestCases.Zip(executionResults))
                 {
+                    var isPassed = executionResult.IsSuccess &&
+                                   executionResult.Output?.Trim() == testCaseDto.Output.Trim();
+                    // Добавьте информативное логирование
+                    Console.WriteLine($"Test {testCaseDto.Id}: " +
+                                      $"Expected='{testCaseDto.Output}', " +
+                                      $"Actual='{executionResult.Output}', " +
+                                      $"IsSuccess={executionResult.IsSuccess}, " +
+                                      $"Passed={isPassed}");
                     var testResult = new TestResult(solution.Id, testCaseDto.Id, testCaseDto.Input, testCaseDto.Output);
 
                     var testStatus = executionResult.IsSuccess &&
@@ -90,7 +121,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
 
                     solution.AddTestResult(testResult);
                     await _solutionRepository.AddTestResultAsync(testResult);
-
+                    Console.WriteLine(testStatus);
                     if (testStatus == TestStatus.Passed)
                     {
                         passedTests++;
@@ -113,7 +144,10 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
                     IsSuccessful = finalStatus == SolutionStatus.Completed,
                     Difficulty = request.Difficulty,
                     ExecutionTime = averageExecutionTime,
-                    TaskId = request.TaskId
+                    TaskId = request.TaskId,
+                    ProblemTitle = task.Title?? "Задача решена",
+                    Language = task.Language.Title,
+                    ActivityType = ActivityType.ProblemSolved
                 };
                 _messageBus.Publish(
                     userUpdateStats,
@@ -127,6 +161,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Я УЛЕТЕЛ В ИСКЛЮЧЕНИЕ");
             // Handle compilation or execution errors
             solution.UpdateStatus(SolutionStatus.Failed, 0, task.TestCases.Count);
             attempt.UpdateStatus(SolutionStatus.Failed);

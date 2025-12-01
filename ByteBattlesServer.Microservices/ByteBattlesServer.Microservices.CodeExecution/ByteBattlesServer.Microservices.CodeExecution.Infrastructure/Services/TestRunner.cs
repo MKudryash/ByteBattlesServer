@@ -37,7 +37,19 @@ public class TestRunner : ITestRunner
         
         // Генерация исполняемого кода
         //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
-        var executableCode = NormalizeCode(submission.Code);
+        var executableCode = submission.Code;
+        //var executableCode = NormalizeCode(submission.Code);
+        //var normalizedCode = NormalizeCode(submission.Code);
+            
+        // Валидация кода
+        // if (string.IsNullOrWhiteSpace(normalizedCode) || 
+        //     normalizedCode.Trim().Equals("string", StringComparison.OrdinalIgnoreCase))
+        // {
+        //     return new TestResult(
+        //         false, 
+        //         new List<TestCaseResult>(), 
+        //         "Invalid code: empty or placeholder 'string'");
+        // }
 
         //Получить информацию о языке submission.Language
         
@@ -98,17 +110,19 @@ public class TestRunner : ITestRunner
     private string NormalizeCode(string code)
     {
         if (string.IsNullOrEmpty(code))
-            return code;
+            return string.Empty;
 
-        // Разэкранирование специальных символов
+        // Удаляем экранирование JSON/HTTP символов
         return code
+            .Replace("\\\"", "\"")          // Экранированные кавычки
             .Replace("\\n", "\n")           // Переносы строк
             .Replace("\\t", "\t")           // Табуляции
-            .Replace("\\\"", "\"")          // Кавычки
-            .Replace("\\\\", "\\")          // Обратные слеши
             .Replace("\\r", "\r")           // Возврат каретки
+            .Replace("\\\\", "\\")          // Обратные слеши
             .Replace("\\'", "'")            // Одиночные кавычки
             .Replace("\\b", "\b")           // Backspace
-            .Replace("\\f", "\f");          // Form feed
+            .Replace("\\f", "\f")           // Form feed
+            .Replace("\\/", "/")            // Слэши
+            .Replace("\\u0022", "\"");      // Unicode кавычки
     }
 }

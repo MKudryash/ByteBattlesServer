@@ -11,4 +11,5 @@ public class UserStatsCommandDto
     public Guid taskId { get; set; }
     public string problemTitle { get; set; }
     public string language { get; set; }
+    public ActivityType activityType { get; set; }
 }

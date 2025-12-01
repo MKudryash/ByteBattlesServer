@@ -10,5 +10,5 @@ public class CodeTestResultResponseEvent
     public bool Success { get; set; }
     public string ErrorMessage { get; set; } = string.Empty;
     public string CorrelationId { get; set; } = string.Empty;
-    
+    public string ReplyToQueue { get; set; }
 }

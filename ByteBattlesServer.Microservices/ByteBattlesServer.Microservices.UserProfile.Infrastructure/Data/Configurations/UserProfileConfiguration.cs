@@ -8,6 +8,7 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
 {
     public void Configure(EntityTypeBuilder<Domain.Entities.UserProfile> builder)
     {
+     
         builder.ToTable("user_profiles");
         
         builder.HasKey(up => up.Id);
@@ -30,7 +31,6 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<Domain.Entities
             .HasMaxLength(255)
             .IsRequired(false);
         
-            
         builder.Property(up => up.AvatarUrl)
             .HasColumnName("avatar_url")
             .HasMaxLength(500)

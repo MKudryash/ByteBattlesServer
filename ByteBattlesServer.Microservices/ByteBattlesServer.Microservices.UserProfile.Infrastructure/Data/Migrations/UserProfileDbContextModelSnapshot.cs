@@ -24,7 +24,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.Achievement", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -65,7 +65,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(50)")
                         .HasColumnName("type");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("RequiredValue");
 
@@ -76,7 +76,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.BattleResult", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -117,7 +117,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("BattleDate");
 
@@ -131,7 +131,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentActivity", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -170,7 +170,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
 
@@ -183,7 +183,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentProblem", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -218,7 +218,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("Difficulty");
 
@@ -233,7 +233,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.TeacherStats", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -267,7 +267,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserProfileId")
                         .IsUnique();
@@ -277,7 +277,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserAchievement", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -294,7 +294,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("AchievementId");
 
@@ -306,7 +306,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -375,7 +375,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(100)")
                         .HasColumnName("user_name");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
 
@@ -401,7 +401,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserSettings", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -452,7 +452,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserProfileId")
                         .IsUnique();
@@ -462,7 +462,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserStats", b =>
                 {
-                    b.Property<Guid>("LanguageId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
@@ -510,8 +510,8 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnName("medium_problems_solved");
 
                     b.Property<string>("SolvedTaskIds")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("solved_task_ids");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("SuccessfulSubmissions")
                         .ValueGeneratedOnAdd()
@@ -559,7 +559,7 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasDefaultValue(0)
                         .HasColumnName("wins");
 
-                    b.HasKey("LanguageId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserProfileId")
                         .IsUnique();

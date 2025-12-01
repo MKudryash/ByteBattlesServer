@@ -1,3 +1,5 @@
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+
 namespace ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 
 public class RecentActivity : Entity
@@ -24,11 +26,4 @@ public class RecentActivity : Entity
         Timestamp = DateTime.UtcNow;
         CreatedAt = DateTime.UtcNow;
     }
-}
-
-public enum ActivityType
-{
-    Battle = 0,
-    ProblemSolved = 1,
-    Achievement = 2
 }

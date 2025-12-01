@@ -56,7 +56,7 @@ public class TaskInfoMessageHandler : BackgroundService
                     "task.info.response");
                 return;
             }
-
+            Console.WriteLine("TASKS TEST:" + task.TestCases.Count);
             // Get language
             var languageQuery = new GetLanguageByIdQuery(task.Language.Id);
             var language = await mediator.Send(languageQuery);

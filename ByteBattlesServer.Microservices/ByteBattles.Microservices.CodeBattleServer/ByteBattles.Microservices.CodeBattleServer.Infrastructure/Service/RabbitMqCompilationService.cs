@@ -6,6 +6,8 @@ using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
+namespace ByteBattles.Microservices.CodeBattleServer.Infrastructure.Service;
+
 public class RabbitMqCompilationService : ICompilationService, IDisposable
 {
     private readonly IMessageBus _messageBus;
@@ -49,10 +51,6 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
                         
                         tcs.TrySetResult(response);
                     }
-                    else
-                    {
-                       
-                    }
                 });
             _isSubscribed = true;
             
@@ -79,6 +77,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
             }).ToList(),
             // Указываем конкретную очередь для ответа
             ReplyToQueue = _responseQueueName,
+            ReplyToRoutingKey = "compiler.info.response",
             CorrelationId = Guid.NewGuid().ToString()
         };
 
@@ -119,6 +118,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
             {
                 foreach (var (testCase, resultDto) in testCasesDto.Zip(response.Results))
                 {
+                 
                     results.Add(new TestExecutionResult(
                         resultDto.IsPassed,
                         resultDto.ActualOutput,
@@ -129,7 +129,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
                 }
             }
 
-            
+            Console.WriteLine(results.Count().ToString());
                 
             return results;
         }

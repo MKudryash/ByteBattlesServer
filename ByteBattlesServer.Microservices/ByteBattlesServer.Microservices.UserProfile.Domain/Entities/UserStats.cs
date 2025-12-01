@@ -25,9 +25,8 @@ public class UserStats : ValueObject
     public int TotalSubmissions { get; private set; }
     public int SuccessfulSubmissions { get; private set; }
     public TimeSpan TotalExecutionTime { get; private set; }
-    public HashSet<Guid> SolvedTaskIds { get; private set; } = new();
+    public HashSet<Guid> SolvedTaskIds { get; set; } = new();
     
-    // Вычисляемые свойства
     public double WinRate => TotalBattles > 0 ? (double)Wins / TotalBattles * 100 : 0;
     public double SuccessRate => TotalSubmissions > 0 ? (double)SuccessfulSubmissions / TotalSubmissions * 100 : 0;
     public TimeSpan AverageExecutionTime => SuccessfulSubmissions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / SuccessfulSubmissions) : TimeSpan.Zero;
@@ -67,33 +66,30 @@ public class UserStats : ValueObject
         {
             SuccessfulSubmissions++;
             TotalExecutionTime += executionTime;
-
-            // Учитываем задачу только если она решена впервые
+            
             if (SolvedTaskIds.Add(taskId))
             {
                 TotalProblemsSolved++;
                 
-                // Увеличиваем счетчик по сложности
                 switch (difficulty)
                 {
                     case TaskDifficulty.Easy:
                         EasyProblemsSolved++;
-                        TotalExperience += 10; // Опыт за легкие задачи
+                        TotalExperience += 10; 
                         break;
                     case TaskDifficulty.Medium:
                         MediumProblemsSolved++;
-                        TotalExperience += 25; // Опыт за средние задачи
+                        TotalExperience += 25;
                         break;
                     case TaskDifficulty.Hard:
                         HardProblemsSolved++;
-                        TotalExperience += 50; // Опыт за сложные задачи
+                        TotalExperience += 50; 
                         break;
                 }
             }
         }
         else
         {
-            // Сбрасываем серию при неудачной попытке
             CurrentStreak = 0;
         }
     }

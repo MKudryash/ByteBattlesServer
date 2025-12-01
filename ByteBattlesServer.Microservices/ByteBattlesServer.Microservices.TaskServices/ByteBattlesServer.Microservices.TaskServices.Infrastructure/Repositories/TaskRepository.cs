@@ -36,7 +36,7 @@ public class TaskRepository : ITaskRepository
             .ThenInclude(ua => ua.Language)
             .Include(up => up.Libraries)
             .ThenInclude(l => l.Library)
-            .Include(t => t.TestCases.Where(tc => tc.IsExample))
+            .Include(t => t.TestCases)
             .FirstOrDefaultAsync(up => up.Id == id);
     }  
     

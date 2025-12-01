@@ -58,6 +58,8 @@ private async Task HandleRandomTaskRequest(TaskInfoRequest request)
         // Get random task
         var taskQuery = new GetRandomTask(request.Difficulty, request.LanguageId);
         var task = await mediator.Send(taskQuery);
+    
+        
         
         if (task == null)
         {
@@ -78,7 +80,8 @@ private async Task HandleRandomTaskRequest(TaskInfoRequest request)
                 "task.random.response");        // Correct routing key for responses
             return;
         }
-
+        
+        Console.WriteLine("TASKS TEST:" + task.TestCases.Count);
         // Safe mapping with null checks
         var response = CreateTaskInfoResponse(task, language, request.CorrelationId);
         
@@ -112,6 +115,8 @@ private async Task HandleRandomTaskRequest(TaskInfoRequest request)
 
     private TaskInfoResponse CreateTaskInfoResponse(TaskDto task, LanguageDto language, Guid correlationId)
     {
+        
+        
         // Initialize collections if null
         task.TestCases ??= new List<TestCaseDto>();
         task.Libraries ??= new List<LibraryDto>();
@@ -134,7 +139,8 @@ private async Task HandleRandomTaskRequest(TaskInfoRequest request)
             TestCases = task.TestCases.Select(x => new TestCaseInfo()
             {
                 Input = x.Input ?? string.Empty,
-                Output = x.Output ?? string.Empty
+                Output = x.Output ?? string.Empty,
+                Hidden = x.IsExample
             }).ToList(),
             Libraries = task.Libraries.Select(x => new LibraryInfo()
             {

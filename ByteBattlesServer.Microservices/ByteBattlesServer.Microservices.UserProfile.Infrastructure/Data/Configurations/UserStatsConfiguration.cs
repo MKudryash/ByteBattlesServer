@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Configurations;
@@ -77,15 +78,18 @@ public class UserStatsConfiguration : IEntityTypeConfiguration<UserStats>
                 v => TimeSpan.FromTicks(v))
             .HasDefaultValue(TimeSpan.Zero);
 
-        builder.Property(us => us.SolvedTaskIds)
-            .HasColumnName("solved_task_ids")
+        builder.Property(e => e.SolvedTaskIds)
             .HasConversion(
-                v => System.Text.Json.JsonSerializer.Serialize<HashSet<Guid>>(v, (JsonSerializerOptions)null),
-                v => string.IsNullOrEmpty(v) 
-                    ? new HashSet<Guid>() 
-                    : System.Text.Json.JsonSerializer.Deserialize<HashSet<Guid>>(v, (JsonSerializerOptions)null))
-            .IsRequired(false)
-            .HasColumnType("jsonb");
+                v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                v => JsonSerializer.Deserialize<HashSet<Guid>>(v, JsonSerializerOptions.Default) ?? new HashSet<Guid>()
+            )
+            .Metadata.SetValueComparer(
+                new ValueComparer<HashSet<Guid>>(
+                    (c1, c2) => c1 != null && c2 != null && c1.SetEquals(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => new HashSet<Guid>(c)
+                )
+            );
 
         builder.Property(us => us.UserProfileId)
             .HasColumnName("user_profile_id")

@@ -27,10 +27,34 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
         _cache = cache;
         _logger = logger;
         
-        // Updated queue name pattern
+        // Create unique response queue for this service instance
         _responseQueueName = $"solution.task.responses.{Guid.NewGuid():N}";
         
-        SubscribeToResponses();
+        // Initialize subscription immediately
+        InitializeSubscription();
+    }
+
+    private void InitializeSubscription()
+    {
+        try
+        {
+            _logger.LogInformation("🟠 [TaskInfoService] Initializing response subscription on queue: {QueueName}", _responseQueueName);
+            
+            // Create and bind the response queue BEFORE any requests are sent
+            _messageBus.Subscribe<TaskInfoResponse>(
+                "solution.tasks.exchange",
+                _responseQueueName,
+                "task.info.response", 
+                async (response) => await HandleTaskInfoResponse(response));
+
+            _isSubscribed = true;
+            _logger.LogInformation("🟢 [TaskInfoService] Response subscription initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔴 [TaskInfoService] Failed to initialize response subscription");
+            throw;
+        }
     }
 
     public async Task<TaskInfo> GetTaskInfoAsync(Guid taskId)
@@ -44,11 +68,16 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
             return cachedInfo;
         }
 
+        if (!_isSubscribed)
+        {
+            throw new InvalidOperationException("Response subscription is not initialized");
+        }
+
         var request = new TaskInfoRequest
         {
             TaskId = taskId,
-            ReplyToQueue = _responseQueueName,
             CorrelationId = Guid.NewGuid()
+            // Note: ReplyToQueue is no longer needed as we use the pre-created queue
         };
 
         var tcs = new TaskCompletionSource<TaskInfoResponse>();
@@ -56,28 +85,33 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
 
         try
         {
-            EnsureSubscribed();
-
             _logger.LogInformation("🟠 [TaskInfoService] Sending TaskInfoRequest for TaskId: {TaskId}, CorrelationId: {CorrelationId}", 
                 taskId, request.CorrelationId);
 
             // Publish to solution exchange
             _messageBus.Publish(
                 request, 
-                "solution.tasks.exchange",  // Updated exchange
+                "solution.tasks.exchange",
                 "task.info.request");
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
-            var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
-
-            if (completedTask == timeoutTask)
+            // Set timeout
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            cts.Token.Register(() => 
             {
-                _logger.LogWarning("🔴 [TaskInfoService] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
-                    request.CorrelationId);
-                throw new TimeoutException("Task info request timeout");
-            }
+                if (!tcs.Task.IsCompleted)
+                {
+                    tcs.TrySetCanceled();
+                    _logger.LogWarning("🔴 [TaskInfoService] Timeout waiting for TaskInfoResponse for CorrelationId: {CorrelationId}", 
+                        request.CorrelationId);
+                }
+            });
 
             var response = await tcs.Task;
+
+            if (response == null)
+            {
+                throw new TimeoutException("Task info request timeout");
+            }
 
             if (!response.Success)
             {
@@ -115,74 +149,50 @@ public class RabbitMQTaskInfoService : ITaskInfoServices, IDisposable
         }
     }
 
-    private void SubscribeToResponses()
+    private async Task HandleTaskInfoResponse(TaskInfoResponse response)
     {
-        if (_isSubscribed) return;
+        _logger.LogInformation("🟣 [TaskInfoService] Received task info response for correlation {CorrelationId}, Success: {Success}", 
+            response?.CorrelationId, response?.Success);
 
-        lock (_subscribeLock)
+        if (response == null)
         {
-            if (_isSubscribed) return;
+            _logger.LogWarning("⚠️ [TaskInfoService] Received null response");
+            return;
+        }
 
-            try
+        if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
+        {
+            if (!tcs.TrySetResult(response))
             {
-                _logger.LogInformation("🟠 [TaskInfoService] Subscribing to task info responses on queue: {QueueName}", _responseQueueName);
-
-                _messageBus.Subscribe<TaskInfoResponse>(
-                    "solution.tasks.exchange",  // Updated exchange
-                    _responseQueueName,
-                    "task.info.response", 
-                    async (response) =>
-                    {
-                        _logger.LogInformation("🟣 [TaskInfoService] Received task info response for correlation {CorrelationId}, Success: {Success}", 
-                            response?.CorrelationId, response?.Success);
-
-                        if (response == null)
-                        {
-                            _logger.LogWarning("⚠️ [TaskInfoService] Received null response");
-                            return;
-                        }
-
-                        if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
-                        {
-                            tcs.TrySetResult(response);
-                            _logger.LogInformation("✅ [TaskInfoService] Successfully processed response for correlation {CorrelationId}", 
-                                response.CorrelationId);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("⚠️ [TaskInfoService] No pending request found for correlation {CorrelationId}", 
-                                response.CorrelationId);
-                        }
-                    });
-
-                _isSubscribed = true;
-                _logger.LogInformation("🟢 [TaskInfoService] Successfully subscribed to task info responses");
+                _logger.LogWarning("⚠️ [TaskInfoService] Failed to set result for correlation {CorrelationId}", 
+                    response.CorrelationId);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "🔴 [TaskInfoService] Failed to subscribe to task info responses");
-                throw;
+                _logger.LogInformation("✅ [TaskInfoService] Successfully processed response for correlation {CorrelationId}", 
+                    response.CorrelationId);
             }
         }
-    }
-
-    private void EnsureSubscribed()
-    {
-        if (!_isSubscribed)
+        else
         {
-            SubscribeToResponses();
+            _logger.LogWarning("⚠️ [TaskInfoService] No pending request found for correlation {CorrelationId}", 
+                response.CorrelationId);
         }
+        
+        await Task.CompletedTask;
     }
 
     public void Dispose()
     {
         if (!_disposed)
         {
+            // Cancel all pending requests
             foreach (var pendingRequest in _pendingRequests.Values)
             {
                 pendingRequest.TrySetCanceled();
             }
             _pendingRequests.Clear();
+            
             _disposed = true;
             _logger.LogInformation("🟠 [TaskInfoService] Disposed");
         }
