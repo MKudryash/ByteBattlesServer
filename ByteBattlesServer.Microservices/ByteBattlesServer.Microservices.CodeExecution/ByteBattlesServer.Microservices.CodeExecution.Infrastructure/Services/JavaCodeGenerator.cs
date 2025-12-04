@@ -5,32 +5,30 @@ using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
 
-public class CCodeGenerator : ICodeGenerator
+public class JavaCodeGenerator : ICodeGenerator
 {
-    public string GenerateExecutableCode(CodeSubmission submission, string? fileNameWithoutExtension = null)
+    public string GenerateExecutableCode(CodeSubmission submission, string? fileNameWithoutExtension)
     {
-        // Генерация кода на C
         var sb = new StringBuilder();
             
-        // Добавление библиотек
         foreach (var sL in submission.Libraries)
         {
-            sb.AppendLine($"#include <{sL.NameLibrary}>");
+            sb.Append($"import {sL.NameLibrary};");
         }
         sb.AppendLine();
-            
-        // Основной код пользователя
+        
+        sb.AppendLine("public class Program {");
         sb.AppendLine(submission.Code);
         sb.AppendLine();
-            
-        // Генерация main функции для тестирования
         
         sb.AppendLine(submission.PatternMain);
+
+        sb.AppendLine("}");
             
-        Console.WriteLine(sb.ToString());
         
+        Console.WriteLine(sb.ToString());
         return sb.ToString();
     }
 
-    public string GetFileExtension(ProgrammingLanguage language) => ".c";
+    public string GetFileExtension(ProgrammingLanguage language) => ".java";
 }

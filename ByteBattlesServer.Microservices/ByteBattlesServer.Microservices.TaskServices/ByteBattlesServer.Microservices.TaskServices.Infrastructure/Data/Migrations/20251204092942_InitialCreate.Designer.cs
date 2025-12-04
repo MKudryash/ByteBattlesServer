@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Migrations
+namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20251201124252_Initial")]
-    partial class Initial
+    [Migration("20251204092942_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -168,13 +168,11 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Migrations
 
                     b.Property<string>("PatternFunction")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("PatternMain")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ReturnType")
                         .IsRequired()

@@ -72,10 +72,10 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            "csharp" or "cs" => new ProcessStartInfo
+            "csharp" => new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"build {filePath} -o {Path.GetDirectoryName(filePath)} --nologo --verbosity quiet",
+                Arguments = $"build {filePath} -o {Path.GetDirectoryName(filePath)}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -114,8 +114,8 @@ public class ProcessService : ICodeCompiler
             },
             "csharp" or "cs" => new ProcessStartInfo
             {
-                FileName = "dotnet",
-                Arguments = $"{outputFileName}.dll {arguments}",
+                FileName = "dotnet-exec",
+                Arguments = $"{outputFileName}.cs --args \"{arguments}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -133,7 +133,7 @@ public class ProcessService : ICodeCompiler
             "java" => new ProcessStartInfo
             {
                 FileName = "java",
-                Arguments = $"-cp {Path.GetDirectoryName(filePath)} {Path.GetFileNameWithoutExtension(filePath)} {arguments}",
+                Arguments = $"{filePath} {arguments}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

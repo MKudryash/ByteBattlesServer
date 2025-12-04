@@ -7,8 +7,11 @@
     <list default="true" id="b9f3e05e-c0a3-4eed-bbd3-a99ecc29c1bc" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/footer.vue" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/footer.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/navigation.vue" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/navigation.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.CodeExecution/ByteBattlesServer.Microservices.CodeExecution.Infrastructure/Services/CCodeGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.CodeExecution/ByteBattlesServer.Microservices.CodeExecution.Infrastructure/Services/CCodeGenerator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Infrastructure/Configurations/TaskConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Infrastructure/Configurations/TaskConfiguration.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Infrastructure/Data/Migrations/TaskDbContextModelSnapshot.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Infrastructure/Migrations/20251201124252_Initial.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ByteBattlesServer.Microservices/ByteBattlesServer.Microservices.TaskServices/ByteBattlesServer.Microservices.TaskServices.Infrastructure/Migrations/20251201124252_Initial.cs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -197,6 +200,7 @@
       <workItem from="1763731848851" duration="4123000" />
       <workItem from="1763788492284" duration="11187000" />
       <workItem from="1763909469297" duration="3263000" />
+      <workItem from="1764840299003" duration="3228000" />
     </task>
     <servers />
   </component>

@@ -149,7 +149,7 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
                 {
                     UserId = request.UserId,
                     IsSuccessful = finalStatus == SolutionStatus.Completed,
-                    Difficulty = request.Difficulty,
+                    Difficulty = task.Difficulty,
                     ExecutionTime = averageExecutionTime,
                     TaskId = request.TaskId,
                     ProblemTitle = task.Title?? "Задача решена",

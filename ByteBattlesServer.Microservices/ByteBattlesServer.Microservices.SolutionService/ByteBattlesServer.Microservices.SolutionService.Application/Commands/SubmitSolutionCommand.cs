@@ -8,7 +8,6 @@ namespace ByteBattlesServer.Microservices.SolutionService.Application.Commands;
 
 public record SubmitSolutionCommand(
     Guid TaskId,
-    TaskDifficulty Difficulty,
     Guid UserId,
     Guid LanguageId,
     string Code) : IRequest<SolutionDto>;

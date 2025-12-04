@@ -28,7 +28,6 @@ public static class SolutionEndpoints
                     var userId = GetUserIdFromClaims(http);
                     var command = new SubmitSolutionCommand(
                         dto.TaskId,
-                        dto.Difficulty,
                         userId,
                         dto.LanguageId,
                         dto.Code);

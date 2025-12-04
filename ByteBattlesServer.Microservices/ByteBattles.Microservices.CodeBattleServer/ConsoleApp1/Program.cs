@@ -465,8 +465,8 @@ private static bool GetBoolProperty(JsonElement element, string propertyName)
         var roomName = "mew";
 
         Console.Write("Введите ID языка (например, 019ac01b-7977-731a-82e6-cfc2ab28e762): ");
-        var languageIdInput = "0250f966-d5db-4994-8bd7-0911460ffbe9";
-        //var languageIdInput = "76f0b6a1-40fc-42ca-8735-cf8ce6096789";
+        //var languageIdInput = "0250f966-d5db-4994-8bd7-0911460ffbe9";
+        var languageIdInput = Console.ReadLine();
         
         if (!Guid.TryParse(languageIdInput, out var languageId))
         {

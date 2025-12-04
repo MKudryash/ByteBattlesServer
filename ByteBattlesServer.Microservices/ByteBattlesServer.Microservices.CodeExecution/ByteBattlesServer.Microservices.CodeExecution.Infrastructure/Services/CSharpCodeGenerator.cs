@@ -7,13 +7,13 @@ namespace ByteBattlesServer.Microservices.CodeExecution.Infrastructure.Services;
 
 public class CSharpCodeGenerator : ICodeGenerator
 {
-    public string GenerateExecutableCode(CodeSubmission submission)
+    public string GenerateExecutableCode(CodeSubmission submission, string? fileNameWithoutExtension = null)
     {
         var sb = new StringBuilder();
             
         foreach (var sL in submission.Libraries)
         {
-            sb.Append($"using <{sL}>;");
+            sb.Append($"using {sL.NameLibrary};");
         }
         sb.AppendLine();
         
@@ -27,9 +27,11 @@ public class CSharpCodeGenerator : ICodeGenerator
         sb.AppendLine("        if (args.Length > 0) {");
         sb.AppendLine("            // Обработка аргументов");
         sb.AppendLine("        }");
-        sb.AppendLine("    }");
-        sb.AppendLine("}");*/
+        sb.AppendLine("    }");*/
+        sb.AppendLine("}");
             
+        
+        Console.WriteLine(sb.ToString());
         return sb.ToString();
     }
 

@@ -35,39 +35,20 @@ public class TestRunner : ITestRunner
         var allTestsPassed = true;
         
         
-        // Генерация исполняемого кода
-        //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
-        //var executableCode = submission.Code;
-        //var executableCode = NormalizeCode(submission.Code);
-        var executableCode = _codeGenerator.GenerateExecutableCode(submission);
-        //var normalizedCode = NormalizeCode(submission.Code);
-            
-        // Валидация кода
-        // if (string.IsNullOrWhiteSpace(normalizedCode) || 
-        //     normalizedCode.Trim().Equals("string", StringComparison.OrdinalIgnoreCase))
-        // {
-        //     return new TestResult(
-        //         false, 
-        //         new List<TestCaseResult>(), 
-        //         "Invalid code: empty or placeholder 'string'");
-        // }
 
-        //Получить информацию о языке submission.Language
-        
         _logger.LogInformation(submission.Language.CompilerCommand);
         _logger.LogInformation(submission.Language.FileExtension);
-        // var languageInfo = new LanguageInfo()
-        // {
-        //     ShortTitle = "C",
-        //     ExecutionCommand = ".c",
-        //     SupportsCompilation = true
-        // };
+
         
         Console.WriteLine($"FileExtension C: {submission.Language.FileExtension}");
         
-        // Создание временного файла
         var filePath = _fileService.GetTempFilePath(submission.Language.FileExtension);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        Console.WriteLine($"FileExtension Java: {fileNameWithoutExtension}");
+        var executableCode = _codeGenerator.GenerateExecutableCode(submission,fileNameWithoutExtension);
+        
         await _fileService.WriteToFileAsync(executableCode, filePath);
+        
 
         try
         {
