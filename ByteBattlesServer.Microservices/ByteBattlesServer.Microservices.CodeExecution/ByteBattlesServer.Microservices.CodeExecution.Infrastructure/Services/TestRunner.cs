@@ -38,7 +38,8 @@ public class TestRunner : ITestRunner
         // Генерация исполняемого кода
         //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
         //var executableCode = submission.Code;
-        var executableCode = NormalizeCode(submission.Code);
+        //var executableCode = NormalizeCode(submission.Code);
+        var executableCode = _codeGenerator.GenerateExecutableCode(submission);
         //var normalizedCode = NormalizeCode(submission.Code);
             
         // Валидация кода

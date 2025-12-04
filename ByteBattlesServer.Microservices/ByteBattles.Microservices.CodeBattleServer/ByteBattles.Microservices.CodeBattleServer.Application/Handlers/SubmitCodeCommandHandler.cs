@@ -21,8 +21,8 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
 
     public SubmitCodeCommandHandler(
         ICodeSubmissionRepository codeSubmissionRepository,
-        IUnitOfWork unitOfWork, 
-        ICompilationService compilationService, 
+        IUnitOfWork unitOfWork,
+        ICompilationService compilationService,
         IBattleRoomRepository battleRoomRepository,
         ILogger<SubmitCodeCommandHandler> logger)
     {
@@ -35,7 +35,6 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
 
     public async Task<SubmitCodeResponse> Handle(SubmitCodeCommand request, CancellationToken cancellationToken)
     {
-
         var room = await _battleRoomRepository.GetByIdAsync(request.RoomId);
 
         if (room == null)
@@ -46,7 +45,8 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
 
         if (!room.Participants.Any(p => p.UserId == request.UserId))
         {
-            _logger.LogWarning("🔴 [SubmitCode] User {UserId} not found in room {RoomId}", request.UserId, request.RoomId);
+            _logger.LogWarning("🔴 [SubmitCode] User {UserId} not found in room {RoomId}", request.UserId,
+                request.RoomId);
             throw new BattleRoomUserNotFoundException(request.UserId);
         }
 
@@ -54,17 +54,26 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
         {
             // Создаем submission
             var submission = new CodeSubmission(request.RoomId, request.UserId, request.Task.Id, request.Code);
-            
-            _logger.LogInformation("🟠 [SubmitCode] Executing tests for task: {TaskId}, Test cases: {TestCaseCount}", 
+
+            _logger.LogInformation("🟠 [SubmitCode] Executing tests for task: {TaskId}, Test cases: {TestCaseCount}",
                 request.Task.Id, request.Task.TestCases.Count());
-            Console.WriteLine("Tests"+  request.Task.TestCases.ToList());
+            Console.WriteLine("Tests" + request.Task.TestCases.ToList());
             // Выполняем тесты
-            var executionResults = await _compilationService.ExecuteAllTestsAsync(
-                request.Code, 
-                request.Task.TestCases.ToList(), 
-                request.Task.Language);
             
-            _logger.LogInformation("🟢 [SubmitCode] Tests executed successfully. Results count: {ResultsCount}", 
+            
+            var executionResults = await _compilationService.ExecuteAllTestsAsync(
+                request.Code,
+                request.Task.TestCases.ToList(),
+                request.Task.Language,
+                request.Task.Libraries.Select(l => new LibraryInfo()
+                {
+                    NameLibrary = l.NameLibrary,
+                    Description = l.Description,
+                    Id = l.Id
+                }).ToList(),
+                request.Task.PatternMain);
+
+            _logger.LogInformation("🟢 [SubmitCode] Tests executed successfully. Results count: {ResultsCount}",
                 executionResults.Count());
 
             int passedTests = 0;
@@ -75,7 +84,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             // Обрабатываем результаты тестов
             foreach (var (testCase, executionResult) in request.Task.TestCases.Zip(executionResults))
             {
-                var testStatus = executionResult.IsSuccess && 
+                var testStatus = executionResult.IsSuccess &&
                                  executionResult.Output?.Trim() == testCase.Output.Trim()
                     ? TestStatus.Passed
                     : TestStatus.Failed;
@@ -106,10 +115,10 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
             var successRate = totalTests > 0 ? (double)passedTests / totalTests * 100 : 0;
             var finalStatus = passedTests == totalTests ? TestStatus.Passed : TestStatus.Failed;
 
-            _logger.LogInformation("🟢 [SubmitCode] Test results: {PassedTests}/{TotalTests} passed, Status: {Status}", 
+            _logger.LogInformation("🟢 [SubmitCode] Test results: {PassedTests}/{TotalTests} passed, Status: {Status}",
                 passedTests, totalTests, finalStatus);
 
-            
+
             // Создаем response
             var response = new SubmitCodeResponse
             {
@@ -126,7 +135,7 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
                 TotalTests = totalTests,
                 SuccessRate = successRate,
                 TestResults = testResults,
-                Attempts = new List<SolutionAttemptDto> 
+                Attempts = new List<SolutionAttemptDto>
                 {
                     new SolutionAttemptDto
                     {
@@ -139,20 +148,21 @@ public class SubmitCodeCommandHandler : IRequestHandler<SubmitCodeCommand, Submi
                     }
                 }
             };
-            
+
             // Сохраняем в базу
             await _codeSubmissionRepository.AddAsync(submission);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("🟢 [SubmitCode] Code submission completed successfully. Submission ID: {SubmissionId}", 
+            _logger.LogInformation(
+                "🟢 [SubmitCode] Code submission completed successfully. Submission ID: {SubmissionId}",
                 submission.Id);
 
-            
+
             return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "🔴 [SubmitCode] Error during code submission for User: {UserId}, Room: {RoomId}", 
+            _logger.LogError(ex, "🔴 [SubmitCode] Error during code submission for User: {UserId}, Room: {RoomId}",
                 request.UserId, request.RoomId);
             throw;
         }

@@ -72,7 +72,9 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
     public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(
         string compiledCode,
         List<TestCaseDto> testCasesDto,
-        LanguageInfo languageInfo)
+        LanguageInfo languageInfo,
+        List<LibraryInfo> libraries,
+        string patternMain)
     {
   
         
@@ -85,6 +87,8 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
                 Input = x.Input,
                 Output = x.Output
             }).ToList(),
+            PatternMain = patternMain,
+            Libraries = libraries,
             ReplyToQueue = _responseQueueName,
             ReplyToRoutingKey = "compiler.info.response",
             CorrelationId = Guid.NewGuid().ToString()

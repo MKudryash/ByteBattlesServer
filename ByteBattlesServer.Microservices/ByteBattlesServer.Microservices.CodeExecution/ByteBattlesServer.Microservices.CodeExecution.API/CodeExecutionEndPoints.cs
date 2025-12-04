@@ -22,7 +22,10 @@ public static class CompilerEndpoints
                     var command = new TestCodeCommand(
                         dto.Code,
                         dto.Language,
-                        dto.TestCases);
+                        dto.TestCases,
+                        dto.Libraries,
+                        dto.PatternFunction,
+                        dto.PatternMain);
 
                     var result = await mediator.Send(command);
                     return Results.Ok(result);

@@ -67,7 +67,10 @@ public class CodeExecutionMessageHandler : BackgroundService
                 {
                     Input = x.Input,
                     ExpectedOutput = x.Output,
-                }).ToList());
+                }).ToList(),
+                arg.Libraries,
+                arg.PatternFunction,
+                arg.PatternMain);
 
 
             var testCase = await mediator.Send(query);

@@ -64,7 +64,9 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
 
     public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode,
         List<TestCaseInfo> testCasesDto,
-        LanguageInfo languageId)
+        LanguageInfo languageId,
+        List<LibraryInfo> libraries,
+        string patternMain)
     {
         var request = new CodeSubmissionEvent()
         {
@@ -75,7 +77,8 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
                 Input = x.Input,
                 Output = x.Output
             }).ToList(),
-            // Указываем конкретную очередь для ответа
+            PatternMain = patternMain,
+            Libraries = libraries,
             ReplyToQueue = _responseQueueName,
             ReplyToRoutingKey = "compiler.info.response",
             CorrelationId = Guid.NewGuid().ToString()

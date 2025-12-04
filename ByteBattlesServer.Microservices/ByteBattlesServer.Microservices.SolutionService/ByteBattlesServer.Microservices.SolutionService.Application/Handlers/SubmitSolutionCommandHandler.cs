@@ -68,7 +68,14 @@ public class SubmitSolutionCommandHandler : IRequestHandler<SubmitSolutionComman
                 var executionResults = await _compilationService.ExecuteAllTestsAsync(
                     request.Code,
                     testCasesForResult,
-                    task.Language);
+                    task.Language,
+                    task.Libraries.Select(l=> new LibraryInfo()
+                    {
+                        Description = l.Description,
+                        NameLibrary = l.NameLibrary,
+                        Id = l.Id
+                    }).ToList(),
+                    task.PatternMain);
                 if (executionResults == null || !executionResults.Any())
                 {
                    Console.WriteLine("❌ [Solution] No execution results received from compiler");

@@ -13,8 +13,10 @@ public class CCodeGenerator : ICodeGenerator
         var sb = new StringBuilder();
             
         // Добавление библиотек
-        sb.AppendLine("#include <stdio.h>");
-        sb.AppendLine("#include <stdlib.h>");
+        foreach (var sL in submission.Libraries)
+        {
+            sb.AppendLine($"#include <{sL.NameLibrary}>");
+        }
         sb.AppendLine();
             
         // Основной код пользователя
@@ -22,13 +24,17 @@ public class CCodeGenerator : ICodeGenerator
         sb.AppendLine();
             
         // Генерация main функции для тестирования
-        sb.AppendLine("int main(int argc, char *argv[]) {");
+        
+        sb.AppendLine(submission.PatternMain);
+        /*sb.AppendLine("int main(int argc, char *argv[]) {");
         sb.AppendLine("    if (argc > 1) {");
         sb.AppendLine("        // Обработка аргументов командной строки");
         sb.AppendLine("    }");
         sb.AppendLine("    return 0;");
-        sb.AppendLine("}");
+        sb.AppendLine("}");*/
             
+        Console.WriteLine(sb.ToString());
+        
         return sb.ToString();
     }
 

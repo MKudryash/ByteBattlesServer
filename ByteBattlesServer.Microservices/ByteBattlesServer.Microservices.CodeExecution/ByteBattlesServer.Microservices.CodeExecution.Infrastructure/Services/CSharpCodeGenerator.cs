@@ -11,17 +11,24 @@ public class CSharpCodeGenerator : ICodeGenerator
     {
         var sb = new StringBuilder();
             
-        sb.AppendLine("using System;");
+        foreach (var sL in submission.Libraries)
+        {
+            sb.Append($"using <{sL}>;");
+        }
         sb.AppendLine();
+        
         sb.AppendLine("public class Program {");
         sb.AppendLine(submission.Code);
         sb.AppendLine();
-        sb.AppendLine("    public static void Main(string[] args) {");
+        
+        sb.AppendLine(submission.PatternMain);
+        
+        /*sb.AppendLine("    public static void Main(string[] args) {");
         sb.AppendLine("        if (args.Length > 0) {");
         sb.AppendLine("            // Обработка аргументов");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
-        sb.AppendLine("}");
+        sb.AppendLine("}");*/
             
         return sb.ToString();
     }

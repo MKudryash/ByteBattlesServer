@@ -6,5 +6,5 @@ namespace ByteBattlesServer.Microservices.SolutionService.Domain.Interfaces.Serv
 public interface ICompilationService
 {
     Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode, List<TestCaseDto> testCases,
-        LanguageInfo languageId);
+        LanguageInfo languageId, List<LibraryInfo> libraries,string patternMain);
 }

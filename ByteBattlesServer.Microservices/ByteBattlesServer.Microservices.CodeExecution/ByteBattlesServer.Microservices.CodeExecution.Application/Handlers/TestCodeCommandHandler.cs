@@ -22,7 +22,8 @@ public class TestCodeCommandHandler: IRequestHandler<TestCodeCommand, CodeTestRe
         return MapToDtoCodeTestResult(testResult);
     }
 
-    private CodeSubmission MapToDto(TestCodeCommand request) => new(request.Code, request.Language, request.TestCases.Select(x=>Map(x)));
+    private CodeSubmission MapToDto(TestCodeCommand request) => 
+        new(request.Code, request.Language, request.TestCases.Select(x=>Map(x)), request.Libraries, request.PatternFunction, request.PatternMain);
 
     private TestCase Map(TestCaseDto dto) => new(dto.Input, dto.ExpectedOutput);
 

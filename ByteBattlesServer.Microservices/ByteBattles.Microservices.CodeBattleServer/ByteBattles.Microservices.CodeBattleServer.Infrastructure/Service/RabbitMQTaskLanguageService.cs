@@ -96,7 +96,7 @@ public class RabbitMQTaskLanguageService : ITaskLanguageService, IDisposable
                 Language = response.Language,
             };
 
-            
+            Console.WriteLine("LIBRARY"+ taskInfo.Libraries.Count());
             return taskInfo;
         }
         finally
