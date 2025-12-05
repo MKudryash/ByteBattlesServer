@@ -30,7 +30,7 @@ class Program
         Console.WriteLine("Подключение к серверу битв...");
         
         // Добавляем токен в query string
-        var uri = new Uri($"ws://localhost:50312/api/battle?access_token={_jwtToken}");
+        var uri = new Uri($"ws://localhost:50310/api/battle?access_token={_jwtToken}");
         
         // Или добавляем в заголовки (зависит от сервера)
         _webSocket.Options.SetRequestHeader("Authorization", $"Bearer {_jwtToken}");
