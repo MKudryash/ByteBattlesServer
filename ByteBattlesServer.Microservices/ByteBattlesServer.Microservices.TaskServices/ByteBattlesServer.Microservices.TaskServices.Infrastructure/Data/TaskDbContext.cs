@@ -15,8 +15,9 @@ public class TaskDbContext: DbContext
     public DbSet<Task> Tasks { get; set; }
     public DbSet<Language> Language { get; set; }
     public DbSet<TaskLanguage> TaskLanguages { get; set; }
+    public DbSet<TaskLibrary> TaskLibraries { get; set; }
     public DbSet<TestCases> TestsTasks { get; set; }
-    public DbSet<Library>  Libraries { get; set; }
+    public DbSet<Library> Libraries { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TaskDbContext).Assembly);

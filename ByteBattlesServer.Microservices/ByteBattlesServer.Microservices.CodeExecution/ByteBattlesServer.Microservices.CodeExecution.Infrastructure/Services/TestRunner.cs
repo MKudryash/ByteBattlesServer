@@ -12,7 +12,7 @@ public class TestRunner : ITestRunner
     private readonly ICodeGenerator _codeGenerator;
     private readonly ICodeCompiler _codeCompiler;
     private readonly IFileService _fileService;
-    private readonly ILanguageService _languageService;
+
     private readonly ILogger<TestRunner> _logger;
     
 
@@ -20,13 +20,12 @@ public class TestRunner : ITestRunner
         ICodeCompiler codeCompiler, 
         IFileService fileService,
         IMessageBus messageBus,
-        ILanguageService languageService,
         ILogger<TestRunner> logger)
     {
         _codeGenerator = codeGenerator;
         _codeCompiler = codeCompiler;
         _fileService = fileService;
-        _languageService = languageService;
+
         _logger = logger;
     }
 
@@ -34,35 +33,30 @@ public class TestRunner : ITestRunner
     {
         var results = new List<TestCaseResult>();
         var allTestsPassed = true;
-
-        // Генерация исполняемого кода
-        //var executableCode = _codeGenerator.GenerateExecutableCode(submission);
-        var executableCode = submission.Code;
-
-        //Получить информацию о языке submission.Language
-        var languageInfo = await _languageService.GetLanguageInfoAsync(submission.Language);
-        _logger.LogInformation(languageInfo.CompilerCommand);
-        _logger.LogInformation(languageInfo.FileExtension);
-        // var languageInfo = new LanguageInfo()
-        // {
-        //     ShortTitle = "C",
-        //     ExecutionCommand = ".c",
-        //     SupportsCompilation = true
-        // };
- 
         
         
-        // Создание временного файла
-        var filePath = _fileService.GetTempFilePath(languageInfo.FileExtension);
+
+        _logger.LogInformation(submission.Language.CompilerCommand);
+        _logger.LogInformation(submission.Language.FileExtension);
+
+        
+        Console.WriteLine($"FileExtension C: {submission.Language.FileExtension}");
+        
+        var filePath = _fileService.GetTempFilePath(submission.Language.FileExtension);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        Console.WriteLine($"FileExtension Java: {fileNameWithoutExtension}");
+        var executableCode = _codeGenerator.GenerateExecutableCode(submission,fileNameWithoutExtension);
+        
         await _fileService.WriteToFileAsync(executableCode, filePath);
+        
 
         try
         {
             // Компиляция (если требуется)
-            if (languageInfo.SupportsCompilation)
+            if (submission.Language.SupportsCompilation)
             {
                 _logger.LogInformation("Compiling code...");
-                var compileResult = await _codeCompiler.CompileAsync(filePath, languageInfo);
+                var compileResult = await _codeCompiler.CompileAsync(filePath, submission.Language);
                 if (!compileResult.IsSuccess)
                 {
                     return new TestResult(false, new List<TestCaseResult>(), $"Compilation failed: {compileResult.Output}");
@@ -72,7 +66,7 @@ public class TestRunner : ITestRunner
             // Запуск тестов
             foreach (var testCase in submission.TestCases)
             {
-                var executionResult = await _codeCompiler.ExecuteAsync(filePath, languageInfo, testCase.Input);
+                var executionResult = await _codeCompiler.ExecuteAsync(filePath, submission.Language, testCase.Input);
                     
                 var isPassed = executionResult.IsSuccess && 
                                executionResult.Output.Trim() == testCase.ExpectedOutput.Trim();
@@ -90,8 +84,27 @@ public class TestRunner : ITestRunner
         }
         finally
         {
+            
             // Очистка временных файлов
             await _fileService.DeleteFileAsync(filePath);
         }
+    }
+    private string NormalizeCode(string code)
+    {
+        if (string.IsNullOrEmpty(code))
+            return string.Empty;
+
+        // Удаляем экранирование JSON/HTTP символов
+        return code
+            .Replace("\\\"", "\"")          // Экранированные кавычки
+            .Replace("\\n", "\n")           // Переносы строк
+            .Replace("\\t", "\t")           // Табуляции
+            .Replace("\\r", "\r")           // Возврат каретки
+            .Replace("\\\\", "\\")          // Обратные слеши
+            .Replace("\\'", "'")            // Одиночные кавычки
+            .Replace("\\b", "\b")           // Backspace
+            .Replace("\\f", "\f")           // Form feed
+            .Replace("\\/", "/")            // Слэши
+            .Replace("\\u0022", "\"");      // Unicode кавычки
     }
 }

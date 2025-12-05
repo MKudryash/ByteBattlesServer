@@ -32,7 +32,11 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
             .IsRequired()
             .HasMaxLength(50);
         
-        builder.Property(l=> l.Pattern)
+        builder.Property(l=> l.PatternMain)
+            .IsRequired()
+            .HasMaxLength(500);
+        
+        builder.Property(l=> l.PatternFunction)
             .IsRequired()
             .HasMaxLength(500);
         

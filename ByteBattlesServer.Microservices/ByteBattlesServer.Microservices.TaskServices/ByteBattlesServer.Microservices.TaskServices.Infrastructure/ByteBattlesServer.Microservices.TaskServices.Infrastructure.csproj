@@ -18,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\ByteBattles.Microservices.CodeBattleServer\ByteBattles.Microservices.CodeBattleServer.Domain\ByteBattles.Microservices.CodeBattleServer.Domain.csproj" />
       <ProjectReference Include="..\ByteBattlesServer.Microservices.TaskServices.Domain\ByteBattlesServer.Microservices.TaskServices.Domain.csproj" />
     </ItemGroup>
 

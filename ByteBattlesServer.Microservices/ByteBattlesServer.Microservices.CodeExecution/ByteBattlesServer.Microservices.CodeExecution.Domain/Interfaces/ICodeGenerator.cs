@@ -5,6 +5,6 @@ namespace ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
 
 public interface ICodeGenerator
 {
-    //string GenerateExecutableCode(CodeSubmission submission);
-    string GetFileExtension(ProgrammingLanguage language);
+    string GenerateExecutableCode(CodeSubmission submission, string? fileNameWithoutExtension = null);
+   // string GetFileExtension(ProgrammingLanguage language);
 }

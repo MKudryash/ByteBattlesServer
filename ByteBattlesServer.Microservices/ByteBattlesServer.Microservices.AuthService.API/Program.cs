@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ByteBattlesServer.SharedContracts.Messaging;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,10 +46,8 @@ Console.WriteLine($"JWT Secret length: {jwtSettings.Secret.Length}");
 builder.Services.Configure<RabbitMQSettings>(
     builder.Configuration.GetSection("RabbitMQ"));
 
-// ИСПРАВЛЕНИЕ: Добавьте эту строку для регистрации самого RabbitMQSettings
 builder.Services.AddSingleton(sp => 
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMQSettings>>().Value);
-
 
 builder.Services.AddSingleton<IMessageBus, RabbitMQMessageBus>();
 
@@ -56,7 +56,30 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Auth Service API", 
+        Version = "v1",
+        Description = "API для аутентификации и авторизации пользователей"
+    });
+
+    // Добавляем поддержку JWT в Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"JWT Authorization header using the Bearer scheme. 
+                      Enter your token in the text input below.
+                      Example: 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.OperationFilter<SecurityRequirementsOperationFilter>();
+});
+
 
 builder.Services.AddCors(options =>
 {
@@ -65,17 +88,17 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://hobbit1021.ru:5035",
                 "http://localhost:8080",
-                "http://localhost:50305" // Ваш production домен
+                "http://localhost:50305"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials(); // Если используете cookies/авторизацию
+            .AllowCredentials();
     });
 });
 
-
 // Регистрация JwtSettings как singleton
 builder.Services.AddSingleton(jwtSettings);
+
 // Add JWT Authentication
 builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -93,15 +116,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Добавляем авторизацию
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service API V1");
-    c.RoutePrefix = "swagger"; // Это позволит API Gateway получать спецификацию
+    c.RoutePrefix = "swagger";
 });
 app.UseHttpsRedirection();
 
@@ -110,8 +134,9 @@ app.UseCors("AllowSpecificOrigin");
 // Глобальная обработка исключений
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// ДОБАВЛЕНО: Аутентификация и авторизация
+// Аутентификация и авторизация
 app.UseAuthentication();
+app.UseAuthorization();
 
 // Initialize database
 using (var scope = app.Services.CreateScope())

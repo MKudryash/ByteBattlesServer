@@ -4,7 +4,7 @@
       <div class="navigation__container">
         <a href="/">
           <div
-              aria-label="CodeCraft Template - Главная страница"
+              aria-label="ByteBattles Template - Главная страница"
               class="navigation__logo"
           >
             <svg
@@ -78,7 +78,7 @@
         >
           <ul class="navigation__list">
             <li class="navigation__item">
-              <a href="/task-template-builder">
+              <router-link to="/task-template-builder">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -99,10 +99,10 @@
                   </svg>
                   <span>Создать Шаблон</span>
                 </div>
-              </a>
+              </router-link>
             </li>
             <li class="navigation__item">
-              <a href="/students">
+              <router-link to="/students">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -125,10 +125,10 @@
                   </svg>
                   <span>Пользователи</span>
                 </div>
-              </a>
+              </router-link>
             </li>
             <li class="navigation__item">
-              <a href="/tasks">
+              <router-link to="/tasks">
                 <div class="navigation__link">
                   <svg
                       width="24"
@@ -145,15 +145,16 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                     >
-                      <path
-                          d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
-                      ></path>
-                      <circle r="3" cx="12" cy="12"></circle>
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                      <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+                      <path d="M9 14h.01"></path>
+                      <path d="M9 17h.01"></path>
+                      <path d="M12 16l1 1 3-3"></path>
                     </g>
                   </svg>
                   <span>Задачи</span>
                 </div>
-              </a>
+              </router-link>
             </li>
           </ul>
           <div class="navigation__actions">
@@ -229,6 +230,7 @@
 
 <script>
 import DangerousHTML from 'dangerous-html/vue'
+import { authUtils } from '@/utils/auth'
 
 export default {
   name: 'Navigation',
@@ -241,77 +243,240 @@ export default {
   mounted() {
     this.checkAuth()
     this.setupMediaQueryListener()
-    this.getLanguages()
+
+    // Слушаем изменения аутентификации
+    window.addEventListener('authStateChanged', this.checkAuth)
+    window.addEventListener('storage', this.checkAuth)
+
+    // Слушаем события обновления пользователя через глобальную шину
+    this.$root.$on('userUpdated', this.checkAuth)
+  },
+  beforeUnmount() {
+    window.removeEventListener('authStateChanged', this.checkAuth)
+    window.removeEventListener('storage', this.checkAuth)
+    this.$root.$off('userUpdated', this.checkAuth)
   },
   methods: {
     checkAuth() {
-      const userData = localStorage.getItem('user')
-      if (userData) {
-        try {
-          const parsedData = JSON.parse(userData)
-          // Проверяем структуру данных
-          if (parsedData.user) {
-            this.user = parsedData.user
-          } else if (parsedData.firstName) {
-            this.user = parsedData
-          }
-          console.log('User data:', this.user)
-        } catch (error) {
-          console.error('Error parsing user data:', error)
-        }
-      }
+      console.log('Checking auth in Navigation...')
+      this.user = authUtils.getUser()
+      console.log('Current user:', this.user)
     },
-
 
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen
-
-      if (this.isMenuOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
+      document.body.style.overflow = this.isMenuOpen ? 'hidden' : ''
     },
 
     handleMenuClick(event) {
-      // Закрываем меню при клике на ссылку
       if (event.target.closest('.navigation__link')) {
         this.isMenuOpen = false
         document.body.style.overflow = ''
       }
     },
 
-    profile() {
-      this.isMenuOpen = false
-      document.body.style.overflow = ''
-      this.$router.push('/me')
+    async profile() {
+      if (!this.user) {
+        this.navigateToAuth()
+
+        return
+      }
+
+      this.closeMenu()
+      await this.$router.push('/me')
     },
+
     navigateToAuth() {
-      this.isMenuOpen = false
-      document.body.style.overflow = ''
+      this.closeMenu()
       this.$router.push('/auth')
     },
 
     logout() {
-      localStorage.removeItem('user')
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('rememberMe')
-      this.user = null
+      if (confirm('Вы уверены, что хотите выйти?')) {
+        authUtils.clearAuth()
+        authUtils.notifyAuthChange() // Уведомляем об изменении
+        this.user = null
+        this.closeMenu()
+
+        // Показываем уведомление
+        this.showNotification('Вы успешно вышли из системы')
+
+        // Редирект если находимся на защищенной странице
+        if (this.$route.meta && this.$route.meta.requiresAuth) {
+          this.$router.push('/')
+        }
+
+        // Отправляем событие об обновлении пользователя
+        this.$root.$emit('userUpdated')
+      }
+    },
+
+    closeMenu() {
       this.isMenuOpen = false
       document.body.style.overflow = ''
     },
 
-    setupMediaQueryListener() {
-      const mediaQuery = window.matchMedia('(min-width: 992px)')
+    showNotification(message, type = 'success') {
+      const notification = document.createElement('div')
 
-      const handleViewportChange = (e) => {
-        if (e.matches && this.isMenuOpen) {
-          this.isMenuOpen = false
-          document.body.style.overflow = ''
+      const colors = {
+        success: {
+          background: 'var(--color-success, #10B981)',
+          icon: '✅'
+        },
+        error: {
+          background: 'var(--color-error, #EF4444)',
+          icon: '❌'
+        },
+        warning: {
+          background: 'var(--color-warning, #F59E0B)',
+          icon: '⚠️'
+        },
+        info: {
+          background: 'var(--color-info, #3B82F6)',
+          icon: 'ℹ️'
         }
       }
 
+      const config = colors[type] || colors.info
+
+      notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--color-surface-elevated);
+    color: var(--color-on-surface);
+    padding: 16px 20px;
+    border-radius: var(--border-radius-lg);
+    z-index: 10000;
+    animation: slideIn 0.3s var(--animation-curve-primary);
+    max-width: 400px;
+    word-wrap: break-word;
+    box-shadow: var(--shadow-level-3);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-body);
+    line-height: var(--line-height-body);
+    cursor: pointer;
+    transition: all var(--animation-duration-standard) var(--animation-curve-primary);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+  `
+
+      // Создаем иконку с акцентным цветом
+      const iconSpan = document.createElement('span')
+      iconSpan.style.cssText = `
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: ${config.background};
+  `
+      iconSpan.textContent = config.icon
+
+      // Создаем текстовый контент
+      const textSpan = document.createElement('span')
+      textSpan.style.cssText = `
+    flex: 1;
+    color: var(--color-on-surface);
+  `
+      textSpan.textContent = message
+
+      // Добавляем акцентную полоску слева
+      const accentBar = document.createElement('div')
+      accentBar.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: ${config.background};
+    border-radius: var(--border-radius-lg) 0 0 var(--border-radius-lg);
+  `
+
+      notification.appendChild(accentBar)
+      notification.appendChild(iconSpan)
+      notification.appendChild(textSpan)
+
+      // Добавляем стили для анимации в стиле вашего сайта
+      const style = document.createElement('style')
+      style.textContent = `
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideOut {
+      to {
+        opacity: 0;
+        transform: translateX(100%) translateY(-10px) scale(0.95);
+      }
+    }
+  `
+
+      // Проверяем, не добавлены ли уже стили
+      if (!document.getElementById('notification-styles')) {
+        style.id = 'notification-styles'
+        document.head.appendChild(style)
+      } else {
+        document.getElementById('notification-styles').appendChild(document.createTextNode(style.textContent))
+      }
+
+      document.body.appendChild(notification)
+
+      // Закрытие по клику
+      const closeNotification = () => {
+        notification.style.animation = 'slideOut 0.25s var(--animation-curve-primary) forwards'
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification)
+          }
+        }, 250)
+      }
+
+      notification.addEventListener('click', closeNotification)
+
+      // Эффект при наведении в стиле retro-card
+      notification.addEventListener('mouseenter', () => {
+        notification.style.transform = 'translateY(-2px)'
+        notification.style.boxShadow = 'var(--shadow-level-4)'
+        notification.style.borderColor = 'var(--color-primary)'
+      })
+
+      notification.addEventListener('mouseleave', () => {
+        notification.style.transform = 'translateY(0)'
+        notification.style.boxShadow = 'var(--shadow-level-3)'
+        notification.style.borderColor = 'var(--color-border)'
+      })
+
+      // Авто-закрытие
+      const autoCloseTimeout = setTimeout(closeNotification, 5000)
+
+      // Останавливаем авто-закрытие при наведении
+      notification.addEventListener('mouseenter', () => {
+        clearTimeout(autoCloseTimeout)
+      })
+
+      notification.addEventListener('mouseleave', () => {
+        setTimeout(closeNotification, 5000)
+      })
+    },
+
+    setupMediaQueryListener() {
+      const mediaQuery = window.matchMedia('(min-width: 992px)')
+      const handleViewportChange = (e) => {
+        if (e.matches && this.isMenuOpen) {
+          this.closeMenu()
+        }
+      }
       mediaQuery.addEventListener('change', handleViewportChange)
     }
   }
@@ -319,6 +484,7 @@ export default {
 </script>
 
 <style scoped>
+/* Ваши существующие стили остаются без изменений */
 .navigation-container1 {
   display: contents;
 }

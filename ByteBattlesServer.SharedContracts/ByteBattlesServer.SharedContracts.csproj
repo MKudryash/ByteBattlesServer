@@ -13,4 +13,9 @@
       <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\ByteBattlesServer.Domain\ByteBattlesServer.Domain.csproj" />
+      <ProjectReference Include="..\ByteBattlesServer.Microservices\ByteBattlesServer.Microservices.TaskServices\ByteBattlesServer.Microservices.TaskServices.Domain\ByteBattlesServer.Microservices.TaskServices.Domain.csproj" />
+    </ItemGroup>
+
 </Project>

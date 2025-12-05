@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Entities;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.enums;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.Interfaces;
@@ -65,7 +66,7 @@ public class ProcessService : ICodeCompiler
             "c" => new ProcessStartInfo
             {
                 FileName = "gcc",
-                Arguments = $"{filePath} -o {outputFileName}",
+                Arguments = $"{filePath} -o {outputFileName} -Wall -Wextra -std=c99",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -83,7 +84,7 @@ public class ProcessService : ICodeCompiler
             "cpp" => new ProcessStartInfo
             {
                 FileName = "g++",
-                Arguments = $"{filePath} -o {outputFileName}",
+                Arguments = $"{filePath} -o {outputFileName} -Wall -Wextra -std=c++17",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -102,7 +103,7 @@ public class ProcessService : ICodeCompiler
 
         return language.ToLower() switch
         {
-            "c" => new ProcessStartInfo
+            "c" or "cpp" => new ProcessStartInfo
             {
                 FileName = outputFileName,
                 Arguments = arguments,
@@ -111,16 +112,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            "cpp" => new ProcessStartInfo
-            {
-                FileName = outputFileName,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            },
-            "charp" => new ProcessStartInfo
+            "csharp" or "cs" => new ProcessStartInfo
             {
                 FileName = "dotnet-exec",
                 Arguments = $"{outputFileName}.cs --args \"{arguments}\"",
@@ -129,7 +121,7 @@ public class ProcessService : ICodeCompiler
                 UseShellExecute = false,
                 CreateNoWindow = true
             },
-            "py" => new ProcessStartInfo
+            "python" or "py" => new ProcessStartInfo
             {
                 FileName = "python",
                 Arguments = $"{filePath} {arguments}",
@@ -141,7 +133,7 @@ public class ProcessService : ICodeCompiler
             "java" => new ProcessStartInfo
             {
                 FileName = "java",
-                Arguments = $"-cp {Path.GetDirectoryName(filePath)} {Path.GetFileNameWithoutExtension(filePath)} {arguments}",
+                Arguments = $"{filePath} {arguments}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -165,20 +157,48 @@ public class ProcessService : ICodeCompiler
             process.Start();
             _logger.LogDebug("Process started with ID: {ProcessId}", process.Id);
 
-            string output = await process.StandardOutput.ReadToEndAsync();
-            string error = await process.StandardError.ReadToEndAsync();
+            // Используем StringBuilder для сбора вывода
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
 
-            _logger.LogDebug("Process output for {OperationType}: {Output}", operationType, output);
-            if (!string.IsNullOrEmpty(error))
+            // Асинхронно читаем вывод
+            var outputTask = Task.Run(async () =>
             {
-                _logger.LogWarning("Process error for {OperationType}: {Error}", operationType, error);
-            }
+                while (!process.StandardOutput.EndOfStream)
+                {
+                    var line = await process.StandardOutput.ReadLineAsync();
+                    if (line != null)
+                    {
+                        outputBuilder.AppendLine(line);
+                        _logger.LogDebug("Process output: {Output}", line);
+                    }
+                }
+            });
 
+            var errorTask = Task.Run(async () =>
+            {
+                while (!process.StandardError.EndOfStream)
+                {
+                    var line = await process.StandardError.ReadLineAsync();
+                    if (line != null)
+                    {
+                        errorBuilder.AppendLine(line);
+                        _logger.LogWarning("Process error: {Error}", line);
+                    }
+                }
+            });
+
+            // Ждем завершения процесса и чтения вывода
             await process.WaitForExitAsync();
+            await Task.WhenAll(outputTask, errorTask);
+
             stopwatch.Stop();
 
+            string output = outputBuilder.ToString().Trim();
+            string error = errorBuilder.ToString().Trim();
+            
             bool success = process.ExitCode == 0 && string.IsNullOrEmpty(error);
-            string result = success ? output : error;
+            string result = success ? output : (string.IsNullOrEmpty(error) ? output : error);
 
             _logger.LogInformation(
                 "Process {OperationType} completed in {ElapsedMs}ms. Success: {Success}, ExitCode: {ExitCode}",

@@ -26,7 +26,6 @@ public class RefreshToken : Entity
         Expires = expires;
         Created = DateTime.UtcNow;
         CreatedByIp = createdByIp;
-        // Revoked, RevokedByIp, ReplacedByToken остаются null по умолчанию
     }
 
     public void Revoke(string revokedByIp, string replacedByToken = null)

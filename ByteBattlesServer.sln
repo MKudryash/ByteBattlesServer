@@ -60,6 +60,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattlesServer.Microserv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattles.ApiGetaway", "ByteBattles.ApiGetaway\ByteBattles.ApiGetaway.csproj", "{FED6EBBB-E10D-48FF-B7DF-852F86480F56}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ByteBattles.Microservices.CodeBattleServer", "ByteBattles.Microservices.CodeBattleServer", "{F6606E44-B6B7-433C-864C-1023BBE5C9C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ByteBattlesServer.Microservices\ByteBattles.Microservices.CodeBattleServer\ConsoleApp1\ConsoleApp1.csproj", "{E2E31785-06CC-42AB-BB46-374C78862711}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattles.Microservices.CodeBattleServer.Domain", "ByteBattlesServer.Microservices\ByteBattles.Microservices.CodeBattleServer\ByteBattles.Microservices.CodeBattleServer.Domain\ByteBattles.Microservices.CodeBattleServer.Domain.csproj", "{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattles.Microservices.CodeBattleServer.Application", "ByteBattlesServer.Microservices\ByteBattles.Microservices.CodeBattleServer\ByteBattles.Microservices.CodeBattleServer.Application\ByteBattles.Microservices.CodeBattleServer.Application.csproj", "{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattles.Microservices.CodeBattleServer.Infrastructure", "ByteBattlesServer.Microservices\ByteBattles.Microservices.CodeBattleServer\ByteBattles.Microservices.CodeBattleServer.Infrastructure\ByteBattles.Microservices.CodeBattleServer.Infrastructure.csproj", "{9A3B5A58-1796-427D-AF4D-EA270083416A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteBattles.Microservices.CodeBattleServer.API", "ByteBattlesServer.Microservices\ByteBattles.Microservices.CodeBattleServer\ByteBattles.Microservices.CodeBattleServer.API\ByteBattles.Microservices.CodeBattleServer.API.csproj", "{9BC97052-7396-4F2E-8607-0DF89FB9C7B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -162,6 +174,26 @@ Global
 		{FED6EBBB-E10D-48FF-B7DF-852F86480F56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FED6EBBB-E10D-48FF-B7DF-852F86480F56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FED6EBBB-E10D-48FF-B7DF-852F86480F56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2E31785-06CC-42AB-BB46-374C78862711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2E31785-06CC-42AB-BB46-374C78862711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2E31785-06CC-42AB-BB46-374C78862711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2E31785-06CC-42AB-BB46-374C78862711}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A3B5A58-1796-427D-AF4D-EA270083416A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A3B5A58-1796-427D-AF4D-EA270083416A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A3B5A58-1796-427D-AF4D-EA270083416A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A3B5A58-1796-427D-AF4D-EA270083416A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BC97052-7396-4F2E-8607-0DF89FB9C7B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BC97052-7396-4F2E-8607-0DF89FB9C7B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BC97052-7396-4F2E-8607-0DF89FB9C7B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BC97052-7396-4F2E-8607-0DF89FB9C7B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1483D10B-154C-45DD-AA4D-AD420F653DFD} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
@@ -190,5 +222,11 @@ Global
 		{7E2901FC-8788-4506-90AD-6CB2A8907787} = {82621F0B-EBDD-4AFD-A1B9-FF37BB43DF1A}
 		{3D734AF3-2427-481D-BB83-6EE8A862DDBE} = {485ED3E4-52C9-4C1F-BC1F-64E925683120}
 		{FED6EBBB-E10D-48FF-B7DF-852F86480F56} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
+		{F6606E44-B6B7-433C-864C-1023BBE5C9C1} = {4E83DCC8-96E2-4BCD-AD8D-8D04262A84D5}
+		{E2E31785-06CC-42AB-BB46-374C78862711} = {F6606E44-B6B7-433C-864C-1023BBE5C9C1}
+		{8CFC8862-871E-4792-AE40-9F3B6CDA5F5B} = {F6606E44-B6B7-433C-864C-1023BBE5C9C1}
+		{5F7D2D19-5D25-4F0E-B9F0-8C5D03C183E4} = {F6606E44-B6B7-433C-864C-1023BBE5C9C1}
+		{9A3B5A58-1796-427D-AF4D-EA270083416A} = {F6606E44-B6B7-433C-864C-1023BBE5C9C1}
+		{9BC97052-7396-4F2E-8607-0DF89FB9C7B8} = {F6606E44-B6B7-433C-864C-1023BBE5C9C1}
 	EndGlobalSection
 EndGlobal

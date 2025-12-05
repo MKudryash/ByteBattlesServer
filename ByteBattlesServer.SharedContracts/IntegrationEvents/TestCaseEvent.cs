@@ -7,4 +7,5 @@ public class TestCaseEvent
     public string ActualOutput { get; set; }
     public bool IsPassed { get; set; }
     public TimeSpan ExecutionTime { get; set; }
+    
 }

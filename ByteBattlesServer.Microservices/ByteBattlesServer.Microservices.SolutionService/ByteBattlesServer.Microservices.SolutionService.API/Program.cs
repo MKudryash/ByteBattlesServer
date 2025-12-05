@@ -109,7 +109,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ITestCasesServices, RabbitMQTestCasesService>();
+builder.Services.AddScoped<ITaskInfoServices, RabbitMQTaskInfoService>();
 builder.Services.AddScoped<ICompilationService, RabbitMqCompilationService>();
 
 var services = builder.Services;

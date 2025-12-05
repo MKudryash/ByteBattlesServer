@@ -1,8 +1,10 @@
 using ByteBattlesServer.Microservices.CodeExecution.Application.DTOs;
 using ByteBattlesServer.Microservices.CodeExecution.Domain.enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.CodeExecution.Application.Commands;
 
-public record TestCodeCommand(string Code, Guid Language, List<TestCaseDto> TestCases )
+public record TestCodeCommand(string Code, LanguageInfo Language, List<TestCaseDto> TestCases, List<LibraryInfo> Libraries,
+    string PatternFunction, string PatternMain)
     :IRequest<CodeTestResultResponse>;

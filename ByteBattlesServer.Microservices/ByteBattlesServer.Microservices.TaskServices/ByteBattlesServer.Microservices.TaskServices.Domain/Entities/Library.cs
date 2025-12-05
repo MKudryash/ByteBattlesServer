@@ -14,6 +14,8 @@ public class Library:Entity
     
     public DateTime UpdatedAd { get; set; }
     public Guid LanguageId { get; set; }
+    public virtual ICollection<TaskLibrary> Libraries { get; private set; } = new List<TaskLibrary>();
+    
     
     public Library(){}
 

@@ -26,7 +26,7 @@ public class UpdateLanguageCommandHandler : IRequestHandler<UpdateLanguageComman
             throw new LanguageNotFoundException(request.LanguageId);
         
         language.Update(request.LanguageTitle, request.LanguageShortTitle, request.FileExtension,request.CompilerCommand,
-            request.SupportsCompilation, request.Pattern, request.ExecutionCommand);
+            request.SupportsCompilation,  request.ExecutionCommand, request.PatternFunction, request.PatternMain);
         
         _languageRepository.Update(language);
         

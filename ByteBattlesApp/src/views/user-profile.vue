@@ -236,34 +236,6 @@
                       </div>
                       <div class="char-counter">{{ userData.bio.length }}/500</div>
                     </div>
-
-                    <div class="form-group">
-                      <label for="department">
-                        Кафедра/Отдел
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="text"
-                            id="department"
-                            v-model="userData.department"
-                            placeholder="Название кафедры или отдела"
-                        >
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="position">
-                        Должность
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="text"
-                            id="position"
-                            v-model="userData.position"
-                            placeholder="Ваша должность"
-                        >
-                      </div>
-                    </div>
                   </div>
 
                   <div class="form-section retro-card">
@@ -285,33 +257,7 @@
                       <div class="error-message" v-if="errors.email">{{ errors.email }}</div>
                     </div>
 
-                    <div class="form-group">
-                      <label for="phone">
-                        Телефон
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="tel"
-                            id="phone"
-                            v-model="userData.phone"
-                            placeholder="+7 (XXX) XXX-XX-XX"
-                        >
-                      </div>
-                    </div>
 
-                    <div class="form-group">
-                      <label for="website">
-                        Веб-сайт
-                      </label>
-                      <div class="input-container vintage-border">
-                        <input
-                            type="url"
-                            id="website"
-                            v-model="userData.website"
-                            placeholder="https://example.com"
-                        >
-                      </div>
-                    </div>
 
                     <div class="form-group">
                       <label>Социальные сети</label>
@@ -320,7 +266,7 @@
 
                           <input
                               type="url"
-                              v-model="userData.social.linkedin"
+                              v-model="userData.linkedInUrl"
                               placeholder="LinkedIn профиль"
                               class="vintage-border"
                           >
@@ -328,16 +274,8 @@
                         <div class="social-input">
                           <input
                               type="url"
-                              v-model="userData.social.github"
+                              v-model="userData.gitHubUrl"
                               placeholder="GitHub профиль"
-                              class="vintage-border"
-                          >
-                        </div>
-                        <div class="social-input">
-                          <input
-                              type="url"
-                              v-model="userData.social.other"
-                              placeholder="Другая социальная сеть"
                               class="vintage-border"
                           >
                         </div>
@@ -466,57 +404,6 @@
                       </ul>
                     </div>
                   </div>
-
-                  <div class="form-section retro-card">
-                    <h3>Настройки безопасности</h3>
-
-                    <div class="security-settings">
-                      <div class="setting-item">
-                        <label class="setting-label">Двухфакторная аутентификация</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="securitySettings.twoFactorAuth"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Добавьте дополнительный уровень защиты к вашему аккаунту
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Уведомления о входе</label>
-                        <div class="setting-control">
-                          <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                v-model="securitySettings.loginNotifications"
-                            >
-                            <span class="toggle-slider"></span>
-                          </label>
-                        </div>
-                        <p class="setting-description">
-                          Получать уведомления о новых входах в аккаунт
-                        </p>
-                      </div>
-
-                      <div class="setting-item">
-                        <label class="setting-label">Сессии аккаунта</label>
-                        <div class="setting-control">
-                          <button @click="showSessions = true" class="btn-text btn-sm">
-                            Управление
-                          </button>
-                        </div>
-                        <p class="setting-description">
-                          Просмотр и управление активными сессиями
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
                 </div>
 
                 <div class="form-actions">
@@ -554,12 +441,6 @@
                       <div class="stat-data">
                         <span class="stat-value">{{ userStats.solvedTasks }}</span>
                         <span class="stat-label">Решено студентами</span>
-                      </div>
-                    </div>
-                    <div class="stat-card retro-card">
-                      <div class="stat-data">
-                        <span class="stat-value">{{ userStats.averageRating }}/5</span>
-                        <span class="stat-label">Средний рейтинг</span>
                       </div>
                     </div>
                     <div class="stat-card retro-card">
@@ -697,6 +578,8 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
+import {userProfilesAPI} from '../api/user'
+import {taskAPI} from "@/api/task";
 
 export default {
   name: 'UserProfile',
@@ -709,6 +592,7 @@ export default {
     return {
       activeSection: 'personal',
       isSaving: false,
+      isLoading: true,
       showAvatarEditor: false,
       showPasswords: {
         current: false,
@@ -717,34 +601,32 @@ export default {
       },
 
       navItems: [
-        { id: 'personal', name: 'Личная информация',  badge: null },
-        { id: 'security', name: 'Безопасность',  badge: null },
-        { id: 'notifications', name: 'Уведомления',  badge: null },
+        { id: 'personal', name: 'Личная информация', badge: null },
+        { id: 'security', name: 'Безопасность', badge: null },
         { id: 'stats', name: 'Статистика', badge: null }
       ],
 
+      // Данные из API
       userData: {
-        fullName: 'Иван Петров',
-        email: 'ivan.petrov@university.edu',
-        phone: '+7 (912) 345-67-89',
-        website: 'https://ipetrov.academy',
-        department: 'Кафедра информатики',
-        position: 'Старший преподаватель',
-        bio: 'Преподаю программирование и алгоритмы. Увлекаюсь разработкой образовательных платформ и автоматизацией проверки задач.',
+        fullName: '',
+        email: '',
+        phone: '',
+        country: '',
+        bio: '',
         avatar: '',
-        isOnline: true,
-        social: {
-          linkedin: 'https://linkedin.com/in/ivanpetrov',
-          github: 'https://github.com/ipetrov',
-          other: ''
-        }
-      },
+        isOnline: false,
+        gitHubUrl: '',
+        linkedInUrl: ''
 
+      },
+      countMedium :0,
+      countHard :0,
+      countEasy: 0,
       userStats: {
-        createdTasks: 24,
-        solvedTasks: 1567,
-        averageRating: 4.7,
-        activeStudents: 89
+        createdTasks: 0,
+        solvedTasks: 0,
+        averageRating: 0,
+        activeStudents: 0
       },
 
       passwordData: {
@@ -753,75 +635,20 @@ export default {
         confirmPassword: ''
       },
 
-      securitySettings: {
-        twoFactorAuth: true,
-        loginNotifications: true
-      },
-
-      notificationSettings: {
-        studentSolutions: true,
-        taskComments: true,
-        systemUpdates: false,
-        taskStatistics: true,
-        emailNotifications: true,
-        webNotifications: true,
-        pushNotifications: false,
-        frequency: 'daily'
-      },
-
-      frequencyOptions: [
-        { value: 'immediate', label: 'Мгновенно', icon: '⚡' },
-        { value: 'daily', label: 'Ежедневно', icon: '📅' },
-        { value: 'weekly', label: 'Еженедельно', icon: '🗓️' }
-      ],
-
-      activityData: Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        tasksCreated: Math.floor(Math.random() * 5)
-      })),
-
-      difficultyBreakdown: [
-        { level: 'easy', label: 'Легкие', icon: '🌱', count: 8, percentage: 33 },
-        { level: 'medium', label: 'Средние', icon: '🎯', count: 12, percentage: 50 },
-        { level: 'hard', label: 'Сложные', icon: '🚀', count: 4, percentage: 17 }
-      ],
-
-      recentActivities: [
-        {
-          id: 1,
-          icon: '📝',
-          text: 'Создана задача "Оптимизация SQL запросов"',
-          time: '2 часа назад'
-        },
-        {
-          id: 2,
-          icon: '✅',
-          text: '15 студентов решили задачу "Сумма элементов массива"',
-          time: '5 часов назад'
-        },
-        {
-          id: 3,
-          icon: '⭐',
-          text: 'Получен отзыв к задаче "Поиск в глубину"',
-          time: '1 день назад'
-        },
-        {
-          id: 4,
-          icon: '🔧',
-          text: 'Обновлена задача "Реализация связного списка"',
-          time: '2 дня назад'
-        }
-      ],
+      activityData: [],
+      difficultyBreakdown: [],
+      recentActivities: [],
 
       errors: {},
       avatarPreview: null,
-      originalUserData: null
+      originalUserData: null,
+      selectedAvatarFile: null
     }
   },
   computed: {
+    // ... остальные computed свойства без изменений
     passwordStrength() {
       if (!this.passwordData.newPassword) return 'empty'
-
       const strength = this.calculatePasswordStrength(this.passwordData.newPassword)
       if (strength < 40) return 'weak'
       if (strength < 70) return 'medium'
@@ -850,10 +677,268 @@ export default {
           this.passwordStrength !== 'weak'
     }
   },
-  mounted() {
-    this.originalUserData = JSON.parse(JSON.stringify(this.userData))
+  async mounted() {
+    await this.loadUserProfile()
   },
   methods: {
+    // Загрузка профиля пользователя
+    async loadUserProfile() {
+      this.isLoading = true
+      try {
+        const profileData = await userProfilesAPI.getMyProfile()
+        this.mapApiDataToUserProfile(profileData)
+        this.originalUserData = JSON.parse(JSON.stringify(this.userData))
+      } catch (error) {
+        console.error('Ошибка загрузки профиля:', error)
+        this.$notify({
+          type: 'error',
+          title: 'Ошибка',
+          text: 'Не удалось загрузить данные профиля'
+        })
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+
+    // Преобразование данных из API в формат компонента
+// Преобразование данных из API в формат компонента
+    mapApiDataToUserProfile(apiData) {
+      console.log('Данные из API:', apiData)
+
+      // Основные поля профиля
+      this.userData = {
+        fullName: apiData.userName || 'Пользователь',
+        email: apiData.email || 'email@example.com',
+        phone: apiData.phone || '',
+        country: apiData.country || '',
+        bio: apiData.bio || '',
+        avatar: apiData.avatarUrl || '', // Обратите внимание: avatarUrl в API
+        linkedInUrl: apiData.linkedInUrl || '',
+        gitHubUrl: apiData.gitHubUrl || '',
+        isOnline: true
+      }
+
+      // Статистика (если есть в API)
+      if (apiData.teacherStats) {
+        this.userStats = {
+          createdTasks: apiData.stats.createdTasks || 0,
+          solvedTasks: apiData.stats.totalProblemsSolved || 0, // Обратите внимание на название поля
+          averageRating: 0,
+          activeStudents: 0
+        }
+      } else {
+        // Заглушка для демонстрации
+        this.userStats = {
+          createdTasks: 24,
+          solvedTasks: apiData.stats?.totalProblemsSolved || 1567,
+          averageRating: 4.7,
+          activeStudents: 89
+        }
+      }
+
+      // Генерируем тестовые данные для демонстрации
+      this.generateMockData()
+    },
+
+    // Преобразование данных для отправки в API
+    prepareProfileForApi() {
+      return {
+        userName: this.userData.fullName,
+        bio: this.userData.bio,
+        linkedInUrl: this.userData.linkedInUrl,
+        gitHubUrl: this.userData.gitHubUrl,
+      }
+    },
+
+    // Сохранение личной информации
+    async savePersonalInfo() {
+      this.validatePersonalInfo()
+      if (Object.keys(this.errors).length > 0) return
+
+      this.isSaving = true
+      try {
+        const updateData = this.prepareProfileForApi()
+        await userProfilesAPI.updateMyProfile(updateData)
+
+        this.originalUserData = JSON.parse(JSON.stringify(this.userData))
+
+        this.$notify({
+          type: 'success',
+          title: 'Успешно',
+          text: 'Данные профиля сохранены'
+        })
+      } catch (error) {
+        console.error('Ошибка сохранения:', error)
+        this.$notify({
+          type: 'error',
+          title: 'Ошибка',
+          text: 'Не удалось сохранить данные профиля'
+        })
+      } finally {
+        this.isSaving = false
+      }
+    },
+
+    // Смена пароля
+    async updatePassword() {
+      this.validatePassword()
+      if (Object.keys(this.errors).length > 0) return
+
+      this.isSaving = true
+      try {
+        await userProfilesAPI.changePassword({
+          oldPassword: this.passwordData.currentPassword,
+          newPassword: this.passwordData.newPassword
+        })
+
+        this.$notify({
+          type: 'success',
+          title: 'Успешно',
+          text: 'Пароль успешно изменен'
+        })
+
+        this.resetPasswordForm()
+      } catch (error) {
+        console.error('Ошибка смены пароля:', error)
+        this.$notify({
+          type: 'error',
+          title: 'Ошибка',
+          text: error.message || 'Не удалось изменить пароль'
+        })
+      } finally {
+        this.isSaving = false
+      }
+    },
+
+    // Загрузка аватара
+    async saveAvatar() {
+      if (!this.selectedAvatarFile && !this.avatarPreview) {
+        this.showAvatarEditor = false
+        return
+      }
+
+      this.isSaving = true
+      try {
+        if (this.selectedAvatarFile) {
+          // Если выбран файл - загружаем его
+          await userProfilesAPI.uploadAvatar(this.selectedAvatarFile)
+        } else if (this.avatarPreview && this.avatarPreview.startsWith('data:image/svg+xml')) {
+          // Если сгенерирован SVG аватар - обрабатываем особым образом
+          await this.saveGeneratedAvatar()
+        }
+
+        // Обновляем данные профиля
+        await this.loadUserProfile()
+
+        this.showAvatarEditor = false
+        this.selectedAvatarFile = null
+
+        this.$notify({
+          type: 'success',
+          title: 'Успешно',
+          text: 'Аватар обновлен'
+        })
+      } catch (error) {
+        console.error('Ошибка сохранения аватара:', error)
+        this.$notify({
+          type: 'error',
+          title: 'Ошибка',
+          text: 'Не удалось сохранить аватар'
+        })
+      } finally {
+        this.isSaving = false
+      }
+    },
+
+    // Обработка загрузки файла аватара
+    handleAvatarUpload(event) {
+      const file = event.target.files[0]
+      if (file) {
+        // Проверяем тип и размер файла
+        if (!file.type.startsWith('image/')) {
+          this.$notify({
+            type: 'error',
+            title: 'Ошибка',
+            text: 'Пожалуйста, выберите файл изображения'
+          })
+          return
+        }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+          this.$notify({
+            type: 'error',
+            title: 'Ошибка',
+            text: 'Размер файла не должен превышать 5MB'
+          })
+          return
+        }
+
+        this.selectedAvatarFile = file
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          this.avatarPreview = e.target.result
+        }
+        reader.readAsDataURL(file)
+      }
+    },
+
+    // Сохранение сгенерированного аватара
+    async saveGeneratedAvatar() {
+      // Конвертируем SVG в Blob и отправляем
+      const svgContent = atob(this.avatarPreview.split(',')[1])
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+      const file = new File([blob], 'avatar.svg', { type: 'image/svg+xml' })
+
+
+    },
+
+    // Удаление аватара
+    async removeAvatar() {
+      try {
+        // Если есть эндпоинт для удаления аватара
+        await makeRequest('/api/user-profiles/me/avatar', {
+          method: 'DELETE'
+        })
+
+        this.avatarPreview = null
+        this.selectedAvatarFile = null
+        await this.loadUserProfile()
+      } catch (error) {
+        console.error('Ошибка удаления аватара:', error)
+      }
+    },
+
+    // Вспомогательные методы
+    getActivityIcon(activityType) {
+      const icons = {
+        TASK_CREATED: '📝',
+        TASK_SOLVED: '✅',
+        REVIEW_RECEIVED: '⭐',
+        TASK_UPDATED: '🔧'
+      }
+      return icons[activityType] || '📌'
+    },
+
+    formatTime(timestamp) {
+      const now = new Date()
+      const activityDate = new Date(timestamp)
+      const diffMs = now - activityDate
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+
+      if (diffMins < 60) {
+        return `${diffMins} минут назад`
+      } else if (diffHours < 24) {
+        return `${diffHours} часов назад`
+      } else {
+        return `${diffDays} дней назад`
+      }
+    },
+
+    // Остальные методы без изменений
     getActiveSectionName() {
       const item = this.navItems.find(item => item.id === this.activeSection)
       return item ? item.name : ''
@@ -864,19 +949,7 @@ export default {
       this.showAvatarEditor = true
     },
 
-    handleAvatarUpload(event) {
-      const file = event.target.files[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          this.avatarPreview = e.target.result
-        }
-        reader.readAsDataURL(file)
-      }
-    },
-
     generateAvatar() {
-      // Генерация простого SVG аватара
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
       const color = colors[Math.floor(Math.random() * colors.length)]
       const initials = this.userData.fullName.split(' ').map(n => n[0]).join('')
@@ -891,41 +964,7 @@ export default {
       `
 
       this.avatarPreview = 'data:image/svg+xml;base64,' + btoa(svg)
-    },
-
-    removeAvatar() {
-      this.avatarPreview = null
-    },
-
-    async saveAvatar() {
-      this.isSaving = true
-      try {
-        // Имитация сохранения аватара
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        this.userData.avatar = this.avatarPreview
-        this.showAvatarEditor = false
-        console.log('Аватар сохранен')
-      } catch (error) {
-        console.error('Ошибка сохранения аватара:', error)
-      } finally {
-        this.isSaving = false
-      }
-    },
-
-    async savePersonalInfo() {
-      this.validatePersonalInfo()
-      if (Object.keys(this.errors).length > 0) return
-
-      this.isSaving = true
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        this.originalUserData = JSON.parse(JSON.stringify(this.userData))
-        console.log('Данные сохранены:', this.userData)
-      } catch (error) {
-        console.error('Ошибка сохранения:', error)
-      } finally {
-        this.isSaving = false
-      }
+      this.selectedAvatarFile = null
     },
 
     resetPersonalInfo() {
@@ -944,22 +983,6 @@ export default {
         this.errors.email = 'Email обязателен'
       } else if (!this.isValidEmail(this.userData.email)) {
         this.errors.email = 'Введите корректный email'
-      }
-    },
-
-    async updatePassword() {
-      this.validatePassword()
-      if (Object.keys(this.errors).length > 0) return
-
-      this.isSaving = true
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        console.log('Пароль обновлен')
-        this.resetPasswordForm()
-      } catch (error) {
-        console.error('Ошибка обновления пароля:', error)
-      } finally {
-        this.isSaving = false
       }
     },
 
@@ -1008,48 +1031,11 @@ export default {
       return Math.min(strength, 100)
     },
 
-    async saveNotificationSettings() {
-      this.isSaving = true
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500))
-        console.log('Настройки уведомлений сохранены:', this.notificationSettings)
-      } catch (error) {
-        console.error('Ошибка сохранения настроек:', error)
-      } finally {
-        this.isSaving = false
-      }
-    },
-
-    resetNotificationSettings() {
-      this.notificationSettings = {
-        studentSolutions: true,
-        taskComments: true,
-        systemUpdates: false,
-        taskStatistics: true,
-        emailNotifications: true,
-        webNotifications: true,
-        pushNotifications: false,
-        frequency: 'daily'
-      }
-    },
-
     getActivityLevel(count) {
       if (count === 0) return 'none'
       if (count <= 1) return 'low'
       if (count <= 3) return 'medium'
       return 'high'
-    },
-
-    exportData() {
-      console.log('Экспорт данных пользователя')
-    },
-
-    showRecoveryCodes() {
-      console.log('Показать коды восстановления')
-    },
-
-    exportSecurityData() {
-      console.log('Экспорт данных безопасности')
     },
 
     isValidEmail(email) {

@@ -1,11 +1,13 @@
 // UserProfile.API/Endpoints/UserProfileEndpoints.cs
 using System.Security.Claims;
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Domain.Results;
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Application.Queries;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
@@ -25,7 +27,8 @@ public static class UserProfileEndpoints
             try
             {
                 var userId = GetUserIdFromClaims(httpContext);
-                var query = new GetUserProfileQuery(userId);
+                var roleUser = GetUserRoleFromClaims(httpContext);
+                var query = new GetUserProfileQuery(userId,roleUser);
                 var result = await mediator.Send(query);
                 
                 return Results.Ok(result);
@@ -116,7 +119,8 @@ public static class UserProfileEndpoints
             {
                 var userId = GetUserIdFromClaims(httpContext);
                 var command = new UpdateUserStatsCommand(
-                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId);
+                    userId, dto.isSuccessful, dto.difficulty, dto.executionTime, dto.taskId, dto.problemTitle, dto.language,dto.activityType
+                    ,dto.BattleId,dto.NameOpponent);
                     
                 await mediator.Send(command);
                 return Results.Ok(new { message = "Settings updated successfully" });
@@ -179,7 +183,7 @@ public static class UserProfileEndpoints
         {
             try
             {
-                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName);
+                var command = new CreateUserProfileCommand(dto.UserId, dto.UserName, dto.Email,dto.IsPublic,dto.Role);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/user-profiles/{result.Id}", result);
             }
@@ -239,8 +243,144 @@ public static class UserProfileEndpoints
         .WithSummary("Search users by name or bio")
         .AllowAnonymous()
         .Produces<List<UserProfileDto>>(StatusCodes.Status200OK);
+        
+        
+        // Новые методы для активности и решенных задач
+        group.MapGet("/me/activity", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int? activitiesLimit, [FromQuery] int? problemsLimit) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetUserActivityQuery(userId, activitiesLimit, problemsLimit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving user activity: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyActivity")
+        .WithSummary("Get current user's recent activity and problems")
+        .Produces<UserActivityResponse>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        group.MapGet("/me/recent-activities", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int limit = 50) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetRecentActivitiesQuery(userId, limit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving recent activities: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyRecentActivities")
+        .WithSummary("Get current user's recent activities")
+        .Produces<List<RecentActivityDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        group.MapGet("/me/recent-problems", async (IMediator mediator, HttpContext httpContext, 
+            [FromQuery] int limit = 20) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetRecentProblemsQuery(userId, limit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving recent problems: {ex.Message}");
+            }
+        })
+        .RequireAuthorization()
+        .WithName("GetMyRecentProblems")
+        .WithSummary("Get current user's recently solved problems")
+        .Produces<List<RecentProblemDto>>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+
+        // Public endpoint для получения активности других пользователей
+        group.MapGet("/{profileId:guid}/activity", async (Guid profileId, IMediator mediator, 
+            [FromQuery] int? activitiesLimit, [FromQuery] int? problemsLimit) =>
+        {
+            try
+            {
+                var query = new GetUserActivityQuery(profileId, activitiesLimit, problemsLimit);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ProfileAccessDeniedException ex)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving user activity: {ex.Message}");
+            }
+        })
+        .WithName("GetUserActivity")
+        .WithSummary("Get user's recent activity and problems")
+        .AllowAnonymous()
+        .Produces<UserActivityResponse>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status403Forbidden);
+        
     }
 
+    private static UserRole GetUserRoleFromClaims(HttpContext context)
+    {
+        var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value
+                        ?? context.User.FindFirst("Role")?.Value
+                        ?? context.User.FindFirst("roles")?.Value
+                        ?? context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/Role")?.Value;
+
+        if (string.IsNullOrEmpty(roleClaim))
+        {
+            var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
+            Console.WriteLine("Available claims for Role: " + string.Join(", ", allClaims));
+            
+            throw new UnauthorizedAccessException("Role not found in claims");
+        }
+
+        // Парсим роль, учитывая возможные варианты написания
+        return roleClaim.ToLower() switch
+        {
+            "student" or "1" => UserRole.student,
+            "teacher" or "2" => UserRole.teacher,
+            "admin" or "administrator" or "3" => UserRole.admin,
+            _ => UserRole.student // значение по умолчанию
+        };
+    }
 
     private static Guid GetUserIdFromClaims(HttpContext context)
     {

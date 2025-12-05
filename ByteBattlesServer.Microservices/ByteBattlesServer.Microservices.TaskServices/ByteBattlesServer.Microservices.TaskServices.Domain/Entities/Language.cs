@@ -11,7 +11,8 @@ public class Language:Entity
     public string CompilerCommand { get; set; } = string.Empty;
     public string ExecutionCommand { get; set; } = string.Empty;
     public bool SupportsCompilation { get; set; }
-    public string Pattern { get; set; }
+    public string PatternFunction { get; set; }
+    public string PatternMain { get; set; }
     public DateTime CreatedAd { get; set; }
     
     public DateTime UpdatedAd { get; set; }
@@ -22,7 +23,7 @@ public class Language:Entity
 
     private Language() { }
     public Language(string title, string shortTitle,  string fileExtension, string compilerCommand, 
-        string executionCommand, bool supportsCompilation, string pattern)
+        string executionCommand, bool supportsCompilation, string patternFunction, string patternMain)
     {
         Title = title;
         ShortTitle = shortTitle;
@@ -30,12 +31,13 @@ public class Language:Entity
         CompilerCommand = compilerCommand;
         ExecutionCommand = executionCommand;
         SupportsCompilation = supportsCompilation;
-        Pattern = pattern;
+        PatternFunction = patternFunction;
+        PatternMain = patternMain;
         CreatedAd = DateTime.UtcNow;
     }
 
     public void Update(string? title, string? shortTitle, string fileExtension, string compilerCommand, bool supportsCompilation,
-        string pattern, string executionCommand)
+       string executionCommand,  string patternFunction, string patternMain)
     {
         if (!string.IsNullOrWhiteSpace(title))
             Title =title.Trim();
@@ -47,8 +49,10 @@ public class Language:Entity
             CompilerCommand = compilerCommand.Trim();
         if(!string.IsNullOrWhiteSpace(executionCommand))
             ExecutionCommand = ExecutionCommand.Trim();
-        if (!string.IsNullOrWhiteSpace(pattern))
-            Pattern = pattern;
+        if (!string.IsNullOrWhiteSpace(patternFunction))
+            PatternFunction = patternFunction.Trim();
+        if (!string.IsNullOrWhiteSpace(patternMain))
+            PatternMain = patternMain.Trim();
         
         SupportsCompilation = supportsCompilation;
         UpdatedAd = DateTime.UtcNow;

@@ -1,4 +1,6 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
@@ -10,5 +12,10 @@ public record UpdateUserStatsCommand(
     bool isSuccessful,
     TaskDifficulty difficulty,
     TimeSpan executionTime,
-    Guid taskId
+    Guid taskId,
+    string problemTitle,
+    string language,
+    ActivityType activityType,
+    Guid? battleId,
+    string battleOpponent
 ) : IRequest<UserProfileDto>;

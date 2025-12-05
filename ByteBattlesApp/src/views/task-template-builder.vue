@@ -482,7 +482,7 @@
                         >
                         <div class="lang-icon">{{ lang.icon }}</div>
                         <div class="lang-info">
-                          <strong>{{ lang.title }}</strong>
+                          <strong>{{ lang.name }}</strong>
                           <span>{{ lang.version }}</span>-
                         </div>
                       </label>
@@ -594,21 +594,6 @@
                       >
                     </div>
                   </div>
-
-                  <div class="form-group">
-                    <label for="output-limit">
-                      Лимит вывода (КБ)
-                    </label>
-                    <div class="input-container vintage-border">
-                      <input
-                          type="number"
-                          id="output-limit"
-                          v-model.number="taskData.outputLimit"
-                          min="1"
-                          max="1024"
-                      >
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -699,9 +684,10 @@
                       <div class="test-info">
                         <h4>Тест {{ index + 1 }}</h4>
                         <div class="test-meta">
-                          <span class="test-visibility">
-                            {{ test.isPublic ? 'Публичный' : 'Скрытый' }}
-                          </span>
+              <span class="test-visibility">
+                {{ test.isPublic ? 'Публичный' : 'Скрытый' }}
+              </span>
+                          <span class="test-weight">Вес: {{ test.weight }}</span>
                         </div>
                       </div>
                       <div class="test-actions">
@@ -719,52 +705,35 @@
                         <div class="form-group">
                           <label>Входные данные</label>
                           <div class="input-container vintage-border">
-                            <textarea
-                                v-model="test.input"
-                                rows="3"
-                                placeholder="Входные данные для примера"
-                            ></textarea>
+                <textarea
+                    v-model="test.input"
+                    rows="3"
+                    placeholder="Входные данные для теста"
+                ></textarea>
                           </div>
                         </div>
                         <div class="form-group">
                           <label>Ожидаемый вывод</label>
                           <div class="input-container vintage-border">
-                            <textarea
-                                v-model="test.output"
-                                rows="3"
-                                placeholder="Ожидаемый результат"
+                <textarea
+                    v-model="test.expectedOutput"
+                            rows="3"
+                            placeholder="Ожидаемый результат"
                             ></textarea>
                           </div>
                         </div>
                       </div>
 
-                      <div class="test-settings">
-
-
-
-                        <div class="form-group" v-if="test.checkType === 'custom'">
-                          <label>Код проверки</label>
-                          <div class="input-container vintage-border">
-                            <textarea
-                                v-model="test.customCheck"
-                                rows="3"
-                                placeholder="Код для пользовательской проверки"
-                            ></textarea>
-                          </div>
-                        </div>
-                      </div>
 
                     </div>
-
                   </div>
 
                   <button @click="addTest" class="btn-outline_left">
                     <span class="btn-icon">+</span>
-                    Добавить пример
+                    Добавить тест
                   </button>
                 </div>
               </div>
-
             </div>
 
             <!-- Навигация -->
@@ -802,10 +771,10 @@
                     v-else
                     @click="saveTask"
                     class="btn-accent"
-                    :disabled="!canSave"
+                    :disabled="!canSave || isSaving"
                 >
                   <span class="btn-icon">💾</span>
-                  Сохранить задачу
+                  {{ isSaving ? 'Сохранение...' : 'Сохранить задачу' }}
                 </button>
 
                 <button @click="saveDraft" class="btn-text">
@@ -827,7 +796,8 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
-
+import { languageAPI, taskAPI } from '@/api/task'
+import { authMixin } from '@/mixins/authMixin'
 export default {
   name: 'TaskTemplateBuilder',
   components: {
@@ -835,12 +805,17 @@ export default {
     DangerousHTML,
     AppFooter,
   },
+  mixins: [authMixin],
   data() {
     return {
       currentStep: 1,
       paramSubmitted: false,
       librarySearch: '',
+      isLoadingLibraries: false,
       newTag: '',
+      isSaving: false,
+      isLoading: false, // Добавьте это
+      error: null, // Добавьте это
       steps: [
         { name: 'Основная информация', description: 'Название и описание задачи' },
         { name: 'Сигнатура функции', description: 'Определение функции и параметров' },
@@ -883,7 +858,7 @@ export default {
 
         tests: [{
           input: '',
-          expectedOutput: '',
+          expectedOutput: '', // Изменили с output на expectedOutput
           isPublic: true,
           weight: 5,
           checkType: 'exact',
@@ -914,6 +889,9 @@ export default {
     }
   },
   async mounted() {
+    if (!this.requireTeacher()) {
+      return
+    }
   await this.loadLanguages()
   },
   computed: {
@@ -933,7 +911,13 @@ export default {
       }
     },
     canSave() {
-      return this.canProceed && this.taskData.tests.some(t => t.input.trim() && t.expectedOutput.trim())
+      if (!this.requireTeacher()) return
+      // Безопасная проверка тестов
+      const hasValidTests = this.taskData.tests.some(test =>
+          test.input.trim() && test.expectedOutput.trim() // Исправлено имя поля
+      );
+
+      return this.canProceed && hasValidTests;
     },
     filteredLibraries() {
       if (!this.librarySearch) return this.availableLibraries
@@ -949,34 +933,76 @@ export default {
       this.error = null
 
       try {
-       // const response = await fetch("http://hobbit1021.ru:50304/api/language/search", {
-        const response = await fetch("http://localhost:50304/api/language/search", {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'accept': 'application/json'
-          }
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const languages = await response.json()
+        const languages = await languageAPI.getAll()
 
         // Преобразуем полученные данные в нужный формат
         this.availableLanguages = languages.map(lang => ({
-          id: lang.id || lang.name?.toLowerCase(),
-          name: lang.name || 'Unknown Language',
+          id: lang.id,
+          name: lang.title || 'Unknown Language',
+          shortName: lang.shortTitle || lang.title?.substring(0, 3).toUpperCase() || 'UNK',
           version: lang.version || '1.0',
-          icon: this.getLanguageIcon(lang.name || lang.id)
+          fileExtension: lang.fileExtension || '.txt',
+          compilerCommand: lang.compilerCommand,
+          executionCommand: lang.executionCommand,
+          supportsCompilation: lang.supportsCompilation || false,
+          patternMain: lang.patternMain,
+          patternFunction: lang.patternFunction,
+          icon: this.getLanguageIcon(lang.title || lang.shortTitle || lang.id),
+          // Сохраняем библиотеки из ответа API
+          libraries: lang.libraries ? lang.libraries.map(lib => ({
+            id: lib.id,
+            name: lib.name || 'Unknown Library',
+            version: lib.version || '1.0.0',
+            description: lib.description || 'No description available',
+            languageId: lib.languageId,
+            compatibility: 'full'
+          })) : []
         }))
+
+        console.log(`Загружено ${this.availableLanguages.length} языков программирования`)
+        // Логируем библиотеки для отладки
+        this.availableLanguages.forEach(lang => {
+          console.log(`Язык ${lang.name}: ${lang.libraries.length} библиотек`, lang.libraries)
+        })
 
       } catch (error) {
         console.error('Ошибка при загрузке языков:', error)
         this.error = 'Не удалось загрузить список языков'
+
+        if (error.message.includes('401') || error.message.includes('403')) {
+          this.error = 'Ошибка авторизации. Проверьте токен доступа.'
+        } else if (error.message.includes('Network Error')) {
+          this.error = 'Проблемы с подключением к серверу'
+        }
       } finally {
         this.isLoading = false
+      }
+    },
+    async loadLibrariesForLanguage(languageId) {
+      if (!languageId) {
+        this.availableLibraries = [];
+        return;
+      }
+
+      this.isLoadingLibraries = true;
+      try {
+        console.log('Loading libraries for language:', languageId);
+
+
+        const selectedLanguage = this.availableLanguages.find(lang => lang.id === languageId);
+
+        if (selectedLanguage && selectedLanguage.libraries && selectedLanguage.libraries.length > 0) {
+          // Используем библиотеки из уже загруженных данных
+          this.availableLibraries = selectedLanguage.libraries;
+          console.log(`Loaded ${this.availableLibraries.length} libraries from cached data`);
+        } else {
+          console.log('Using default libraries for language:', languageId);
+        }
+
+      } catch (error) {
+        console.error('Error loading libraries:', error);
+      } finally {
+        this.isLoadingLibraries = false;
       }
     },
     getLanguageIcon(languageName) {
@@ -1038,22 +1064,6 @@ export default {
       }
     },
 
-    addPreCondition() {
-      this.taskData.preConditions.push({ text: '' })
-    },
-
-    removePreCondition(index) {
-      this.taskData.preConditions.splice(index, 1)
-    },
-
-    addPostCondition() {
-      this.taskData.postConditions.push({ text: '' })
-    },
-
-    removePostCondition(index) {
-      this.taskData.postConditions.splice(index, 1)
-    },
-
     addTag() {
       if (this.newTag.trim() && !this.taskData.tags.includes(this.newTag.trim())) {
         this.taskData.tags.push(this.newTag.trim())
@@ -1083,20 +1093,6 @@ export default {
       return lib ? lib.name : libId
     },
 
-    addExample() {
-      this.taskData.examples.push({
-        description: '',
-        input: '',
-        output: '',
-        isPublic: true
-      })
-    },
-
-    removeExample(index) {
-      if (this.taskData.examples.length > 1) {
-        this.taskData.examples.splice(index, 1)
-      }
-    },
 
     addTest() {
       this.taskData.tests.push({
@@ -1119,9 +1115,6 @@ export default {
       this.taskData.tests[index].isPublic = !this.taskData.tests[index].isPublic
     },
 
-    importTests() {
-      console.log('Импорт тестов')
-    },
 
     getAvailableTypes() {
       const baseTypes = ['int', 'float', 'double', 'string', 'boolean', 'char', 'byte']
@@ -1174,50 +1167,499 @@ export default {
       console.log('Сохранение черновика:', this.taskData)
       alert('Черновик сохранен!')
     },
-
     saveTask() {
-      console.log('Сохранение задачи:', this.taskData)
-      alert('Задача успешно создана!')
-    }
+      // Проверяем, есть ли валидные тесты
+      const hasValidTests = this.taskData.tests.some(test =>
+          test.input.trim() && test.expectedOutput.trim()
+      );
+
+      if (!hasValidTests) {
+        alert('Добавьте хотя бы один тест с входными данными и ожидаемым выводом');
+        return;
+      }
+
+      // Получаем реального пользователя (замените на ваш способ получения)
+      const currentUser = this.getCurrentUser();
+
+      // Подготавливаем данные для отправки согласно схеме API
+      const taskToSave = {
+        title: this.taskData.title,
+        description: this.taskData.description,
+        difficulty: this.taskData.difficulty,
+        author: currentUser,
+        functionName: this.taskData.functionName,
+        parameters: this.formatInputParameters(),
+        returnType: this.taskData.returnType,
+        patternMain: this.taskData.mainTemplate,
+        patternFunction: this.taskData.codeTemplate,
+        languageId: this.formatLanguageIds(),
+        libraryId: this.formatLibrariesIds()
+      };
+
+      console.log('Подготовленные данные для сохранения:', taskToSave);
+
+      // Отправляем на сервер
+      this.sendTaskToServer(taskToSave);
+    },
+
+// Метод для получения текущего пользователя
+    getCurrentUser() {
+      // Замените на ваш способ получения текущего пользователя
+      // Например, из Vuex store, localStorage, или другого места
+      return JSON.parse(localStorage.getItem("user")).firstName || 'default_user';
+    },
+
+// Вспомогательные методы для форматирования данных
+    formatInputParameters() {
+      // Форматируем параметры в строку
+      return this.taskData.parameters
+          .filter(param => param.name.trim()) // Только заполненные параметры
+          .map(param => {
+            let paramStr = `${param.name}: ${param.type}`;
+            if (param.defaultValue) {
+              paramStr += ` = ${param.defaultValue}`;
+            }
+            if (param.description) {
+              paramStr += ` // ${param.description}`;
+            }
+            return paramStr;
+          })
+          .join(', ');
+    },
+
+    formatLanguageIds() {
+      // Преобразуем выбранный язык в массив UUID
+      // Если поддерживается только один язык, возвращаем массив с одним элементом
+      return this.taskData.language ? [this.taskData.language] : [];
+    },
+
+    formatLibrariesIds(){
+      return this.taskData.libraries ? this.taskData.libraries : [];
+    },
+
+// Метод для отправки на сервер
+    // Метод для отправки на сервер
+    async sendTaskToServer(taskData) {
+      try {
+        this.isSaving = true;
+
+        console.log('Отправка задачи на сервер...', taskData);
+        const response = await taskAPI.create(taskData);
+
+        console.log('Задача успешно создана:', response);
+
+        // Если задача создана успешно, сохраняем тестовые случаи
+        if (response && response.id) {
+          console.log('ID созданной задачи:', response.id);
+          await this.saveTestCases(response.id);
+        } else {
+          console.error('Не получен ID созданной задачи');
+          alert('Задача создана, но не удалось получить ID для сохранения тестов');
+          this.isSaving = false;
+        }
+
+      } catch (error) {
+        console.error('Ошибка при сохранении задачи:', error);
+
+        // Более информативное сообщение об ошибке
+        let errorMessage = 'Ошибка при сохранении задачи';
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          errorMessage += `: ${errorData.title || errorData.detail || JSON.stringify(errorData)}`;
+        } else {
+          errorMessage += `: ${error.message}`;
+        }
+
+        alert(errorMessage);
+        this.isSaving = false;
+      }
+    },
+
+    async saveTestCases(taskId) {
+      try {
+        const testCasesDto = {
+          testCases: this.taskData.tests
+              .filter(test => test.input.trim() && test.expectedOutput.trim())
+              .map(test => ({
+                input: test.input.trim(),
+                output: test.expectedOutput.trim(),
+                isPublic: test.isPublic || false
+              }))
+        };
+
+        console.log('Сохранение тестовых случаев:', testCasesDto);
+
+        if (testCasesDto.testCases.length > 0) {
+          // Отправляем DTO объект, а не массив напрямую
+          await taskAPI.createTestCases(taskId, testCasesDto);
+          console.log('Тестовые случаи успешно сохранены');
+          alert('Задача и тестовые случаи успешно созданы!');
+
+          // Перенаправляем на страницу задач
+          this.$router.push('/tasks');
+        } else {
+          alert('Задача успешно создана! (без тестовых случаев)');
+          this.$router.push('/tasks');
+        }
+
+      } catch (error) {
+        console.error('Ошибка при сохранении тестовых случаев:', error);
+
+        let errorMessage = 'Задача создана, но не удалось сохранить тестовые случаи';
+
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          errorMessage += `: ${errorData.title || errorData.detail || 'Неизвестная ошибка сервера'}`;
+          console.error('Полная ошибка сервера:', errorData);
+        } else {
+          errorMessage += `: ${error.message}`;
+        }
+
+        alert(errorMessage);
+        this.$router.push('/tasks');
+      } finally {
+        this.isSaving = false;
+      }
+    },
+    generateLanguageSpecificSignature() {
+      if (!this.taskData.functionName || !this.taskData.language) return '';
+
+      const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+      if (!language) return '';
+
+      const params = this.taskData.parameters
+          .filter(p => p.name.trim())
+          .map(p => {
+            const paramName = p.name.trim();
+            let paramStr = paramName;
+
+            if (p.type && this.supportsTypeAnnotations(this.taskData.language)) {
+              paramStr = this.formatParameterWithType(paramName, p.type, this.taskData.language);
+            }
+
+            if (p.defaultValue && p.defaultValue.trim()) {
+              paramStr += this.formatDefaultValue(p.defaultValue, this.taskData.language);
+            }
+
+            return paramStr;
+          })
+          .join(', ');
+
+      const functionName = this.taskData.functionName.trim();
+      const returnType = this.taskData.returnType;
+
+      return this.formatFunctionSignature(functionName, params, returnType, this.taskData.language);
+    },
+
+    // Проверка поддержки аннотаций типов для языка
+    supportsTypeAnnotations(languageId) {
+      const typedLanguages = ['java', 'cpp', 'csharp', 'typescript'];
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      return typedLanguages.includes(language?.shortName?.toLowerCase()) || false;
+    },
+
+    // Форматирование параметра с типом
+    formatParameterWithType(paramName, paramType, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const langShortName = language?.shortName?.toLowerCase();
+
+      switch (langShortName) {
+        case 'python':
+          return `${paramName}: ${this.mapTypeToLanguage(paramType, languageId)}`;
+        case 'java':
+        case 'cpp':
+        case 'csharp':
+          return `${this.mapTypeToLanguage(paramType, languageId)} ${paramName}`;
+        default:
+          return paramName;
+      }
+    },
+
+    // Форматирование значения по умолчанию
+    formatDefaultValue(defaultValue, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const langShortName = language?.shortName?.toLowerCase();
+
+      switch (langShortName) {
+        case 'python':
+          return ` = ${defaultValue}`;
+        case 'cpp':
+        case 'csharp':
+        case 'java':
+          return ` = ${defaultValue}`;
+        default:
+          return ` = ${defaultValue}`;
+      }
+    },
+
+    // Форматирование полной сигнатуры функции
+    formatFunctionSignature(functionName, params, returnType, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const langShortName = language?.shortName?.toLowerCase();
+
+      let signature = `${functionName}(${params})`;
+
+      // Добавляем возвращаемый тип
+      if (returnType && returnType !== 'void') {
+        switch (langShortName) {
+          case 'python':
+            signature += ` -> ${this.mapTypeToLanguage(returnType, languageId)}`;
+            break;
+          case 'java':
+          case 'cpp':
+          case 'csharp':
+            signature = `${this.mapTypeToLanguage(returnType, languageId)} ${signature}`;
+            break;
+        }
+      } else if (returnType === 'void' && langShortName !== 'python') {
+        signature = `void ${signature}`;
+      }
+
+      return signature;
+    },
+
+    // Маппинг типов на конкретный язык
+    mapTypeToLanguage(type, languageId) {
+      const language = this.availableLanguages.find(lang => lang.id === languageId);
+      const langShortName = language?.shortName?.toLowerCase();
+
+      const typeMap = {
+        python: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'float',
+          'string': 'str',
+          'boolean': 'bool',
+          'char': 'str',
+          'byte': 'bytes',
+          'array': 'list',
+          'list': 'list',
+          'vector': 'list',
+          'map': 'dict',
+          'dictionary': 'dict',
+          'set': 'set',
+          'void': 'None'
+        },
+        java: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'String',
+          'boolean': 'boolean',
+          'char': 'char',
+          'byte': 'byte',
+          'array': 'array',
+          'list': 'List',
+          'vector': 'Vector',
+          'map': 'Map',
+          'dictionary': 'Dictionary',
+          'set': 'Set',
+          'void': 'void'
+        },
+        cpp: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'std::string',
+          'boolean': 'bool',
+          'char': 'char',
+          'byte': 'unsigned char',
+          'array': 'std::array',
+          'list': 'std::list',
+          'vector': 'std::vector',
+          'map': 'std::map',
+          'dictionary': 'std::map',
+          'set': 'std::set',
+          'void': 'void'
+        },
+        csharp: {
+          'int': 'int',
+          'float': 'float',
+          'double': 'double',
+          'string': 'string',
+          'boolean': 'bool',
+          'char': 'char',
+          'byte': 'byte',
+          'array': 'array',
+          'list': 'List',
+          'vector': 'List',
+          'map': 'Dictionary',
+          'dictionary': 'Dictionary',
+          'set': 'HashSet',
+          'void': 'void'
+        }
+      };
+
+      const langMap = typeMap[langShortName] || typeMap.python;
+      return langMap[type] || type;
+    },
+
+    // Генерация шаблона main функции для выбранного языка
+    generateMainTemplate() {
+      if (!this.taskData.language) return '';
+
+      const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+      if (!language || !language.patternMain) return '';
+
+      // Заменяем плейсхолдеры в шаблоне main
+      let mainTemplate = language.patternMain;
+
+      // Добавляем вызов функции, если есть сигнатура
+      if (this.taskData.functionName) {
+        const functionCall = this.generateFunctionCall();
+        mainTemplate = mainTemplate.replace('/* код */', functionCall + '\n    /* ваш код для тестирования */');
+      }
+
+      return mainTemplate;
+    },
+
+    // Генерация вызова функции
+    generateFunctionCall() {
+      if (!this.taskData.functionName) return '';
+
+      const params = this.taskData.parameters
+          .filter(p => p.name.trim())
+          .map(p => {
+            // Генерируем примеры значений для параметров
+            return this.generateExampleValue(p.type, p.name);
+          })
+          .join(', ');
+
+      const functionName = this.taskData.functionName.trim();
+
+      // Для языков, где нужно сохранить результат
+      if (this.taskData.returnType && this.taskData.returnType !== 'void') {
+        const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+        const langShortName = language?.shortName?.toLowerCase();
+
+        let resultType = this.mapTypeToLanguage(this.taskData.returnType, this.taskData.language);
+        let resultVar = 'result';
+
+        switch (langShortName) {
+          case 'python':
+            return `${resultVar} = ${functionName}(${params})`;
+          case 'java':
+          case 'cpp':
+          case 'csharp':
+            return `${resultType} ${resultVar} = ${functionName}(${params});`;
+          default:
+            return `${functionName}(${params});`;
+        }
+      } else {
+        return `${functionName}(${params});`;
+      }
+    },
+
+    // Генерация примеров значений для параметров
+    generateExampleValue(type, paramName) {
+      const examples = {
+        'int': '42',
+        'float': '3.14',
+        'double': '3.14',
+        'string': `"${paramName}"`,
+        'boolean': 'true',
+        'char': `'a'`,
+        'array': `[1, 2, 3]`,
+        'list': `[1, 2, 3]`,
+        'vector': `{1, 2, 3}`,
+        'map': `{"key": "value"}`,
+        'dictionary': `{"key": "value"}`
+      };
+
+      return examples[type] || 'null';
+    },
+
+    // Обработчик смены языка
+    onLanguageChange() {
+      // Автоматически обновляем шаблон кода с правильной сигнатурой
+      this.updateCodeTemplate();
+
+      // Автоматически обновляем шаблон main
+      this.updateMainTemplate();
+    },
+
+    // Обновление шаблона кода
+    updateCodeTemplate() {
+      if (!this.taskData.language) return;
+
+      const language = this.availableLanguages.find(lang => lang.id === this.taskData.language);
+      if (!language) return;
+
+      const functionSignature = this.generateLanguageSpecificSignature();
+
+      if (language.patternFunction) {
+        // Используем шаблон из базы данных
+        this.taskData.codeTemplate = language.patternFunction.replace('{{function_signature}}', functionSignature);
+      } else {
+        // Генерируем базовый шаблон
+        this.taskData.codeTemplate = `${functionSignature} {\n    // ваш код здесь\n}`;
+      }
+    },
+
+    // Обновление шаблона main
+    updateMainTemplate() {
+      this.taskData.mainTemplate = this.generateMainTemplate();
+    },
   },
   watch: {
-    'taskData.language'(newLang) {
-      if (newLang === 'python') {
-        this.taskData.codeTemplate = `def {{function_signature}}:
-    \"\"\"
-    {{function_description}}
-    \"\"\"
-    # Ваша реализация здесь
-    pass`
+    'taskData.language': {
+      handler(newLanguageId) {
+        if (newLanguageId) {
+          console.log('Language changed to:', newLanguageId);
+          this.loadLibrariesForLanguage(newLanguageId);
+          // Очищаем выбранные библиотеки при смене языка
+          this.taskData.libraries = [];
 
-        this.taskData.mainTemplate = `if __name__ == "__main__":
-    # Пример использования
-    {{function_call}}
-    print("Результат:", result)`
+          // Автоматически обновляем шаблоны
+          this.$nextTick(() => {
+            this.updateCodeTemplate();
+            this.updateMainTemplate();
+          });
+        } else {
+          this.availableLibraries = [];
+        }
+      },
+      immediate: true
+    },
 
-      } else if (newLang === 'java') {
-        this.taskData.codeTemplate = `public class Solution {
-    public static {{function_signature}} {
-        // Ваша реализация здесь
-    }
-}`
+    // Следим за изменениями в сигнатуре функции и обновляем шаблоны
+    'taskData.functionName': function() {
+      if (this.taskData.language) {
+        this.$nextTick(() => {
+          this.updateCodeTemplate();
+          this.updateMainTemplate();
+        });
+      }
+    },
 
-        this.taskData.mainTemplate = `public class Main {
-    public static void main(String[] args) {
-        // Пример использования
-        {{function_call}};
-        System.out.println("Результат: " + result);
-    }
-}`
+    'taskData.parameters': {
+      handler() {
+        if (this.taskData.language) {
+          this.$nextTick(() => {
+            this.updateCodeTemplate();
+            this.updateMainTemplate();
+          });
+        }
+      },
+      deep: true
+    },
+
+    'taskData.returnType': function() {
+      if (this.taskData.language) {
+        this.$nextTick(() => {
+          this.updateCodeTemplate();
+          this.updateMainTemplate();
+        });
       }
     }
+
   },
   metaInfo: {
-    title: 'Конструктор задач - CodeCraft',
+    title: 'Конструктор задач',
     meta: [
       {
         property: 'og:title',
-        content: 'Конструктор задач - CodeCraft',
+        content: 'Конструктор задач',
       },
     ],
   },

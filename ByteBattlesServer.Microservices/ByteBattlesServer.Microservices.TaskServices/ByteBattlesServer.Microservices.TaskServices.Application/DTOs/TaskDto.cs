@@ -1,3 +1,7 @@
+using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+
 namespace ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 
 public class TaskDto
@@ -5,13 +9,22 @@ public class TaskDto
   public Guid Id { get; set; }
   public  string Title { get; set; }
   public  string Description { get; set; }
-  public  string Difficulty { get; set; }
+  public  TaskDifficulty Difficulty { get; set; }
   public  string Author { get; set; }
   public  string FunctionName { get; set; }
-  public  string InputParameters { get; set; }
-  public  string OutputParameters { get; set; }
+  public  string PatternMain { get; set; }
+  public  string PatternFunction { get; set; }
+  
+  public  string Parameters { get; set; }
+  public  string ReturnType { get; set; }
   public  DateTime CreatedAt { get; set; }
   public  DateTime? UpdatedAt { get; set; }
+  public int TotalAttempts { get; set; }
+  public int SuccessfulAttempts { get; set; }
+  public double SuccessRate { get; set; }
+  public double AverageExecutionTime { get; set; }
+  public LanguageDto Language { get; set; }
   public  List<TaskLanguageDto> TaskLanguages { get; set; }
+  public List<LibraryDto>  Libraries { get; set; }
   public List<TestCaseDto> TestCases { get; set; }
 }

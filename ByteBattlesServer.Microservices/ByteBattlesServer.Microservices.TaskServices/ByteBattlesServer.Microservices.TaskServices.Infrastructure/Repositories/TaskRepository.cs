@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -16,23 +17,57 @@ public class TaskRepository : ITaskRepository
         _dbContext = dbContext;
     }
 
+    public async Task<Task> GetRandomByDifficultyAsync(TaskDifficulty difficulty,Guid languageId)
+    {
+        return await _dbContext.Tasks
+            .Where(t => t.Difficulty == difficulty)
+            .Include(t => t.TaskLanguages)
+            .ThenInclude(tl => tl.Language)
+            .Include(t => t.Libraries)
+            .ThenInclude(l => l.Library)
+            .Include(t => t.TestCases)
+            .OrderBy(t => EF.Functions.Random())
+            .Where(t=> t.TaskLanguages.Where(tl => tl.Language.Id == languageId).Any())
+            .FirstOrDefaultAsync();
+    }
     public async Task<Task> GetByIdAsync(Guid id)
     {
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
-            .Include(t => t.TestCases.Where(tc => tc.IsExample))
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
+            .Include(t => t.TestCases)
+            .FirstOrDefaultAsync(up => up.Id == id);
+    }  
+    
+    public async Task<Task> GetByIdAsyncWithTasks(Guid id)
+    {
+        return await _dbContext.Tasks
+            .Include(up => up.TaskLanguages)
+            .ThenInclude(ua => ua.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
+            .Include(t => t.TestCases)
             .FirstOrDefaultAsync(up => up.Id == id);
     }
     public void RemoveTaskLanguage(TaskLanguage taskLanguage)
     {
         _dbContext.TaskLanguages.Remove(taskLanguage);
     }
+
+    public void RemoveTaskLibrary(TaskLibrary taskLibrary)
+    {
+        _dbContext.TaskLibraries.Remove(taskLibrary);
+    }
+
     public async Task<Task> GetByTitleAsync(string title)
     {
         return await _dbContext.Tasks
             .Include(up => up.TaskLanguages)
             .ThenInclude(ua => ua.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
             .Include(t => t.TestCases.Where(tc => tc.IsExample))
             .FirstOrDefaultAsync(up => up.Title == title);
     }
@@ -60,6 +95,20 @@ public class TaskRepository : ITaskRepository
         _dbContext.Tasks.Remove(task);
     }
 
+    public async System.Threading.Tasks.Task<(int Easy, int Medium, int Hard)> TaskCountDiffaclty()
+    {
+        var counts = await _dbContext.Tasks
+            .GroupBy(x => x.Difficulty)
+            .Select(g => new { Difficulty = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var easyCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Easy")?.Count ?? 0;
+        var mediumCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Medium")?.Count ?? 0;
+        var hardCount = counts.FirstOrDefault(x => x.Difficulty.ToString() == "Hard")?.Count ?? 0;
+    
+        return (easyCount, mediumCount, hardCount);
+    }
+
     public async Task<List<TaskLanguage>> GetTaskLanguagesAsync(Guid taskId)
     {
         return await _dbContext.TaskLanguages
@@ -67,12 +116,36 @@ public class TaskRepository : ITaskRepository
             .Include(tl => tl.Language)
             .ToListAsync();
     }
+
+    public async Task<List<TaskLibrary>> GetTaskLibraryAsync(Guid taskId)
+    {
+        return await _dbContext.TaskLibraries
+            .Where(tl => tl.IdTask == taskId)
+            .Include(tl => tl.Library)
+            .ToListAsync();
+    }
+
     public async System.Threading.Tasks.Task AddTaskLanguageAsync(TaskLanguage taskLanguage)
     {
         await _dbContext.TaskLanguages.AddAsync(taskLanguage);
     }
 
-    public async Task<List<Task>> SearchTask(Difficulty? difficulty, Guid? languageId, string? searchTerm)
+    public async System.Threading.Tasks.Task AddTaskLibraryAsync(TaskLibrary taskLibrary)
+    {
+        await _dbContext.TaskLibraries.AddAsync(taskLibrary);
+    }
+
+
+    public async Task<Task?> InfoForCompilerAsync(Guid taskId)
+    {
+      return  await _dbContext.Tasks
+            .Include(up => up.TaskLanguages)
+            .Where(t=>t.Id == taskId)
+            .Include(t=>t.TestCases)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<Task>> SearchTask(TaskDifficulty? difficulty, Guid? languageId, string? searchTerm)
     {
         var query = BuildSearchQuery(difficulty, languageId, searchTerm);
         
@@ -81,7 +154,7 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
 
-    public async Task<List<Task>> SearchTasksPagedAsync(Difficulty? difficulty, Guid? languageId, string? searchTerm, int page, int pageSize)
+    public async Task<List<Task>> SearchTasksPagedAsync(TaskDifficulty? difficulty, Guid? languageId, string? searchTerm, int page, int pageSize)
     {
         var query = BuildSearchQuery(difficulty, languageId, searchTerm);
 
@@ -92,13 +165,16 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
     private IQueryable<Task> BuildSearchQuery(
-        Difficulty? difficulty,
+        TaskDifficulty? difficulty,
         Guid? languageId,
         string? searchTerm)
     {
         var query = _dbContext.Tasks
             .Include(t => t.TaskLanguages)
             .ThenInclude(tl => tl.Language)
+            .Include(up => up.Libraries)
+            .ThenInclude(l => l.Library)
+            .Include(t => t.TestCases)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))

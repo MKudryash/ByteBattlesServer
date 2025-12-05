@@ -33,11 +33,17 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
             .IsRequired()
             .HasMaxLength(100);
             
-        builder.Property(t => t.InputParameters)
+        builder.Property(t => t.PatternFunction)
+            .IsRequired();
+            
+        builder.Property(t => t.PatternMain)
+            .IsRequired();
+        
+        builder.Property(t => t.Parameters)
             .IsRequired()
             .HasMaxLength(500);
-            
-        builder.Property(t => t.OutputParameters)
+        
+        builder.Property(t => t.ReturnType)
             .IsRequired()
             .HasMaxLength(500);
 
@@ -57,6 +63,11 @@ public class TaskConfiguration : IEntityTypeConfiguration<Task>
         builder.HasMany(t => t.TestCases)
             .WithOne(tt => tt.Task)
             .HasForeignKey(tt => tt.TaskId)
+            .OnDelete(DeleteBehavior.Cascade); 
+        
+        builder.HasMany(t => t.Libraries)
+            .WithOne(tt => tt.Task)
+            .HasForeignKey(tt => tt.IdTask)
             .OnDelete(DeleteBehavior.Cascade);
       
         builder.HasIndex(t => t.Difficulty);

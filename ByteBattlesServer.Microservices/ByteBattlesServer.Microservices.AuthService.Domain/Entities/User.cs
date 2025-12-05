@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.AuthService.Domain.ValueObject;
 
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Entities;
@@ -9,13 +10,14 @@ public class User:Entity
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
     public bool IsActive { get; private set; }
+    public Guid RoleId { get; set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-    public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
+    public Role Role { get; set; }
 
     private User() { }
 
-    public User(string email, string passwordHash, string firstName, string lastName)
+    public User(string email, string passwordHash, string firstName, string lastName, Role role)
     {
        Email =  Email.Create(email);
         PasswordHash = passwordHash;
@@ -23,6 +25,8 @@ public class User:Entity
         LastName = lastName;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
+        Role = role;
+        RoleId = role.Id;
     }
 
     public void UpdateProfile(string firstName, string lastName)
@@ -30,19 +34,6 @@ public class User:Entity
         FirstName = firstName;
         LastName = lastName;
         UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void AddRole(Role role)
-    {
-        if (role == null)
-            throw new ArgumentNullException(nameof(role));
-        
-        if (!UserRoles.Any(ur => ur.RoleId == role.Id))
-        {
-            var userRole = new UserRole(this.Id,role.Id);
-            UserRoles.Add(userRole);
-            UpdatedAt = DateTime.UtcNow;
-        }
     }
 
     public void Deactivate()

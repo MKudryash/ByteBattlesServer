@@ -6,4 +6,5 @@ public class TestCasesInfoResponse
     public string CorrelationId { get; set; } = string.Empty;
     public bool Success { get; set; }
     public string ErrorMessage { get; set; } = string.Empty;
+    public LanguageInfo Language { get; set; }
 }

@@ -1,8 +1,11 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Exceptions;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -32,22 +35,72 @@ public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsComman
         {
             throw new UserProfileNotFoundException(request.UserId);
         }
-        if (userProfile.Stats == null)
+        var expGained = request.difficulty switch
         {
-            userProfile.Stats = new UserStats();
+            TaskDifficulty.Easy => 100,
+            TaskDifficulty.Medium => 250,
+            TaskDifficulty.Hard => 500,
+            _ => 0
+        };
+        if (request.activityType == ActivityType.ProblemSolved)
+        {
+            if (!userProfile.Stats.HasSolvedTask(request.taskId))
+            {
+                userProfile.UpdateProblemStats(request.isSuccessful, request.difficulty,
+                    request.executionTime, request.taskId);
+                _userProfileRepository.Update(userProfile);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            var activity = new RecentActivity(userProfile.Id, request.activityType,$"Решена задача: {request.problemTitle}",
+                $"Сложность: {request.difficulty}, Язык: {request.language}",expGained);
+            await _userProfileRepository.AddRecentActivityAsync(activity);
+            
+            var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);
+            userProfile.UpdatedAt = DateTime.UtcNow;
+            await _userProfileRepository.AddRecentProblemAsync(recentProblem);
+            
         }
-        
-        userProfile.UpdateProblemStats(request.isSuccessful,request.difficulty,
-            request.executionTime,request.taskId);
-        
-        userProfile.UpdatedAt = DateTime.UtcNow;
+
+        if (request is { activityType: ActivityType.Battle, battleId: not null })
+        {
+
+            var result =request.isSuccessful? BattleResultType.Win : BattleResultType.Loss;
+            var battle = new BattleResult(userProfile.Id, request.battleId.Value,request.battleOpponent,result,
+               (request.isSuccessful? expGained*5:0), request.taskId,request.executionTime);
+            
+            await _userProfileRepository.AddBattleResultAsync(battle);
+            
+            var activityDescription = $"Результат: {request.isSuccessful}, Опыт: {expGained}";
+
+            var activity = new RecentActivity(userProfile.Id, request.activityType,$"Завершена битва",
+                activityDescription);
+            await _userProfileRepository.AddRecentActivityAsync(activity);
+            
+            var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);
+            userProfile.UpdatedAt = DateTime.UtcNow;
+            await _userProfileRepository.AddRecentProblemAsync(recentProblem);
+            
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            userProfile.Stats.UpdateStats(battle);
+        }
+
+        userProfile.UpdateLevel();
         _userProfileRepository.Update(userProfile);
-        
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        return new UserProfileDto
+         return new UserProfileDto
         {
             Id = userProfile.Id,
+            UserId = userProfile.UserId,
+            UserName = userProfile.UserName,
+            Bio = userProfile.Bio,
+            Country = userProfile.Country,
+            GitHubUrl = userProfile.GitHubUrl,
+            LinkedInUrl = userProfile.LinkedInUrl,
+            IsPublic = userProfile.IsPublic,
+            CreatedAt = userProfile.CreatedAt,
             Settings = new UserSettingsDto
             {
                 Theme = userProfile.Settings.Theme,

@@ -92,7 +92,12 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = user.UserRoles?.Select(ur => ur.Role.Name) ?? Enumerable.Empty<string>()
+                Role = new RoleDto()
+                {
+                    Id = user.Role.Id,
+                    Name = user.Role.Name,
+                    Description =  user.Role.Description
+                }
             }
         };
     }

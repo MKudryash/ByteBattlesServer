@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.1.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\ByteBattlesServer.SharedContracts\ByteBattlesServer.SharedContracts.csproj" />
+      <ProjectReference Include="..\..\ByteBattlesServer.Microservices.Middleware\ByteBattlesServer.Microservices.Middleware.csproj" />
+      <ProjectReference Include="..\ByteBattles.Microservices.CodeBattleServer.Application\ByteBattles.Microservices.CodeBattleServer.Application.csproj" />
+      <ProjectReference Include="..\ByteBattles.Microservices.CodeBattleServer.Infrastructure\ByteBattles.Microservices.CodeBattleServer.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+</Project>

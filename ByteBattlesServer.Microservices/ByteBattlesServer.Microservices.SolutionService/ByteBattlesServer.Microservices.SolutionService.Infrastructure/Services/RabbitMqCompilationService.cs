@@ -6,6 +6,8 @@ using ByteBattlesServer.SharedContracts.Messaging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
+namespace ByteBattlesServer.Microservices.SolutionService.Infrastructure.Services;
+
 public class RabbitMqCompilationService : ICompilationService, IDisposable
 {
     private readonly IMessageBus _messageBus;
@@ -14,7 +16,6 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
     private readonly ConcurrentDictionary<string, TaskCompletionSource<CodeTestResultResponseEvent>> _pendingRequests = new();
     private readonly string _responseQueueName;
     private bool _disposed = false;
-    private bool _isSubscribed = false;
 
     public RabbitMqCompilationService(
         IMessageBus messageBus,
@@ -25,7 +26,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
         _cache = cache;
         _logger = logger;
         
-        // Создаем уникальное имя очереди для этого экземпляра сервиса
+        // Создаем уникальное имя очереди для этого сервиса
         _responseQueueName = $"solution.compiler.responses.{Guid.NewGuid():N}";
         
         SubscribeToResponses();
@@ -35,50 +36,61 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
     {
         try
         {
+        
            
+            // В RabbitMqCompilationService в обработчике:
             _messageBus.Subscribe<CodeTestResultResponseEvent>(
                 "code_execution.exchange",
                 _responseQueueName, 
-                "compiler.info.response",
+                "compiler.info.response", 
                 async (response) =>
                 {
-                    
-
+                    _logger.LogInformation($"📥 [Solution] Received response for CorrelationId: {response.CorrelationId}");
+        
                     if (_pendingRequests.TryGetValue(response.CorrelationId, out var tcs))
                     {
-                        
+                        _logger.LogInformation($"✅ [Solution] Found pending request, setting result");
+                        _logger.LogInformation(response.Success.ToString());
                         tcs.TrySetResult(response);
                     }
                     else
                     {
-                       
+                        _logger.LogWarning($"⚠️ [Solution] No pending request found for CorrelationId: {response.CorrelationId}");
                     }
                 });
-            _isSubscribed = true;
-            
+
+                
+            _logger.LogInformation($"🟢 [CompilationService] Successfully subscribed to responses");
         }
         catch (Exception ex)
         {
-           
+            _logger.LogError(ex, $"❌ [CompilationService] Failed to subscribe to responses");
             throw;
         }
     }
 
-    public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(string compiledCode,
+    public async Task<List<TestExecutionResult>> ExecuteAllTestsAsync(
+        string compiledCode,
         List<TestCaseDto> testCasesDto,
-        Guid languageId)
+        LanguageInfo languageInfo,
+        List<LibraryInfo> libraries,
+        string patternMain)
     {
+  
+        
         var request = new CodeSubmissionEvent()
         {
             Code = compiledCode,
-            Language = languageId,
+            Language = languageInfo,
             TestCases = testCasesDto.Select(x => new TestCaseEvent()
             {
                 Input = x.Input,
                 Output = x.Output
             }).ToList(),
-            // Указываем конкретную очередь для ответа
+            PatternMain = patternMain,
+            Libraries = libraries,
             ReplyToQueue = _responseQueueName,
+            ReplyToRoutingKey = "compiler.info.response",
             CorrelationId = Guid.NewGuid().ToString()
         };
 
@@ -87,31 +99,28 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
 
         try
         {
-           
 
             _messageBus.Publish(
                 request,
                 "code_execution.exchange",
                 "compiler.info.request");
 
-            
-
+           
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-               
-                throw new TimeoutException("Compiler request timeout");
+                throw new TimeoutException("Compiler request timeout (30 seconds)");
             }
 
             var response = await tcs.Task;
             
-
             if (!response.Success)
             {
                 throw new InvalidOperationException($"Compilation failed: {response.ErrorMessage}");
             }
+            
             
             var results = new List<TestExecutionResult>();
             
@@ -119,6 +128,7 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
             {
                 foreach (var (testCase, resultDto) in testCasesDto.Zip(response.Results))
                 {
+                    
                     results.Add(new TestExecutionResult(
                         resultDto.IsPassed,
                         resultDto.ActualOutput,
@@ -130,12 +140,12 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
             }
 
             
-                
+                Console.WriteLine(results.Count().ToString());
             return results;
         }
         finally
         {
-            _pendingRequests.TryRemove(request.CorrelationId, out _);
+            _pendingRequests.TryRemove(request.CorrelationId, out _); 
         }
     }
 
@@ -143,9 +153,6 @@ public class RabbitMqCompilationService : ICompilationService, IDisposable
     {
         if (!_disposed)
         {
-            // Очищаем подписку при dispose
-            // Это зависит от реализации вашего IMessageBus
-            // Обычно есть метод Unsubscribe или Dispose
             _pendingRequests.Clear();
             _disposed = true;
         }

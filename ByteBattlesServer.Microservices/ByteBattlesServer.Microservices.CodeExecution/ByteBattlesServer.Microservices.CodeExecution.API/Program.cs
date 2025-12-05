@@ -101,7 +101,6 @@ builder.Services.AddHostedService<CodeExecutionMessageHandler>();
 
 
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ILanguageService, RabbitMQLanguageService>();
 
 
 var app = builder.Build();

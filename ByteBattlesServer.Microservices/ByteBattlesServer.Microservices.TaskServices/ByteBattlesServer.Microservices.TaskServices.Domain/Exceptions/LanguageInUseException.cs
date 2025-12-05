@@ -10,3 +10,11 @@ public class LanguageInUseException:LanguageException
        
     }
 }
+public class LibraryInUseException:LibraryException
+{
+    public LibraryInUseException(Guid libraryId, int usageCount)
+        : base($"Library with ID '{libraryId}' is used in {usageCount} tasks and cannot be deleted")
+    {
+       
+    }
+}

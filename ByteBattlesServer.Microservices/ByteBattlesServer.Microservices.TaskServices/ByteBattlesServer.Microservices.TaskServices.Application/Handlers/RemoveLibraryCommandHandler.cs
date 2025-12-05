@@ -9,20 +9,32 @@ namespace ByteBattlesServer.Microservices.TaskServices.Application.Handlers;
 public class RemoveLibraryCommandHandler : IRequestHandler<RemoveLibrariesCommand, DeleteResponseDto>
 {
     private readonly ILanguageRepository _repository;
+    private readonly ITaskRepository _taskRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public RemoveLibraryCommandHandler(ILanguageRepository repository, IUnitOfWork unitOfWork)
+    public RemoveLibraryCommandHandler(ILanguageRepository repository, IUnitOfWork unitOfWork,
+        ITaskRepository taskRepository)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _taskRepository = taskRepository;
     }
     public async Task<DeleteResponseDto> Handle(RemoveLibrariesCommand request, CancellationToken cancellationToken)
     {
-        var testCase = await _repository.GetLibraryByIdAsync(request.Id);
-        if (testCase == null)
+        var library = await _repository.GetLibraryByIdAsync(request.Id);
+        if (library == null)
             throw new TestCaseNotFoundException(request.Id);
         
-        _repository.DeleteLibraryAsync(testCase);
+        var taskLibraries = await _taskRepository.GetTaskLibraryAsync(library.Id);
+        
+        if (taskLibraries.Any())
+        {
+            throw new LibraryInUseException(request.Id,taskLibraries.Count);
+        }
+
+        
+        
+        _repository.DeleteLibraryAsync(library);
         _unitOfWork.SaveChangesAsync(cancellationToken);
         
         return new DeleteResponseDto();

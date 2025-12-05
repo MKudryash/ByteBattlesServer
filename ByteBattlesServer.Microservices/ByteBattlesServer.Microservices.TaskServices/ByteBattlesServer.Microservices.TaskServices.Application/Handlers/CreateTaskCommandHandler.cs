@@ -1,5 +1,6 @@
 using ByteBattlesServer.Microservices.TaskServices.Application.Commands;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
+using ByteBattlesServer.Microservices.TaskServices.Application.Mapping;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Entities;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Exceptions;
 using ByteBattlesServer.Microservices.TaskServices.Domain.Interfaces;
@@ -36,9 +37,19 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
             languages.Add(language);
         }
         
+        var libraries = new List<Library>();
+
+        foreach (var librariesId in request.LibrariesIds)
+        {
+            var library = await _languageRepository.GetLibraryByIdAsync(librariesId);
+            if (library == null)
+                throw new LibraryNotFoundException(librariesId);
+            libraries.Add(library);
+        }
+        
         
         var task = new Domain.Entities.Task(request.Title, request.Description,
-            request.Difficulty, request.Author,request.FunctionName,request.InputParameters,request.OutputParameters);
+            request.Difficulty, request.Author,request.FunctionName,request.PatternMain,request.PatternFunction, request.Parameters,request.ReturnType);
        
         
         
@@ -48,31 +59,19 @@ public class CreateTaskCommandHandler:IRequestHandler<CreateTaskCommand, TaskDto
             task.TaskLanguages.Add(taskLanguage);
         }
 
-        
+        foreach (var library in libraries)
+        {
+            var taskLibrary = new TaskLibrary(task.Id, library.Id);
+            task.Libraries.Add(taskLibrary);
+        }
+
+
         await _taskRepository.AddAsync(task);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
     
         var createdTask = await _taskRepository.GetByIdAsync(task.Id);
-        return MapToDto(createdTask);
+        return TaskMapping.MapToDto(createdTask);
 
     }
-
-    private TaskDto MapToDto(Task task) => new()
-    {
-        Id = task.Id,
-        Title = task.Title,
-        Description = task.Description,
-        Difficulty = task.Difficulty.ToString(),
-        Author = task.Author,
-        FunctionName = task.FunctionName,
-        InputParameters = task.InputParameters,
-        OutputParameters = task.OutputParameters,
-        TaskLanguages = task.TaskLanguages.Select(tl => new TaskLanguageDto()
-            {
-                LanguageId = tl.Id,
-                LanguageTitle = tl.Language.Title,
-                LanguageShortTitle = tl.Language.ShortTitle,
-            }).ToList()
-    };
 }

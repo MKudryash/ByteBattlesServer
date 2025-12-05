@@ -1,6 +1,9 @@
+using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Repositories;
 
@@ -17,8 +20,21 @@ public class UserProfileRepository : IUserProfileRepository
     {
         return await _context.UserProfiles
             .Include(up => up.Achievements)
-            .ThenInclude(ua => ua.Achievement)
+                .ThenInclude(ua => ua.Achievement)
             .Include(up => up.BattleHistory)
+            .Include(up => up.RecentActivities)
+            .Include(up => up.RecentProblems)
+            .Include(up => up.Stats)
+            .Include(up => up.Settings)
+            .FirstOrDefaultAsync(up => up.Id == id);
+    }  
+
+    public async Task<Domain.Entities.UserProfile> GetByIdTeacherAsync(Guid id)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.RecentActivities)
+            .Include(up => up.TeacherStats)
+            .Include(up => up.Settings)
             .FirstOrDefaultAsync(up => up.Id == id);
     }
 
@@ -26,15 +42,55 @@ public class UserProfileRepository : IUserProfileRepository
     {
         return await _context.UserProfiles
             .Include(up => up.Achievements)
-            .ThenInclude(ua => ua.Achievement)
+                .ThenInclude(ua => ua.Achievement)
             .Include(up => up.BattleHistory)
+            .Include(up => up.RecentActivities)
+            .Include(up => up.RecentProblems)
+            .Include(up => up.Stats)
+            .Include(up => up.Settings)
             .FirstOrDefaultAsync(up => up.UserId == userId);
+    }   
+
+    public async Task<Domain.Entities.UserProfile> GetByUserIdTeacherAsync(Guid userId)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.RecentActivities)
+            .Include(up => up.TeacherStats)
+            .Include(up => up.Settings)
+            .FirstOrDefaultAsync(up => up.UserId == userId);
+    }
+
+    
+    public async Task<Domain.Entities.UserProfile> GetStudentProfileAsync(Guid userId)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.Stats)
+            .Include(up => up.Settings)
+            .Include(up => up.RecentProblems.OrderByDescending(rp => rp.SolvedAt).Take(10))
+            .Include(up => up.BattleHistory.OrderByDescending(bh => bh.BattleDate).Take(10))
+            .Include(up => up.RecentActivities.OrderByDescending(ra => ra.Timestamp).Take(10))
+            .Include(up => up.Achievements.OrderByDescending(a => a.AchievedAt).Take(5))
+                .ThenInclude(ua => ua.Achievement)
+            .Where(up => up.UserId == userId && up.Role == UserRole.student)
+            .FirstOrDefaultAsync();
+    }
+
+    // Оптимизированный метод для учителя - загружаем только нужные данные
+    public async Task<Domain.Entities.UserProfile> GetTeacherProfileAsync(Guid userId)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.TeacherStats)
+            .Include(up => up.Settings)
+            .Include(up => up.RecentActivities.OrderByDescending(ra => ra.Timestamp).Take(10))
+            .Where(up => up.UserId == userId && up.Role == UserRole.teacher)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<Domain.Entities.UserProfile>> GetLeaderboardAsync(int topCount)
     {
         return await _context.UserProfiles
-            .Where(up => up.IsPublic)
+            .Where(up => up.IsPublic && up.Role == UserRole.student)
+            .Include(up => up.Stats)
             .OrderByDescending(up => up.Stats.TotalExperience)
             .Take(topCount)
             .ToListAsync();
@@ -42,10 +98,21 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<List<Domain.Entities.UserProfile>> SearchAsync(string searchTerm, int page, int pageSize)
     {
-        return await _context.UserProfiles
-            .Where(up => up.IsPublic && 
-                (up.UserName.Contains(searchTerm) || up.Bio.Contains(searchTerm)))
-            .OrderByDescending(up => up.Stats.TotalExperience)
+        var query = _context.UserProfiles
+            .Where(up => up.Role == UserRole.student);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(up => 
+                up.UserName.Contains(searchTerm) || 
+                (up.Bio != null && up.Bio.Contains(searchTerm)) ||
+                (up.Email != null && up.Email.Contains(searchTerm)));
+        }
+
+        return await query
+            .Include(up => up.Stats)
+            .OrderByDescending(up => up.Role)
+            .ThenByDescending(up => up.Stats != null ? up.Stats.TotalExperience : 0)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -59,6 +126,90 @@ public class UserProfileRepository : IUserProfileRepository
     public void Update(Domain.Entities.UserProfile userProfile)
     {
         _context.UserProfiles.Update(userProfile);
+    }
+
+    public async Task AddRecentActivityAsync(Domain.Entities.RecentActivity activity)
+    {
+        await _context.RecentActivities.AddAsync(activity);
+    }
+
+    public async Task AddRecentProblemAsync(Domain.Entities.RecentProblem problem)
+    {
+        await _context.RecentProblems.AddAsync(problem);
+    }
+
+    public async Task<List<Domain.Entities.RecentActivity>> GetRecentActivitiesAsync(Guid userProfileId, int count = 50)
+    {
+        return await _context.RecentActivities
+            .Where(ra => ra.UserProfileId == userProfileId)
+            .OrderByDescending(ra => ra.Timestamp)
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<List<Domain.Entities.RecentProblem>> GetRecentProblemsAsync(Guid userProfileId, int count = 20)
+    {
+        return await _context.RecentProblems
+            .Where(rp => rp.UserProfileId == userProfileId)
+            .OrderByDescending(rp => rp.SolvedAt)
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<bool> HasUserSolvedProblemAsync(Guid userProfileId, Guid problemId)
+    {
+        return await _context.RecentProblems
+            .AnyAsync(rp => rp.UserProfileId == userProfileId && rp.ProblemId == problemId);
+    }
+
+    public async Task<(int TotalActivities, int TodayActivities)> GetActivityStatsAsync(Guid userProfileId)
+    {
+        var today = DateTime.UtcNow.Date;
         
+        var totalActivities = await _context.RecentActivities
+            .CountAsync(ra => ra.UserProfileId == userProfileId);
+            
+        var todayActivities = await _context.RecentActivities
+            .CountAsync(ra => ra.UserProfileId == userProfileId && ra.Timestamp.Date == today);
+
+        return (totalActivities, todayActivities);
+    }
+
+    public async Task UpdateTeacherStatsAsync(
+        Guid userId, 
+        int? createdTasks = null, 
+        int? activeStudents = null, 
+        double? averageRating = null, 
+        int? totalSubmissions = null)
+    {
+        var profile = await _context.UserProfiles
+            .Include(up => up.TeacherStats)
+            .FirstOrDefaultAsync(up => up.UserId == userId && up.Role == UserRole.teacher);
+
+        if (profile != null)
+        {
+            profile.UpdateTeacherStats(createdTasks, activeStudents, averageRating, totalSubmissions);
+            _context.UserProfiles.Update(profile);
+        }
+    }
+    
+    public async Task<bool> ExistsByEmailAsync(string email)
+    {
+        return await _context.UserProfiles
+            .AnyAsync(up => up.Email == email);
+    }
+    
+    public async Task<Domain.Entities.UserProfile> GetByEmailAsync(string email)
+    {
+        return await _context.UserProfiles
+            .Include(up => up.Stats)
+            .Include(up => up.TeacherStats)
+            .Include(up => up.Settings)
+            .FirstOrDefaultAsync(up => up.Email == email);
+    }
+
+    public async Task AddBattleResultAsync(BattleResult battleResult)
+    {
+        await _context.BattleResults.AddAsync(battleResult);
     }
 }

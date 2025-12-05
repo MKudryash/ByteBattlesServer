@@ -35,5 +35,10 @@ public class LibraryConfiguration : IEntityTypeConfiguration<Library>
         builder.HasIndex(l=> l.LanguageId);
         builder.HasIndex(t => t.CreatedAd);
         
+        builder.HasMany(t => t.Libraries)
+            .WithOne(tt => tt.Library)
+            .HasForeignKey(tt => tt.IdLibrary)
+            .OnDelete(DeleteBehavior.Cascade);
+        
     }
 }

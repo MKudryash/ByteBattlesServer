@@ -46,7 +46,12 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<string>("Pattern")
+                    b.Property<string>("PatternFunction")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PatternMain")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -153,12 +158,20 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("InputParameters")
+                    b.Property<string>("Parameters")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<string>("OutputParameters")
+                    b.Property<string>("PatternFunction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PatternMain")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReturnType")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -208,6 +221,27 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                         .IsUnique();
 
                     b.ToTable("TaskLanguages", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLibrary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdLibrary")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdTask")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdLibrary");
+
+                    b.HasIndex("IdTask");
+
+                    b.ToTable("TaskLibraries");
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
@@ -277,6 +311,25 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TaskLibrary", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", "Library")
+                        .WithMany("Libraries")
+                        .HasForeignKey("IdLibrary")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", "Task")
+                        .WithMany("Libraries")
+                        .HasForeignKey("IdTask")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Library");
+
+                    b.Navigation("Task");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.TestCases", b =>
                 {
                     b.HasOne("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", "Task")
@@ -295,8 +348,15 @@ namespace ByteBattlesServer.Microservices.TaskServices.Infrastructure.Data.Migra
                     b.Navigation("TasksLanguage");
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Library", b =>
+                {
+                    b.Navigation("Libraries");
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task", b =>
                 {
+                    b.Navigation("Libraries");
+
                     b.Navigation("TaskLanguages");
 
                     b.Navigation("TestCases");

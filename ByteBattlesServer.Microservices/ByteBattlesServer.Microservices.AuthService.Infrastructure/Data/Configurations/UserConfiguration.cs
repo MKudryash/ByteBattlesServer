@@ -43,11 +43,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
             
         builder.Property(u => u.UpdatedAt);
+        
+        builder.Property(u => u.RoleId)
+            .IsRequired();
 
-
-        builder.HasMany(u => u.UserRoles)
-            .WithOne(ur => ur.User)
-            .HasForeignKey(ur => ur.UserId)
-            ;
+        builder.HasOne(u => u.Role)
+            .WithMany()
+            .HasForeignKey(u => u.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

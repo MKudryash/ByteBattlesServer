@@ -1,0 +1,1218 @@
+using System.Collections.Concurrent;
+using System.Net.WebSockets;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using ByteBattles.Microservices.CodeBattleServer.Application.Commands;
+using ByteBattles.Microservices.CodeBattleServer.Application.Queries;
+using ByteBattles.Microservices.CodeBattleServer.Domain.Enums;
+using ByteBattlesServer.Domain.enums;
+using ByteBattlesServer.Domain.Results;
+using ByteBattlesServer.Microservices.TaskServices.Domain.Enums;
+using ByteBattlesServer.SharedContracts.IntegrationEvents;
+using MediatR;
+
+namespace ByteBattles.Microservices.CodeBattleServer.API;
+
+public static class BattleEndpoints
+{
+    private static readonly ConcurrentDictionary<Guid, WebSocket> _sockets = new();
+    private static readonly ConcurrentDictionary<Guid, List<Guid>> _roomParticipants = new();
+    private static readonly ConcurrentDictionary<Guid, HashSet<Guid>> _readyPlayers = new();
+    private static readonly ConcurrentDictionary<Guid, DateTime> _lastActivity = new();
+    private static readonly ConcurrentDictionary<Guid, Timer> _roomTimers = new();
+    private static readonly ConcurrentDictionary<Guid, TaskInfo> _roomTasks = new();
+    private static readonly Timer _cleanupTimer;
+
+    static BattleEndpoints()
+    {
+        _cleanupTimer = new Timer(CleanupInactiveConnections, null, 
+            TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public static void MapBattleEndpoints(this IEndpointRouteBuilder routes)
+    {
+        var group = routes.MapGroup("/api/battle")
+            .WithTags("Battle");
+
+        group.MapGet("/", async (HttpContext http, IMediator mediator, IConnectionManager connectionManager) =>
+        {
+            if (http.WebSockets.IsWebSocketRequest)
+            {
+                var webSocket = await http.WebSockets.AcceptWebSocketAsync();
+                await HandleWebSocketConnection(webSocket, mediator, connectionManager, http);
+            }
+            else
+            {
+                http.Response.StatusCode = 400;
+                await http.Response.WriteAsync("WebSocket connection required");
+            }
+        })
+        .WithName("BattleWebSocket")
+        .WithSummary("WebSocket соединение для битв")
+        .WithDescription("Устанавливает WebSocket соединение для участия в программистских битвах")
+        .Produces(StatusCodes.Status101SwitchingProtocols)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/rooms", async (IMediator mediator, HttpContext http) =>
+        {
+            try
+            {
+                var activeRooms = new List<object>();
+                
+                foreach (var room in _roomParticipants)
+                {
+                    var roomQuery = await mediator.Send(new GetRoomQuery(room.Key));
+                    var roomStatus = roomQuery?.Status ?? RoomStatus.Waiting;
+                    
+                    activeRooms.Add(new { 
+                        RoomId = room.Key, 
+                        ParticipantCount = room.Value.Count,
+                        ReadyCount = _readyPlayers.ContainsKey(room.Key) ? _readyPlayers[room.Key].Count : 0,
+                        Status = roomStatus.ToString(),
+                        CanStart = room.Value.Count >= 2 && roomStatus == RoomStatus.Active,
+                        Participants = room.Value
+                    });
+                }
+                
+                return Results.Ok(new { 
+                    rooms = activeRooms,
+                    totalConnections = _sockets.Count,
+                    activeUsers = _lastActivity.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}");
+            }
+        })
+        .WithName("GetBattleRooms")
+        .WithSummary("Получение списка комнат для битв")
+        .WithDescription("Возвращает список активных комнат для программистских битв")
+        .Produces(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status400BadRequest);
+
+        // Новый endpoint для получения статуса комнаты
+        group.MapGet("/rooms/{roomId:guid}/status", async (Guid roomId, IMediator mediator) =>
+        {
+            try
+            {
+                var roomQuery = await mediator.Send(new GetRoomQuery(roomId));
+                if (roomQuery == null)
+                    return Results.NotFound(new { message = "Room not found" });
+
+                var participantCount = _roomParticipants.ContainsKey(roomId) ? _roomParticipants[roomId].Count : 0;
+                var readyCount = _readyPlayers.ContainsKey(roomId) ? _readyPlayers[roomId].Count : 0;
+                var canStart = participantCount >= 2 && roomQuery.Status == RoomStatus.Active;
+
+                return Results.Ok(new
+                {
+                    RoomId = roomId,
+                    Status = roomQuery.Status.ToString(),
+                    ParticipantCount = participantCount,
+                    ReadyCount = readyCount,
+                    CanStart = canStart,
+                    IsActive = roomQuery.Status == RoomStatus.Active,
+                    Message = canStart ? "Комната готова к началу игры" : "Недостаточно игроков для начала"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}");
+            }
+        })
+        .WithName("GetRoomStatus")
+        .WithSummary("Получение статуса комнаты")
+        .WithDescription("Возвращает текущий статус комнаты и информацию о готовности игроков")
+        .Produces(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound);
+    }
+
+    private static async Task HandleWebSocketConnection(
+        WebSocket webSocket, 
+        IMediator mediator, 
+        IConnectionManager connectionManager, 
+        HttpContext httpContext)
+    {
+        var playerId = GetUserIdFromContext(httpContext);
+        _sockets[playerId] = webSocket;
+        _lastActivity[playerId] = DateTime.UtcNow;
+        await connectionManager.AddConnection(playerId, webSocket.GetHashCode().ToString());
+
+        Console.WriteLine($"Player {playerId} connected. Total connections: {_sockets.Count}");
+
+        try
+        {
+            await SendMessage(webSocket, new
+            {
+                type = "connected",
+                playerId = playerId.ToString(),
+                message = "Подключение к серверу битв установлено"
+            });
+
+            var buffer = new byte[1024 * 4];
+            while (webSocket.State == WebSocketState.Open)
+            {
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                if (result.MessageType == WebSocketMessageType.Text)
+                {
+                    _lastActivity[playerId] = DateTime.UtcNow;
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    await ProcessMessage(playerId, message, mediator, connectionManager);
+                }
+                else if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    await HandleDisconnection(playerId, connectionManager, "Normal closure", mediator);
+                    break;
+                }
+            }
+        }
+        catch (WebSocketException ex) when (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+        {
+            await HandleDisconnection(playerId, connectionManager, "Connection closed prematurely", mediator);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"WebSocket error for player {playerId}: {ex.Message}");
+            await HandleDisconnection(playerId, connectionManager, $"Error: {ex.Message}", mediator);
+        }
+        finally
+        {
+            CleanupPlayer(playerId, connectionManager);
+        }
+    }
+
+    private static async Task ProcessMessage(
+        Guid playerId, 
+        string message, 
+        IMediator mediator, 
+        IConnectionManager connectionManager)
+    {
+        try
+        {
+            var json = JsonDocument.Parse(message);
+            var type = json.RootElement.GetProperty("type").GetString();
+
+            switch (type)
+            {
+                case "CreateRoom":
+                    await CreateRoom(playerId, 
+                        json.RootElement.GetProperty("roomName").GetString(),
+                        json.RootElement.GetProperty("languageId").GetGuid(),
+                        json.RootElement.GetProperty("difficulty").GetString(),
+                        mediator, 
+                        connectionManager);
+                    break;
+                case "JoinRoom":
+                    await JoinRoom(playerId, 
+                        json.RootElement.GetProperty("roomId").GetGuid(),
+                        mediator, 
+                        connectionManager);
+                    break;
+                case "LeaveRoom":
+                    await LeaveRoom(playerId,
+                        json.RootElement.GetProperty("roomId").GetGuid(),
+                        connectionManager,
+                        mediator);
+                    break;
+                case "SubmitCode":
+                    await SubmitCode(playerId,
+                        json.RootElement.GetProperty("roomId").GetGuid(),
+                        json.RootElement.GetProperty("code").GetString(),
+                        mediator,
+                        connectionManager);
+                    break;
+                case "PlayerReady":
+                    await SetPlayerReady(playerId,
+                        json.RootElement.GetProperty("roomId").GetGuid(),
+                        json.RootElement.GetProperty("isReady").GetBoolean(),
+                        mediator,
+                        connectionManager);
+                    break;
+                case "pong":
+                    _lastActivity[playerId] = DateTime.UtcNow;
+                    break;
+                default:
+                    await SendToPlayer(playerId, new { type = "error", message = $"Unknown message type: {type}" }, mediator);
+                    break;
+            }
+        }
+        catch (JsonException ex)
+        {
+            await SendToPlayer(playerId, new { type = "error", message = $"Invalid JSON format: {ex.Message}" }, mediator);
+        }
+        catch (Exception ex)
+        {
+            await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+        }
+    }
+    private static async void CleanupInactiveConnections(object state)
+     {
+         try
+         {
+             var now = DateTime.UtcNow;
+             var timeout = TimeSpan.FromMinutes(5); // 5 минут неактивности
+             var inactivePlayers = _lastActivity
+                 .Where(x => now - x.Value > timeout)
+                 .Select(x => x.Key)
+                 .ToList();
+
+             foreach (var playerId in inactivePlayers)
+             {
+                 Console.WriteLine($"Cleaning up inactive player: {playerId}");
+                 if (_sockets.TryGetValue(playerId, out var socket))
+                 {
+                     try
+                     {
+                         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, 
+                             "Inactive timeout", CancellationToken.None);
+                     }
+                     catch (Exception ex)
+                     {
+                         Console.WriteLine($"Error closing inactive socket for {playerId}: {ex.Message}");
+                     }
+                 }
+                 CleanupPlayer(playerId, new ConnectionManager());
+             }
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Error in cleanup timer: {ex.Message}");
+         }
+     }
+    
+   private static async Task LeaveRoom(
+        Guid playerId, 
+        Guid roomId, 
+        IConnectionManager connectionManager,
+        IMediator mediator)
+    {
+        try
+        {
+            await connectionManager.RemoveUserFromRoom(playerId, roomId);
+        
+            // Удаляем игрока из списка участников комнаты
+            if (_roomParticipants.TryGetValue(roomId, out var participants))
+            {
+                participants.Remove(playerId);
+            
+                // Удаляем из списка готовых игроков
+                if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
+                {
+                    readyPlayers.Remove(playerId);
+                }
+
+                // УЛУЧШЕНИЕ: Проверяем, остались ли игроки в комнате
+                if (participants.Count == 0)
+                {
+                    await CloseEmptyRoom(roomId, mediator);
+                }
+                else
+                {
+                    // Если игроки остались, отправляем обновленный статус
+                    await SendRoomStatus(roomId, mediator);
+                }
+            }
+
+            var command = new LeaveRoomCommand(roomId, playerId);
+            await mediator.Send(command);
+
+            await SendToPlayer(playerId, new
+            {
+                type = "left_room",
+                roomId = roomId,
+                message = $"Вы покинули комнату {roomId}"
+            }, mediator);
+
+            // Уведомляем остальных участников комнаты
+            await BroadcastToRoom(playerId, roomId, new
+            {
+                type = "player_left",
+                playerId = playerId.ToString(),
+                roomId = roomId,
+                participants = participants?.Count ?? 0,
+                message = $"Игрок покинул комнату. Осталось участников: {participants?.Count ?? 0}"
+            }, mediator);
+
+        }
+        catch (Exception ex)
+        {
+            await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Закрытие пустой комнаты
+    private static async Task CloseEmptyRoom(Guid roomId, IMediator mediator)
+    {
+        try
+        {
+            Console.WriteLine($"🟠 Closing empty room: {roomId}");
+
+            // Отправляем уведомление о закрытии комнаты (если есть кому отправлять)
+            await BroadcastToRoom(Guid.Empty, roomId, new
+            {
+                type = "room_closed",
+                roomId = roomId,
+                message = "Комната закрыта, так как все игроки покинули её",
+                reason = "no_players"
+            }, mediator);
+
+            // Закрываем комнату через медиатор
+            var closeCommand = new CloseRoom(roomId);
+            await mediator.Send(closeCommand);
+
+            // Очищаем данные комнаты
+            CleanupRoomData(roomId);
+
+            Console.WriteLine($"🟢 Room {roomId} successfully closed and cleaned up");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error closing room {roomId}: {ex.Message}");
+            // Даже при ошибке пытаемся очистить данные
+            CleanupRoomData(roomId);
+        }
+    }
+
+    // УЛУЧШЕННЫЙ МЕТОД: Очистка данных комнаты
+    private static void CleanupRoomData(Guid roomId)
+    {
+        try
+        {
+            // Удаляем комнату из всех словарей
+            _roomParticipants.TryRemove(roomId, out _);
+            _readyPlayers.TryRemove(roomId, out _);
+            _roomTasks.TryRemove(roomId, out _);
+            
+            // Останавливаем и удаляем таймер
+            if (_roomTimers.TryRemove(roomId, out var timer))
+            {
+                timer?.Dispose();
+            }
+            
+            Console.WriteLine($"🟠 Room {roomId} data cleaned up");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error cleaning up room {roomId} data: {ex.Message}");
+        }
+    }
+
+    private static async Task HandleDisconnection(Guid playerId, IConnectionManager connectionManager, string reason, IMediator mediator)
+    {
+        Console.WriteLine($"🟠 Player {playerId} disconnected. Reason: {reason}");
+        
+        try
+        {
+            await LeaveAllRooms(playerId, connectionManager, mediator);
+            
+            // Уведомляем о дисконнекте игрока
+            await BroadcastToAllRooms(playerId, new 
+            { 
+                type = "player_disconnected", 
+                playerId = playerId.ToString(),
+                reason = reason,
+                message = "Игрок отключился от сервера"
+            }, mediator);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error handling disconnection for player {playerId}: {ex.Message}");
+        }
+        finally
+        {
+            CleanupPlayer(playerId, connectionManager);
+        }
+    }
+
+    private static async Task LeaveAllRooms(Guid playerId, IConnectionManager connectionManager, IMediator mediator)
+    {
+        try
+        {
+            var userRooms = await connectionManager.GetUserRooms(playerId);
+            Console.WriteLine($"🟠 Player {playerId} leaving {userRooms.Count} rooms");
+
+            foreach (var roomId in userRooms)
+            {
+                try
+                {
+                    await connectionManager.RemoveUserFromRoom(playerId, roomId);
+                  
+                    var command = new LeaveRoomCommand(roomId, playerId);
+                    await mediator.Send(command);
+
+                    // УЛУЧШЕНИЕ: Используем обновленную логику для проверки пустых комнат
+                    if (_roomParticipants.TryGetValue(roomId, out var participants))
+                    {
+                        participants.Remove(playerId);
+                        
+                        if (participants.Count == 0)
+                        {
+                            await CloseEmptyRoom(roomId, mediator);
+                        }
+                        else
+                        {
+                            // Уведомляем оставшихся участников
+                            await BroadcastToRoom(playerId, roomId, new 
+                            { 
+                                type = "player_disconnected", 
+                                playerId = playerId.ToString(),
+                                participants = participants.Count,
+                                message = $"Игрок отключился. Осталось участников: {participants.Count}"
+                            }, mediator);
+                            
+                            // Обновляем статус комнаты
+                            await SendRoomStatus(roomId, mediator);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"🔴 Error leaving room {roomId} for player {playerId}: {ex.Message}");
+                }
+            }
+            
+            Console.WriteLine($"🟢 Player {playerId} successfully left all rooms");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error in LeaveAllRooms for player {playerId}: {ex.Message}");
+        }
+    }
+
+    // ... остальные методы без изменений ...
+
+    private static async Task BroadcastToAllRooms(Guid senderId, object message, IMediator mediator)
+    {
+        try
+        {
+            var userRooms = await new ConnectionManager().GetUserRooms(senderId);
+            Console.WriteLine($"🟠 Broadcasting to {userRooms.Count} rooms for player {senderId}");
+
+            var broadcastTasks = userRooms
+                .Select(roomId => BroadcastToRoom(senderId, roomId, message, mediator))
+                .ToList();
+
+            await Task.WhenAll(broadcastTasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error broadcasting to all rooms for player {senderId}: {ex.Message}");
+        }
+    }
+
+    // УЛУЧШЕНИЕ: В метод CleanupPlayer добавляем логику выхода из комнат
+    private static void CleanupPlayer(Guid playerId, IConnectionManager connectionManager)
+    {
+        try
+        {
+            _sockets.TryRemove(playerId, out _);
+            _lastActivity.TryRemove(playerId, out _);
+            
+            // Убеждаемся, что игрок удален из всех комнат
+            connectionManager.RemoveConnection(playerId, "cleanup").Wait();
+            
+            Console.WriteLine($"🟢 Player {playerId} cleaned up. Remaining connections: {_sockets.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"🔴 Error cleaning up player {playerId}: {ex.Message}");
+        }
+    } 
+private static async Task CreateRoom(
+    Guid playerId, 
+    string roomName, 
+    Guid languageId, 
+    string difficultyString,
+    IMediator mediator, 
+    IConnectionManager connectionManager)
+{
+    try
+    {
+        if (!Enum.TryParse<TaskDifficulty>(difficultyString, true, out var difficulty))
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "Invalid difficulty value. Use: Easy, Medium, or Hard" 
+            }, mediator);
+            return;
+        }
+
+        var command = new CreateRoomCommand(roomName, playerId, languageId, difficulty);
+        var result = await mediator.Send(command);
+
+        await connectionManager.AddUserToRoom(playerId, result.Id);
+        
+        _roomParticipants.AddOrUpdate(result.Id,
+            new List<Guid> { playerId },
+            (_, participants) =>
+            {
+                participants.Add(playerId);
+                return participants;
+            });
+
+        // Сохраняем задачу для комнаты
+        _roomTasks[result.Id] = result.TaskInfo;
+        Console.WriteLine($"Task saved for room {result.Id}: {result.TaskInfo.Title}");
+
+        // Инициализируем набор готовых игроков для комнаты
+        _readyPlayers[result.Id] = new HashSet<Guid>();
+
+        await SendToPlayer(playerId, new
+        {
+            type = "room_created",
+            roomId = result.Id,
+            roomName = roomName,
+            difficulty = difficulty.ToString(),
+            languageId = languageId,
+            status = "waiting",
+            taskTitle = result.TaskInfo?.Title ?? "No task assigned",
+            message = $"Комната '{roomName}' создана. Ожидаем второго игрока..."
+        }, mediator);
+
+        // Отправляем начальный статус комнаты
+        await SendRoomStatus(result.Id, mediator);
+    }
+    catch (Exception ex)
+    {
+        await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+    }
+}
+
+private static async Task JoinRoom(
+    Guid playerId, 
+    Guid roomId, 
+    IMediator mediator, 
+    IConnectionManager connectionManager)
+{
+    try
+    {
+        // Проверяем существование комнаты через медиатор
+        var roomQuery = await mediator.Send(new GetRoomQuery(roomId));
+        if (roomQuery == null)
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = $"Room {roomId} not found" 
+            }, mediator);
+            return;
+        }
+
+        var command = new JoinRoomCommand(roomId, playerId);
+        var result = await mediator.Send(command);
+        
+        await connectionManager.AddUserToRoom(playerId, roomId);
+        
+        _roomParticipants.AddOrUpdate(roomId,
+            new List<Guid> { playerId },
+            (_, participants) =>
+            {
+                if (!participants.Contains(playerId))
+                    participants.Add(playerId);
+                return participants;
+            });
+
+        // Инициализируем набор готовых игроков если его нет
+        _readyPlayers.TryAdd(roomId, new HashSet<Guid>());
+
+        await SendToPlayer(playerId, new
+        {
+            type = "joined_room",
+            roomId = roomId,
+            roomName = roomQuery.Name,
+            status = roomQuery.Status.ToString(),
+            message = $"Вы присоединились к комнате {roomQuery.Name}",
+            participants = _roomParticipants[roomId].Count,
+
+            canStart = _roomParticipants[roomId].Count >= 2
+        }, mediator);
+
+        // Уведомляем других участников комнаты
+        await BroadcastToRoom(playerId, roomId, new
+        {
+            type = "player_joined",
+            playerId = playerId.ToString(),
+            roomId = roomId,
+            participants = _roomParticipants[roomId].Count,
+            roomStatus = roomQuery.Status.ToString()
+        }, mediator);
+
+        // Отправляем обновленный статус комнаты всем участникам
+        await SendRoomStatus(roomId, mediator);
+
+        // ИСПРАВЛЕНО: Проверяем готовность на основе данных в памяти
+        if (_roomParticipants[roomId].Count >= 2)
+        {
+            await BroadcastToRoom(Guid.Empty, roomId, new
+            {
+                type = "game_can_start",
+                roomId = roomId,
+                message = "Комната заполнена! Подтвердите готовность в течение 10 секунд.",
+                countdown = 10
+            }, mediator);
+
+            // Запускаем таймер ожидания готовности
+            StartReadinessTimer(roomId, mediator);
+        }
+    }
+    catch (Exception ex)
+    {
+        await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+    }
+}
+private static async Task SubmitCode(
+    Guid playerId, 
+    Guid roomId, 
+    string code, 
+    IMediator mediator,
+    IConnectionManager connectionManager)
+{
+    try
+    {
+        // Получаем информацию о комнате чтобы получить language
+        var roomQuery = await mediator.Send(new GetRoomQuery(roomId));
+        if (roomQuery == null)
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "Room not found" 
+            }, mediator);
+            return;
+        }
+
+        // Получаем сохраненную задачу для комнаты
+        if (!_roomTasks.TryGetValue(roomId, out var taskInfo))
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "No task assigned to this room" 
+            }, mediator);
+            return;
+        }
+        
+
+        var command = new SubmitCodeCommand(
+            roomId, 
+            playerId, 
+            taskInfo, 
+            code
+        );
+        
+        var result = await mediator.Send(command);
+        
+        // Сначала отправляем подтверждение отправки
+        await SendToPlayer(playerId, new
+        {
+            type = "code_submitted",
+            roomId = roomId,
+            problemId = taskInfo.Id,
+            taskTitle = taskInfo.Title,
+            message = "Код отправлен на проверку"
+        }, mediator);
+
+        // Уведомляем других участников комнаты
+        await BroadcastToRoom(playerId, roomId, new
+        {
+            type = "code_submitted_by_player",
+            playerId = playerId.ToString(),
+            problemId = taskInfo.Id,
+            taskTitle = taskInfo.Title,
+            roomId = roomId
+        }, mediator);
+
+        // Отправляем результат проверки
+        if (result != null)
+        {
+            Console.WriteLine($"🟢 [SubmitCode] Sending code result: Status={result.Status}, Passed={result.PassedTests}/{result.TotalTests}");
+            
+            await SendToPlayer(playerId, new
+            {
+                type = "code_result",
+                roomId = roomId,
+                problemId = taskInfo.Id,
+                taskTitle = taskInfo.Title,
+                result = new
+                {
+                    status = result.Status.ToString(),
+                    passedTests = result.PassedTests,
+                    totalTests = result.TotalTests,
+                    executionTime = result.ExecutionTime?.TotalMilliseconds ?? 0,
+                    successRate = result.SuccessRate,
+                    statusMessage = result.Status,
+                    testResults = result.TestResults.Select(tr => new {
+                        status = tr.Status,
+                        input = tr.Input,
+                        expectedOutput = tr.ExpectedOutput,
+                        actualOutput = tr.ActualOutput,
+                        errorMessage = tr.ErrorMessage,
+                        executionTime = tr.ExecutionTime.TotalMilliseconds
+                    }).ToList()
+                }
+            }, mediator);
+            if (result.Status == TestStatus.Passed && result.PassedTests == result.TotalTests)
+            {
+                await HandlePlayerWin(playerId, roomId, taskInfo, mediator);
+            }
+        }
+        else
+        {
+            Console.WriteLine("🔴 [SubmitCode] Result is null!");
+            await SendToPlayer(playerId, new
+            {
+                type = "error",
+                message = "No result returned from code execution"
+            }, mediator);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"🔴 [SubmitCode] Error: {ex.Message}");
+        await SendToPlayer(playerId, new { 
+            type = "error", 
+            message = $"Code submission failed: {ex.Message}" 
+        }, mediator);
+    }
+}
+
+private static async Task HandlePlayerWin(Guid winnerId, Guid roomId, TaskInfo taskInfo, IMediator mediator)
+{
+    try
+    {
+        Console.WriteLine($"🎉 Player {winnerId} won the battle in room {roomId}!");
+
+        if (!_roomParticipants.TryGetValue(roomId, out var participants))
+        {
+            Console.WriteLine($"❌ No participants found for room {roomId}");
+            return;
+        }
+
+        // 1. Сначала получаем имя победителя для оппонентов
+        var winnerName = "Winner"; // Замените на реальное имя победителя если есть
+        
+        // 2. Создаем задачи для обработки результатов БЕЗ параллельного выполнения через DbContext
+        var battleResults = new List<(Guid participantId, bool isWinner)>();
+
+        // Сначала собираем все данные
+        foreach (var participantId in participants)
+        {
+            bool isWinner = participantId == winnerId;
+            battleResults.Add((participantId, isWinner));
+        }
+
+        // 3. Выполняем последовательно для избежания конфликтов DbContext
+        foreach (var (participantId, isWinner) in battleResults)
+        {
+            try
+            {
+                var userStatsCommand = new SubmitUserStatsCommand(
+                    participantId,
+                    isWinner,
+                    taskInfo,
+                    new TimeSpan(0, 0, 2, 0), // Пример: 2 минуты
+                    roomId, // Используем roomId как battleId
+                    isWinner ? "Opponent" : winnerName
+                );
+                
+                // ВАЖНО: Выполняем последовательно с await
+                await mediator.Send(userStatsCommand);
+                Console.WriteLine($"✅ Battle result saved for player {participantId}, winner: {isWinner}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error saving battle result for player {participantId}: {ex.Message}");
+            }
+        }
+
+        Console.WriteLine($"✅ All battle results processed for room {roomId}");
+
+        // 4. Отправляем уведомления
+        var notificationTasks = new List<Task>();
+        
+        // Уведомляем победителя
+        notificationTasks.Add(SendToPlayer(winnerId, new
+        {
+            type = "battle_won",
+            roomId = roomId,
+            taskTitle = taskInfo.Title,
+            message = "🎉 Поздравляем! Вы выиграли битву!",
+            winnerId = winnerId.ToString(),
+            timestamp = DateTime.UtcNow
+        }, mediator));
+
+        // Уведомляем всех участников комнаты о победе
+        notificationTasks.Add(BroadcastToRoom(winnerId, roomId, new
+        {
+            type = "battle_finished",
+            roomId = roomId,
+            winnerId = winnerId.ToString(),
+            taskTitle = taskInfo.Title,
+            message = $"Игрок {winnerId} выиграл битву!",
+            timestamp = DateTime.UtcNow
+        }, mediator));
+
+        // Уведомления проигравшим
+        foreach (var participantId in participants.Where(p => p != winnerId))
+        {
+            notificationTasks.Add(SendToPlayer(participantId, new
+            {
+                type = "battle_lost",
+                roomId = roomId,
+                taskTitle = taskInfo.Title,
+                message = "К сожалению, вы проиграли эту битву.",
+                winnerId = winnerId.ToString(),
+                timestamp = DateTime.UtcNow
+            }, mediator));
+        }
+
+        // Ждем завершения всех уведомлений
+        await Task.WhenAll(notificationTasks);
+
+        // 5. Закрываем комнату через отдельную команду
+        try
+        {
+            var commandCompleted = new CloseRoom(roomId);
+            await mediator.Send(commandCompleted);
+            Console.WriteLine($"✅ Room {roomId} closed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error closing room {roomId}: {ex.Message}");
+        }
+
+        // 6. Очищаем данные комнаты в конце
+        CleanupRoom(roomId);
+
+        Console.WriteLine($"✅ Battle in room {roomId} finished. Winner: {winnerId}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error handling player win: {ex.Message}");
+        // Очищаем комнату даже при ошибке
+        CleanupRoom(roomId);
+    }
+}
+private static void CleanupRoom(Guid roomId)
+{
+    try
+    {
+        // Удаляем комнату из всех словарей
+        _roomParticipants.TryRemove(roomId, out _);
+        _readyPlayers.TryRemove(roomId, out _);
+        _roomTasks.TryRemove(roomId, out _);
+        
+        // Останавливаем и удаляем таймер
+        if (_roomTimers.TryRemove(roomId, out var timer))
+        {
+            timer?.Dispose();
+        }
+        
+        Console.WriteLine($"Room {roomId} cleaned up after battle completion");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error cleaning up room {roomId}: {ex.Message}");
+    }
+}
+private static async Task SetPlayerReady(
+    Guid playerId, 
+    Guid roomId, 
+    bool isReady,
+    IMediator mediator,
+    IConnectionManager connectionManager)
+{
+    try
+    {
+        if (!_roomParticipants.ContainsKey(roomId))
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "Room not found" 
+            }, mediator);
+            return;
+        }
+
+        if (!_roomParticipants[roomId].Contains(playerId))
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "You are not in this room" 
+            }, mediator);
+            return;
+        }
+
+        
+        var participantCount = _roomParticipants[roomId].Count;
+        var canStart = participantCount >= 2;
+        
+        if (!canStart)
+        {
+            await SendToPlayer(playerId, new { 
+                type = "error", 
+                message = "Not enough players to start the game" 
+            }, mediator);
+            return;
+        }
+
+        if (isReady)
+        {
+            _readyPlayers[roomId].Add(playerId);
+            await SendToPlayer(playerId, new
+            {
+                type = "player_ready_set",
+                roomId = roomId,
+                isReady = true,
+                message = "Вы подтвердили готовность"
+            }, mediator);
+        }
+        else
+        {
+            _readyPlayers[roomId].Remove(playerId);
+            await SendToPlayer(playerId, new
+            {
+                type = "player_ready_set",
+                roomId = roomId,
+                isReady = false,
+                message = "Вы отменили готовность"
+            }, mediator);
+        }
+
+        // Уведомляем всех о изменении статуса готовности
+        await BroadcastToRoom(playerId, roomId, new
+        {
+            type = "player_ready_changed",
+            playerId = playerId.ToString(),
+            roomId = roomId,
+            isReady = isReady,
+            readyCount = _readyPlayers[roomId].Count,
+            totalPlayers = _roomParticipants[roomId].Count
+        }, mediator);
+
+        
+        if (_readyPlayers[roomId].Count == _roomParticipants[roomId].Count && 
+            _roomParticipants[roomId].Count >= 2)
+        {
+            await StartGame(roomId, mediator);
+        }
+        
+        
+        if (_readyPlayers[roomId].Count > 0)
+        {
+            StartReadinessTimer(roomId, mediator);
+        }
+    }
+    catch (Exception ex)
+    {
+        await SendToPlayer(playerId, new { type = "error", message = ex.Message }, mediator);
+    }
+}
+
+   
+    private static void StartReadinessTimer(Guid roomId, IMediator mediator)
+    {
+        
+        if (_roomTimers.TryRemove(roomId, out var oldTimer))
+        {
+            oldTimer?.Dispose();
+        }
+
+        var timer = new Timer(async _ =>
+        {
+            await CheckReadinessTimeout(roomId, mediator);
+        }, null, TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
+
+        _roomTimers[roomId] = timer;
+
+        Console.WriteLine($"Started readiness timer for room {roomId}");
+    }
+
+    private static async Task CheckReadinessTimeout(Guid roomId, IMediator mediator)
+    {
+        try
+        {
+            if (_roomParticipants.TryGetValue(roomId, out var participants) &&
+                _readyPlayers.TryGetValue(roomId, out var readyPlayers))
+            {
+                if (readyPlayers.Count == participants.Count && participants.Count >= 2)
+                {
+                   
+                    await StartGame(roomId, mediator);
+                }
+                else
+                {
+                   
+                    await BroadcastToRoom(Guid.Empty, roomId, new
+                    {
+                        type = "readiness_timeout",
+                        roomId = roomId,
+                        message = "Время ожидания истекло. Не все игроки подтвердили готовность.",
+                        readyCount = readyPlayers.Count,
+                        totalPlayers = participants.Count
+                    }, mediator);
+
+                  
+                    readyPlayers.Clear();
+                }
+
+                
+                _roomTimers.TryRemove(roomId, out _);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in readiness timeout for room {roomId}: {ex.Message}");
+        }
+    }
+
+    private static async Task StartGame(Guid roomId, IMediator mediator)
+    {
+        try
+        {
+            await BroadcastToRoom(Guid.Empty, roomId, new
+            {
+                type = "game_started",
+                roomId = roomId,
+                message = "Игра началась! У вас есть 30 минут на решение задачи.",
+                startTime = DateTime.UtcNow,
+                duration = 1800 // 30 минут в секундах
+            }, mediator);
+
+            
+            if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
+            {
+                readyPlayers.Clear();
+            }
+
+            
+            if (_roomTimers.TryRemove(roomId, out var timer))
+            {
+                timer?.Dispose();
+            }
+
+            Console.WriteLine($"Game started in room {roomId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting game in room {roomId}: {ex.Message}");
+        }
+    }
+
+    private static async Task SendRoomStatus(Guid roomId, IMediator mediator)
+    {
+        try
+        {
+            var roomQuery = await mediator.Send(new GetRoomQuery(roomId));
+            if (roomQuery == null) return;
+
+            var participantCount = _roomParticipants.ContainsKey(roomId) ? _roomParticipants[roomId].Count : 0;
+            var readyCount = _readyPlayers.ContainsKey(roomId) ? _readyPlayers[roomId].Count : 0;
+            var canStart = participantCount >= 2 && roomQuery.Status == RoomStatus.Active;
+
+            var statusMessage = new
+            {
+                type = "room_status",
+                roomId = roomId,
+                status = roomQuery.Status.ToString(),
+                participantCount = participantCount,
+                readyCount = readyCount,
+                canStart = canStart,
+                isActive = roomQuery.Status == RoomStatus.Active
+            };
+
+            await BroadcastToRoom(Guid.Empty, roomId, statusMessage, mediator);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending room status for {roomId}: {ex.Message}");
+        }
+    }
+
+
+
+
+    private static async Task SendToPlayer(Guid playerId, object message, IMediator mediator)
+    {
+        if (_sockets.TryGetValue(playerId, out var webSocket) && webSocket.State == WebSocketState.Open)
+        {
+            try
+            {
+                await SendMessage(webSocket, message);
+            }
+            catch (WebSocketException ex)
+            {
+                Console.WriteLine($"WebSocket exception when sending to {playerId}: {ex.Message}");
+                await HandleDisconnection(playerId, new ConnectionManager(), "Send failed", mediator);
+            }
+        }
+    }
+
+    private static async Task BroadcastToRoom(Guid senderId, Guid roomId, object message, IMediator mediator)
+    {
+        if (_roomParticipants.TryGetValue(roomId, out var participants))
+        {
+            var tasks = participants
+                .Where(participantId => participantId != senderId)
+                .Select(participantId => SendToPlayer(participantId, message, mediator))
+                .ToList();
+
+            await Task.WhenAll(tasks);
+        }
+    }
+
+    private static async Task SendMessage(WebSocket webSocket, object message)
+    {
+        var json = JsonSerializer.Serialize(message);
+        var bytes = Encoding.UTF8.GetBytes(json);
+        await webSocket.SendAsync(new ArraySegment<byte>(bytes), 
+            WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+private static Guid GetUserIdFromContext(HttpContext context)
+{
+    // Проверяем аутентификацию
+    if (!context.User.Identity?.IsAuthenticated ?? true)
+    {
+        // Для тестирования - генерируем test ID
+        Console.WriteLine("⚠️ User not authenticated. Using test user ID.");
+        var testUserId = Guid.NewGuid();
+        return testUserId;
+    }
+
+    // Получаем userId из claims
+    var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                      ?? context.User.FindFirst("sub")?.Value
+                      ?? context.User.FindFirst("userId")?.Value
+                      ?? context.User.FindFirst(ClaimTypes.Name)?.Value; // Email как fallback
+
+    if (string.IsNullOrEmpty(userIdClaim))
+    {
+        // Логируем все доступные claims для отладки
+        var allClaims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}");
+        Console.WriteLine($"⚠️ User authenticated but no userId claim found. Claims: {string.Join(", ", allClaims)}");
+        
+        // Для тестирования - используем email как ID
+        var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
+        if (!string.IsNullOrEmpty(email))
+        {
+            // Генерируем стабильный Guid из email
+            var testId = Guid.Parse(email.GetHashCode().ToString("X").PadLeft(32, '0').Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-"));
+            Console.WriteLine($"⚠️ Using email-based test ID: {testId} from email: {email}");
+            return testId;
+        }
+        
+        throw new UnauthorizedAccessException("User ID not found in claims");
+    }
+
+    if (Guid.TryParse(userIdClaim, out var userId))
+    {
+        Console.WriteLine($"✅ User authenticated with ID: {userId}");
+        return userId;
+    }
+    
+    // Если userId не Guid (например, строка), конвертируем
+    var stableGuid = Guid.Parse(userIdClaim.GetHashCode().ToString("X").PadLeft(32, '0').Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-"));
+    Console.WriteLine($"⚠️ User ID is not GUID format. Converted '{userIdClaim}' to stable GUID: {stableGuid}");
+    
+    return stableGuid;
+}
+}

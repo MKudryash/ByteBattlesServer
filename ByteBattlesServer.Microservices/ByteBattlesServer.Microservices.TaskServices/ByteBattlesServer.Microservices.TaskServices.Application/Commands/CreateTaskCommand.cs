@@ -9,6 +9,9 @@ string Description ,
 string Difficulty ,
 string Author,
 string FunctionName,
-string InputParameters,
-string OutputParameters ,
-List<Guid> LanguageIds):IRequest<TaskDto>;
+string PatternMain,
+string PatternFunction ,
+string Parameters,
+string ReturnType,
+List<Guid> LanguageIds,
+List<Guid> LibrariesIds):IRequest<TaskDto>;

@@ -103,8 +103,8 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(100)")
                         .HasColumnName("opponent_name");
 
-                    b.Property<int>("ProblemSolved")
-                        .HasColumnType("integer")
+                    b.Property<Guid>("ProblemSolved")
+                        .HasColumnType("uuid")
                         .HasColumnName("problems_solved");
 
                     b.Property<string>("Result")
@@ -121,12 +121,157 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                     b.HasIndex("BattleDate");
 
-                    b.HasIndex("BattleId")
-                        .IsUnique();
+                    b.HasIndex("BattleId");
 
                     b.HasIndex("UserProfileId");
 
                     b.ToTable("battle_results", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("ExperienceGained")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("experience_gained");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("recent_activities", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentProblem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("difficulty");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("language");
+
+                    b.Property<Guid>("ProblemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("problem_id");
+
+                    b.Property<DateTime>("SolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("solved_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Difficulty");
+
+                    b.HasIndex("ProblemId");
+
+                    b.HasIndex("SolvedAt");
+
+                    b.HasIndex("UserProfileId");
+
+                    b.ToTable("recent_problems", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.TeacherStats", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ActiveStudents")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("active_students");
+
+                    b.Property<double>("AverageRating")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3, 2)
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(0.0)
+                        .HasColumnName("average_rating");
+
+                    b.Property<int>("CreatedTasks")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("created_tasks");
+
+                    b.Property<int>("TotalSubmissions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_submissions");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("teacher_stats", (string)null);
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserAchievement", b =>
@@ -184,6 +329,11 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
                     b.Property<string>("GitHubUrl")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -204,6 +354,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(200)")
                         .HasColumnName("linkedin_url");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("Role");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -222,9 +378,15 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("Email");
+
                     b.HasIndex("IsPublic");
 
                     b.HasIndex("Level");
+
+                    b.HasIndex("Role")
+                        .HasDatabaseName("ix_user_profiles_role_teacher")
+                        .HasFilter("\"Role\" = 'Teacher'");
 
                     b.HasIndex("UpdatedAt");
 
@@ -236,6 +398,174 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.ToTable("user_profiles", (string)null);
                 });
 
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AchievementNotifications")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("achievement_notifications");
+
+                    b.Property<bool>("BattleInvitations")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("battle_invitations");
+
+                    b.Property<string>("CodeEditorTheme")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("vs-light")
+                        .HasColumnName("code_editor_theme");
+
+                    b.Property<bool>("EmailNotifications")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("email_notifications");
+
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("csharp")
+                        .HasColumnName("preferred_language");
+
+                    b.Property<string>("Theme")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("light")
+                        .HasColumnName("theme");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("user_settings", (string)null);
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserStats", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CurrentStreak")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("current_streak");
+
+                    b.Property<int>("Draws")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("draws");
+
+                    b.Property<int>("EasyProblemsSolved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("easy_problems_solved");
+
+                    b.Property<int>("HardProblemsSolved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("hard_problems_solved");
+
+                    b.Property<int>("Losses")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("losses");
+
+                    b.Property<int>("MaxStreak")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("max_streak");
+
+                    b.Property<int>("MediumProblemsSolved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("medium_problems_solved");
+
+                    b.Property<string>("SolvedTaskIds")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SuccessfulSubmissions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("successful_submissions");
+
+                    b.Property<int>("TotalBattles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_battles");
+
+                    b.Property<long>("TotalExecutionTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L)
+                        .HasColumnName("total_execution_time");
+
+                    b.Property<int>("TotalExperience")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_experience");
+
+                    b.Property<int>("TotalProblemsSolved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_problems_solved");
+
+                    b.Property<int>("TotalSubmissions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_submissions");
+
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_profile_id");
+
+                    b.Property<int>("Wins")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("wins");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("user_stats", (string)null);
+                });
+
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.BattleResult", b =>
                 {
                     b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
@@ -243,6 +573,38 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentActivity", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("RecentActivities")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.RecentProblem", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithMany("RecentProblems")
+                        .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.TeacherStats", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithOne("TeacherStats")
+                        .HasForeignKey("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.TeacherStats", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("UserProfile");
                 });
@@ -266,169 +628,24 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", b =>
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserSettings", b =>
                 {
-                    b.OwnsOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserSettings", "Settings", b1 =>
-                        {
-                            b1.Property<Guid>("UserProfileId")
-                                .HasColumnType("uuid");
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithOne("Settings")
+                        .HasForeignKey("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserSettings", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                            b1.Property<bool>("AchievementNotifications")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("boolean")
-                                .HasDefaultValue(true)
-                                .HasColumnName("achievement_notifications");
+                    b.Navigation("UserProfile");
+                });
 
-                            b1.Property<bool>("BattleInvitations")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("boolean")
-                                .HasDefaultValue(true)
-                                .HasColumnName("battle_invitations");
+            modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserStats", b =>
+                {
+                    b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
+                        .WithOne("Stats")
+                        .HasForeignKey("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserStats", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                            b1.Property<string>("CodeEditorTheme")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasDefaultValue("vs-light")
-                                .HasColumnName("code_editor_theme");
-
-                            b1.Property<bool>("EmailNotifications")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("boolean")
-                                .HasDefaultValue(true)
-                                .HasColumnName("email_notifications");
-
-                            b1.Property<string>("PreferredLanguage")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasDefaultValue("csharp")
-                                .HasColumnName("preferred_language");
-
-                            b1.Property<string>("Theme")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasDefaultValue("light")
-                                .HasColumnName("theme");
-
-                            b1.HasKey("UserProfileId");
-
-                            b1.ToTable("user_profiles");
-
-                            b1.WithOwner()
-                                .HasForeignKey("UserProfileId");
-                        });
-
-                    b.OwnsOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserStats", "Stats", b1 =>
-                        {
-                            b1.Property<Guid>("UserProfileId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("CurrentStreak")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("current_streak");
-
-                            b1.Property<int>("Draws")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("draws");
-
-                            b1.Property<int>("EasyProblemsSolved")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("easy_problems_solved");
-
-                            b1.Property<int>("HardProblemsSolved")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("hard_problems_solved");
-
-                            b1.Property<int>("Losses")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("losses");
-
-                            b1.Property<int>("MaxStreak")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("max_streak");
-
-                            b1.Property<int>("MediumProblemsSolved")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("medium_problems_solved");
-
-                            b1.Property<string>("SolvedTaskIds")
-                                .HasColumnType("text")
-                                .HasColumnName("solved_task_ids");
-
-                            b1.Property<int>("SuccessfulSubmissions")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("successful_submissions");
-
-                            b1.Property<int>("TotalBattles")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("total_battles");
-
-                            b1.Property<long>("TotalExecutionTime")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("bigint")
-                                .HasDefaultValue(0L)
-                                .HasColumnName("total_execution_time");
-
-                            b1.Property<int>("TotalExperience")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("total_experience");
-
-                            b1.Property<int>("TotalProblemsSolved")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("total_problems_solved");
-
-                            b1.Property<int>("TotalSubmissions")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("total_submissions");
-
-                            b1.Property<int>("Wins")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(0)
-                                .HasColumnName("wins");
-
-                            b1.HasKey("UserProfileId");
-
-                            b1.ToTable("user_stats", (string)null);
-
-                            b1.WithOwner()
-                                .HasForeignKey("UserProfileId");
-                        });
-
-                    b.Navigation("Settings")
-                        .IsRequired();
-
-                    b.Navigation("Stats")
-                        .IsRequired();
+                    b.Navigation("UserProfile");
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", b =>
@@ -436,6 +653,19 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.Navigation("Achievements");
 
                     b.Navigation("BattleHistory");
+
+                    b.Navigation("RecentActivities");
+
+                    b.Navigation("RecentProblems");
+
+                    b.Navigation("Settings")
+                        .IsRequired();
+
+                    b.Navigation("Stats")
+                        .IsRequired();
+
+                    b.Navigation("TeacherStats")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

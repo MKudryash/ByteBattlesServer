@@ -49,7 +49,7 @@ public class UserStatsEventHandler : BackgroundService
     private async Task HandleUserStatsEvent(UserStatsIntegrationEvent arg)
     {
         _logger.LogInformation("🟣 [UserProfile] Received user stats update for user: {UserId}, successful: {IsSuccessful}", 
-            arg.UserId, arg.isSuccessful);
+            arg.UserId, arg.IsSuccessful);
 
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -57,31 +57,27 @@ public class UserStatsEventHandler : BackgroundService
         try
         {
             var command = new UpdateUserStatsCommand(
-                arg.UserId, 
-                arg.isSuccessful, 
-                arg.difficulty, 
-                arg.executionTime, 
-                arg.taskId);
+                arg.UserId,
+                arg.IsSuccessful,
+                arg.Difficulty,
+                arg.ExecutionTime,
+                arg.TaskId,
+                arg.ProblemTitle,
+                arg.Language,
+                arg.ActivityType,
+                arg.BattleId,
+                arg.BattleOponent
+                );
 
             var result = await mediator.Send(command);
 
             _logger.LogInformation("🟢 [UserProfile] Successfully updated stats for user: {UserId}, total solved: {TotalSolved}", 
-                arg.UserId, result.Stats.TotalProblemsSolved);
+                arg.UserId, 0);
 
             // Публикация события о обновлении профиля
             var profileUpdatedEvent = new UserStatsUpdateIntegrationEvent
             {
-                UserId = arg.UserId,
-                TotalProblemsSolved = result.Stats.TotalProblemsSolved,
-                TotalBattles = result.Stats.TotalBattles,
-                Wins = result.Stats.Wins,
-                Losses = result.Stats.Losses,
-                Draws = result.Stats.Draws,
-                CurrentStreak = result.Stats.CurrentStreak,
-                MaxStreak = result.Stats.MaxStreak,
-                TotalExperience = result.Stats.TotalExperience,
-                WinRate = result.Stats.WinRate,
-                ExperienceToNextLevel = result.Stats.ExperienceToNextLevel,
+                UserId = arg.UserId
             };
 
             _messageBus.Publish(

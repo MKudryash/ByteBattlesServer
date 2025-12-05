@@ -7,7 +7,11 @@ public class CreateTaskDto
     public string Difficulty { get; set; }
     public string Author { get; set; }
     public string FunctionName { get; set; }
-    public string InputParameters { get; set; }
-    public string OutputParameters{ get; set; }
+    public string PatternMain { get; set; }
+    public string PatternFunction{ get; set; }
+    
+    public string Parameters { get; set; }
+    public string ReturnType { get; set; }
     public List<Guid> LanguageId { get; set; }
+    public List<Guid> LibraryId { get; set; }
 }

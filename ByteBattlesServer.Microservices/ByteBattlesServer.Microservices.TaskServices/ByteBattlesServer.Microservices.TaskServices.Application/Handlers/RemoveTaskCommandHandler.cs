@@ -29,10 +29,22 @@ public class RemoveTaskCommandHandler : IRequestHandler<RemoveTaskCommand, Delet
         foreach (var language in taskLanguage)
         {
             _repository.RemoveTaskLanguage(language);
+        }  
+        
+        var taskLibrary = await _repository.GetTaskLibraryAsync(task.Id);
+        foreach (var library in taskLibrary)
+        {
+            _repository.RemoveTaskLibrary(library);
+        }
+        
+        var testCases = await _repository.GetTestCasesAsync(request.TaskId);
+        foreach (var testCase in testCases)
+        {
+           await _repository.RemoveTestCaseAsync(testCase);
         }
 
-        _repository.Delete(task);
-        _unitOfWork.SaveChangesAsync();
+        await _repository.Delete(task);
+       await _unitOfWork.SaveChangesAsync();
 
         return new DeleteResponseDto("Task deleted successfully");
     }

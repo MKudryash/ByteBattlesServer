@@ -107,30 +107,30 @@
                 Фильтры задач
               </h3>
               <div>
-              <button
-                  @click="resetFilters"
-                  class="btn-text btn-sm reset-filters-btn"
-                  :disabled="!hasActiveFilters"
-              >
+                <button
+                    @click="resetFilters"
+                    class="btn-text btn-sm reset-filters-btn"
+                    :disabled="!hasActiveFilters"
+                >
 
-                Сбросить
-              </button>
-              <div class="view-controls">
-                <button
-                    @click="viewMode = 'grid'"
-                    :class="['view-btn', { 'active': viewMode === 'grid' }]"
-                    title="Сетка"
-                >
-                  <span class="btn-icon">⏹️</span>
+                  Сбросить
                 </button>
-                <button
-                    @click="viewMode = 'list'"
-                    :class="['view-btn', { 'active': viewMode === 'list' }]"
-                    title="Список"
-                >
-                  <span class="btn-icon">📋</span>
-                </button>
-              </div>
+                <div class="view-controls">
+                  <button
+                      @click="viewMode = 'grid'"
+                      :class="['view-btn', { 'active': viewMode === 'grid' }]"
+                      title="Сетка"
+                  >
+                    <span class="btn-icon">⏹️</span>
+                  </button>
+                  <button
+                      @click="viewMode = 'list'"
+                      :class="['view-btn', { 'active': viewMode === 'list' }]"
+                      title="Список"
+                  >
+                    <span class="btn-icon">📋</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -242,8 +242,6 @@
           </div>
 
 
-
-
           <!-- Список задач -->
           <div class="tasks-container">
             <div :class="['tasks-grid', viewMode]">
@@ -259,9 +257,9 @@
                       {{ getDifficultyLabel(task.difficulty) }}
                     </span>
                     <span class="task-language">
-                      <span class="lang-icon">{{ getLanguageIcon(task.language) }}</span>
-                      {{ task.language }}
-                    </span>
+  <span class="lang-icon">{{ getLanguageIcon(task.language) }}</span>
+  {{ task.language }}
+</span>
                     <span class="task-category" v-if="task.category">
                       {{ getCategoryLabel(task.category) }}
                     </span>
@@ -271,7 +269,7 @@
                       Решена
                     </span>
                     <button
-                        v-if="task.isAuthor || userRole === 'teacher'"
+                        v-if="task.isAuthor || userRole === ''"
                         @click="editTask(task.id)"
                         class="btn-text btn-sm"
                         title="Редактировать"
@@ -286,19 +284,19 @@
 
                 <div class="task-stats">
                   <div class="stat">
-                    <span class="stat-icon">✅</span>
+                    <span class="stat-icon">⭐</span>
                     <span class="stat-value">{{ task.completedCount }}</span>
-                    <span class="stat-label">решили</span>
+                    <span class="stat-label">решали</span>
                   </div>
                   <div class="stat">
-                    <span class="stat-icon">⭐</span>
-                    <span class="stat-value">{{ task.rating }}/5</span>
-                    <span class="stat-label">рейтинг</span>
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-value">{{ task.SuccessfulAttempts }}</span>
+                    <span class="stat-label">Успешные попытки</span>
                   </div>
                   <div class="stat">
                     <span class="stat-icon">⏱️</span>
-                    <span class="stat-value">{{ task.avgTime }}м</span>
-                    <span class="stat-label">время</span>
+                    <span class="stat-value">{{ task.AverageExecutionTime }}м</span>
+                    <span class="stat-label">Среднее время выполнения</span>
                   </div>
                 </div>
 
@@ -419,6 +417,7 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
+import {languageAPI, taskAPI} from '../api/task.js'
 
 export default {
   name: 'TaskList',
@@ -436,111 +435,28 @@ export default {
       searchTerm: '',
       currentPage: 1,
       pageSize: 12,
-      userRole: 'student', // или 'teacher'
+      isAuthor: false,
+      userRole: 'teacher', // или 'teacher'
 
-      tasks: [
-        {
-          id: 1,
-          title: 'Сумма элементов массива',
-          description: 'Напишите функцию для вычисления суммы всех элементов массива целых чисел. Функция должна обрабатывать пустые массивы и возвращать 0 в этом случае.',
-          difficulty: 'easy',
-          language: 'Python',
-          category: 'algorithms',
-          tags: ['массивы', 'сумма', 'базовые', 'циклы'],
-          completedCount: 156,
-          rating: 4.2,
-          avgTime: 15,
-          isSolved: true,
-          isFeatured: false,
-          isAuthor: false,
-          author: { name: 'Иван Петров' }
-        },
-        {
-          id: 2,
-          title: 'Поиск в глубину для графа',
-          description: 'Реализуйте алгоритм поиска в глубину (DFS) для обхода графа, представленного в виде списка смежности.',
-          difficulty: 'medium',
-          language: 'Java',
-          category: 'algorithms',
-          tags: ['графы', 'поиск', 'рекурсия', 'алгоритмы'],
-          completedCount: 89,
-          rating: 4.5,
-          avgTime: 45,
-          isSolved: false,
-          isFeatured: true,
-          isAuthor: true,
-          author: { name: 'Мария Иванова' }
-        },
-        {
-          id: 3,
-          title: 'Оптимизация SQL запросов',
-          description: 'Проанализируйте и оптимизируйте данные SQL запросы для улучшения производительности базы данных.',
-          difficulty: 'hard',
-          language: 'SQL',
-          category: 'databases',
-          tags: ['sql', 'оптимизация', 'базы данных', 'индексы'],
-          completedCount: 34,
-          rating: 4.8,
-          avgTime: 90,
-          isSolved: false,
-          isFeatured: false,
-          isAuthor: false,
-          author: { name: 'Алексей Сидоров' }
-        },
-        {
-          id: 4,
-          title: 'Реализация связного списка',
-          description: 'Создайте класс для односвязного списка с методами добавления, удаления и поиска элементов.',
-          difficulty: 'medium',
-          language: 'C++',
-          category: 'data-structures',
-          tags: ['списки', 'структуры данных', 'указатели'],
-          completedCount: 67,
-          rating: 4.3,
-          avgTime: 35,
-          isSolved: true,
-          isFeatured: false,
-          isAuthor: false,
-          author: { name: 'Екатерина Козлова' }
-        },
-        {
-          id: 5,
-          title: 'Валидация email адреса',
-          description: 'Напишите функцию для проверки корректности email адреса с использованием регулярных выражений.',
-          difficulty: 'easy',
-          language: 'JavaScript',
-          category: 'web',
-          tags: ['валидация', 'regex', 'веб', 'строки'],
-          completedCount: 203,
-          rating: 3.9,
-          avgTime: 10,
-          isSolved: false,
-          isFeatured: false,
-          isAuthor: true,
-          author: { name: 'Дмитрий Николаев' }
-        }
-      ],
+      tasks: [],
 
-      availableLanguages: [
-        { id: 'python', name: 'Python', icon: '🐍' },
-        { id: 'java', name: 'Java', icon: '☕' },
-        { id: 'javascript', name: 'JavaScript', icon: '📜' },
-        { id: 'cpp', name: 'C++', icon: '⚡' },
-        { id: 'sql', name: 'SQL', icon: '🗄️' },
-        { id: 'csharp', name: 'C#', icon: '🎵' }
-      ]
+      availableLanguages: []
     }
+  },
+  async mounted() {
+    await this.loadLanguages()
+    await this.getAllTasks()
   },
   computed: {
     filteredTasks() {
       return this.tasks.filter(task => {
         const matchesDifficulty = !this.difficultyFilter || task.difficulty === this.difficultyFilter
-        const matchesLanguage = !this.languageFilter || task.language === this.languageFilter
+        const matchesLanguage = !this.languageFilter || task.languageId === this.languageFilter
         const matchesCategory = !this.categoryFilter || task.category === this.categoryFilter
         const matchesSearch = !this.searchTerm ||
             task.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-            task.description.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-            task.tags.some(tag => tag.toLowerCase().includes(this.searchTerm.toLowerCase()))
+            (task.description && task.description.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+            (task.tags && task.tags.some(tag => tag.toLowerCase().includes(this.searchTerm.toLowerCase())))
 
         return matchesDifficulty && matchesLanguage && matchesCategory && matchesSearch
       })
@@ -610,6 +526,105 @@ export default {
     }
   },
   methods: {
+
+    async getAllTasks() {
+      this.isLoading = true
+      this.error = null
+      try {
+        const tasks = await taskAPI.getAll()
+        console.log('Полученные задачи из API:', tasks) // Для отладки
+
+        this.tasks = tasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          difficulty: task.difficulty,
+          // Исправляем получение языка
+          language: task.taskLanguages && task.taskLanguages.length > 0
+              ? task.taskLanguages[0].title
+              : 'Unknown',
+          // Язык для фильтрации (ID)
+          languageId: task.taskLanguages && task.taskLanguages.length > 0
+              ? task.taskLanguages[0].idLanguage
+              : '',
+          author: {
+            name: task.author || 'Unknown Author'
+          },
+          isAuthor: task.author === JSON.parse(localStorage.getItem("user")).firstName,
+          functionName: task.functionName,
+          patternMain: task.patternMain,
+          patternFunction: task.patternFunction,
+          completedCount: task.completedCount || 0,
+          SuccessfulAttempts: task.successfulAttempts || 0,
+          AverageExecutionTime: task.averageExecutionTime ? Math.round(task.averageExecutionTime) : 0,
+
+          category: task.category || 'algorithms',
+          tags: task.tags || [],
+          isSolved: task.isSolved || false,
+          isFeatured: task.isFeatured || false,
+          rating: task.rating || 4.5
+        }))
+        console.log(JSON.parse(localStorage.getItem("user")).firstName)
+
+        console.log('Преобразованные задачи:', this.tasks) // Для отладки
+
+      } catch (error) {
+        console.error('Ошибка при загрузке задач:', error)
+        this.error = 'Не удалось загрузить список задач'
+      } finally {
+        this.isLoading = false
+      }
+    },
+    async loadLanguages() {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const languages = await languageAPI.getAll()
+
+        // Преобразуем полученные данные в нужный формат
+        this.availableLanguages = languages.map(lang => ({
+          id: lang.id,
+          name: lang.title || 'Unknown Language',
+          shortName: lang.shortTitle || lang.title?.substring(0, 3).toUpperCase() || 'UNK',
+          version: lang.version || '1.0',
+          fileExtension: lang.fileExtension || '.txt',
+          compilerCommand: lang.compilerCommand,
+          executionCommand: lang.executionCommand,
+          supportsCompilation: lang.supportsCompilation || false,
+          patternMain: lang.patternMain,
+          patternFunction: lang.patternFunction,
+          icon: this.getLanguageIcon(lang.title || lang.shortTitle || lang.id),
+          // Сохраняем библиотеки из ответа API
+          libraries: lang.libraries ? lang.libraries.map(lib => ({
+            id: lib.id,
+            name: lib.name || 'Unknown Library',
+            version: lib.version || '1.0.0',
+            description: lib.description || 'No description available',
+            languageId: lib.languageId,
+            compatibility: 'full'
+          })) : []
+        }))
+
+        console.log(`Загружено ${this.availableLanguages.length} языков программирования`)
+
+        this.availableLanguages.forEach(lang => {
+          console.log(`Язык ${lang.name}: ${lang.libraries.length} библиотек`, lang.libraries)
+        })
+
+      } catch (error) {
+        console.error('Ошибка при загрузке языков:', error)
+        this.error = 'Не удалось загрузить список языков'
+
+        if (error.message.includes('401') || error.message.includes('403')) {
+          this.error = 'Ошибка авторизации. Проверьте токен доступа.'
+        } else if (error.message.includes('Network Error')) {
+          this.error = 'Проблемы с подключением к серверу'
+        }
+      } finally {
+        this.isLoading = false
+      }
+    },
     resetFilters() {
       this.difficultyFilter = ''
       this.languageFilter = ''
@@ -629,9 +644,9 @@ export default {
 
     getDifficultyLabel(difficulty) {
       const labels = {
-        easy: 'Легкая',
-        medium: 'Средняя',
-        hard: 'Сложная'
+        Easy: 'Легкая',
+        Medium: 'Средняя',
+        Hard: 'Сложная'
       }
       return labels[difficulty] || difficulty
     },

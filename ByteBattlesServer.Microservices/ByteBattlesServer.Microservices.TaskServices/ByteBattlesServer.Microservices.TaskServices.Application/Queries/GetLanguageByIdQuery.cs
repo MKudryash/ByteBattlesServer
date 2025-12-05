@@ -4,4 +4,4 @@ using MediatR;
 
 namespace ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 
-public record GetLanguageByIdQuery(Guid LanguageId) :IRequest<LanguageDto>;
+public record GetLanguageByIdQuery(Guid LanguageId) :IRequest<LanguageDto?>;

@@ -19,7 +19,6 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     {
         return await _context.RefreshTokens
             .Include(rt => rt.User)
-            .ThenInclude(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(rt => rt.Token == token);
     }

@@ -12,4 +12,14 @@ public class UserStatsDto
     public int TotalExperience { get; set; }
     public double WinRate { get; set; }
     public int ExperienceToNextLevel { get; set; }
+    public int EasyProblemsSolved { get; set; }
+    public int MediumProblemsSolved { get; set; }
+    public int HardProblemsSolved { get; set; }
+    public int TotalSubmissions { get; set; }
+    public int SuccessfulSubmissions { get; set; }
+    public TimeSpan TotalExecutionTime { get; set; }
+    public HashSet<Guid> SolvedTaskIds { get; set; } = new();
+    
+    public double SuccessRate { get; set; }
+    public TimeSpan AverageExecutionTime { get; set; }
 }

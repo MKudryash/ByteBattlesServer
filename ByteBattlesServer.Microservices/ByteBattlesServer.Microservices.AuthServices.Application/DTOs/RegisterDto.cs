@@ -1,3 +1,5 @@
+using ByteBattlesServer.Domain.enums;
+
 namespace ByteBattlesServer.Microservices.AuthServices.Application.DTOs;
 
 public class RegisterDto
@@ -6,5 +8,5 @@ public class RegisterDto
     public string Password { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public List<string> Roles { get; set; }
+    public UserRole Role { get; set; }
 }

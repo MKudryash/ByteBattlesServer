@@ -10,6 +10,7 @@ public record CreateLanguageCommand(
     string CompilerCommand,
     string ExecutionCommand,
     bool SupportsCompilation,
-    string Pattern,
+    string PatternMain,
+    string PatternFunction,
     List<CreateLibraryDto> Libraries
     ): IRequest<LanguageDto>;

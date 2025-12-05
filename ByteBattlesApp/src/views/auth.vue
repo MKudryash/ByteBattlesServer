@@ -3,7 +3,7 @@
     <div class="auth-container2">
       <div class="auth-container3">
         <DangerousHTML
-          html="<style>
+            html="<style>
   @media (prefers-reduced-motion: reduce) {
   .auth-card, .auth-input, .auth-btn, .auth-toggle, .auth-social-btn {
     transition: none;
@@ -22,22 +22,22 @@
         <div class="auth-header">
           <div class="auth-brand">
             <svg
-              width="32"
-              xmlns="http://www.w3.org/2000/svg"
-              height="32"
-              viewBox="0 0 24 24"
-              class="auth-logo-icon"
+                width="32"
+                xmlns="http://www.w3.org/2000/svg"
+                height="32"
+                viewBox="0 0 24 24"
+                class="auth-logo-icon"
             >
               <path
-                d="m16 18l6-6l-6-6M8 6l-6 6l6 6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                  d="m16 18l6-6l-6-6M8 6l-6 6l6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
               ></path>
             </svg>
-            <span class="auth-logo-text">CodeCraft Template</span>
+            <span class="auth-logo-text">ByteBattles Template</span>
           </div>
           <p class="auth-tagline">
             Войдите в свою мастерскую создания учебных задач
@@ -47,11 +47,11 @@
 
         <div class="auth-card">
           <div class="auth-tabs">
-            <button 
-              @click="setActiveTab('login')"
-              :class="['auth-tab', { 'auth-tab--active': activeTab === 'login' }]"
-              aria-controls="login-form"
-              aria-selected="true"
+            <button
+                @click="setActiveTab('login')"
+                :class="['auth-tab', { 'auth-tab--active': activeTab === 'login' }]"
+                aria-controls="login-form"
+                aria-selected="true"
             >
               <svg width="20" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24">
                 <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -62,11 +62,11 @@
               </svg>
               <span>Вход</span>
             </button>
-            <button 
-              @click="setActiveTab('register')"
-              :class="['auth-tab', { 'auth-tab--active': activeTab === 'register' }]"
-              aria-controls="register-form"
-              aria-selected="false"
+            <button
+                @click="setActiveTab('register')"
+                :class="['auth-tab', { 'auth-tab--active': activeTab === 'register' }]"
+                aria-controls="register-form"
+                aria-selected="false"
             >
               <svg width="20" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24">
                 <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -80,11 +80,11 @@
           </div>
 
           <!-- Форма входа -->
-          <form 
-            v-if="activeTab === 'login'" 
-            id="login-form"
-            @submit.prevent="handleLogin"
-            class="auth-form"
+          <form
+              v-if="activeTab === 'login'"
+              id="login-form"
+              @submit.prevent="handleLogin"
+              class="auth-form"
           >
             <div class="form-group">
               <label for="login-email" class="auth-label">
@@ -97,12 +97,12 @@
                 <span>Email</span>
               </label>
               <input
-                v-model="loginForm.email"
-                type="email"
-                id="login-email"
-                required
-                placeholder="your.email@example.com"
-                class="auth-input"
+                  v-model="loginForm.email"
+                  type="email"
+                  id="login-email"
+                  required
+                  placeholder="your.email@example.com"
+                  class="auth-input"
               >
             </div>
 
@@ -110,23 +110,23 @@
               <label for="login-password" class="auth-label">
                 <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
                   <path
-                    d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                      d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                   ></path>
                 </svg>
                 <span>Пароль</span>
               </label>
               <input
-                v-model="loginForm.password"
-                type="password"
-                id="login-password"
-                required
-                placeholder="••••••••"
-                class="auth-input"
+                  v-model="loginForm.password"
+                  type="password"
+                  id="login-password"
+                  required
+                  placeholder="••••••••"
+                  class="auth-input"
               >
             </div>
 
@@ -140,20 +140,20 @@
               </a>
             </div>
 
-            <button 
-              type="submit" 
-              :disabled="loading"
-              class="auth-btn btn-primary btn"
+            <button
+                type="submit"
+                :disabled="loading"
+                class="auth-btn btn-primary btn"
             >
               <span v-if="loading" class="auth-btn-loading">
                 <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" class="auth-spinner">
                   <path
-                    d="M21 12a9 9 0 1 1-6.219-8.56"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                      d="M21 12a9 9 0 1 1-6.219-8.56"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                   ></path>
                 </svg>
                 Вход...
@@ -172,17 +172,18 @@
           </form>
 
           <!-- Форма регистрации -->
-          <form 
-            v-if="activeTab === 'register'" 
-            id="register-form"
-            @submit.prevent="handleRegister"
-            class="auth-form"
+          <form
+              v-if="activeTab === 'register'"
+              id="register-form"
+              @submit.prevent="handleRegister"
+              class="auth-form"
           >
             <div class="form-row">
               <div class="form-group">
                 <label for="register-firstName" class="auth-label">
                   <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
-                    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                       stroke-linejoin="round">
                       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                       <circle r="4" cx="12" cy="7"></circle>
                     </g>
@@ -190,12 +191,12 @@
                   <span>Имя</span>
                 </label>
                 <input
-                  v-model="registerForm.firstName"
-                  type="text"
-                  id="register-firstName"
-                  required
-                  placeholder="Иван"
-                  class="auth-input"
+                    v-model="registerForm.firstName"
+                    type="text"
+                    id="register-firstName"
+                    required
+                    placeholder="Иван"
+                    class="auth-input"
                 >
               </div>
               <div class="form-group">
@@ -203,12 +204,12 @@
                   <span>Фамилия</span>
                 </label>
                 <input
-                  v-model="registerForm.lastName"
-                  type="text"
-                  id="register-lastName"
-                  required
-                  placeholder="Петров"
-                  class="auth-input"
+                    v-model="registerForm.lastName"
+                    type="text"
+                    id="register-lastName"
+                    required
+                    placeholder="Петров"
+                    class="auth-input"
                 >
               </div>
             </div>
@@ -224,12 +225,12 @@
                 <span>Email</span>
               </label>
               <input
-                v-model="registerForm.email"
-                type="email"
-                id="register-email"
-                required
-                placeholder="your.email@example.com"
-                class="auth-input"
+                  v-model="registerForm.email"
+                  type="email"
+                  id="register-email"
+                  required
+                  placeholder="your.email@example.com"
+                  class="auth-input"
               >
             </div>
 
@@ -237,23 +238,23 @@
               <label for="register-password" class="auth-label">
                 <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
                   <path
-                    d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                      d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                   ></path>
                 </svg>
                 <span>Пароль</span>
               </label>
               <input
-                v-model="registerForm.password"
-                type="password"
-                id="register-password"
-                required
-                placeholder="••••••••"
-                class="auth-input"
+                  v-model="registerForm.password"
+                  type="password"
+                  id="register-password"
+                  required
+                  placeholder="••••••••"
+                  class="auth-input"
               >
             </div>
 
@@ -261,23 +262,23 @@
               <label for="register-confirmPassword" class="auth-label">
                 <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
                   <path
-                    d="M20 6L9 17l-5-5"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                      d="M20 6L9 17l-5-5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                   ></path>
                 </svg>
                 <span>Подтверждение пароля</span>
               </label>
               <input
-                v-model="registerForm.confirmPassword"
-                type="password"
-                id="register-confirmPassword"
-                required
-                placeholder="••••••••"
-                class="auth-input"
+                  v-model="registerForm.confirmPassword"
+                  type="password"
+                  id="register-confirmPassword"
+                  required
+                  placeholder="••••••••"
+                  class="auth-input"
               >
             </div>
 
@@ -291,20 +292,20 @@
               </span>
             </label>
 
-            <button 
-              type="submit" 
-              :disabled="loading"
-              class="auth-btn btn-accent btn"
+            <button
+                type="submit"
+                :disabled="loading"
+                class="auth-btn btn-accent btn"
             >
               <span v-if="loading" class="auth-btn-loading">
                 <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" class="auth-spinner">
                   <path
-                    d="M21 12a9 9 0 1 1-6.219-8.56"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                      d="M21 12a9 9 0 1 1-6.219-8.56"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                   ></path>
                 </svg>
                 Регистрация...
@@ -330,12 +331,12 @@
             <button @click="socialLogin('google')" class="auth-social-btn btn-outline btn">
               <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
                 <path
-                  d="M21 12a9 9 0 1 1-9-9c2.5 0 4.5 1 6 2l-3 3"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                    d="M21 12a9 9 0 1 1-9-9c2.5 0 4.5 1 6 2l-3 3"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
                 ></path>
               </svg>
               <span>Google</span>
@@ -344,7 +345,7 @@
               <svg width="18" xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24">
                 <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path
-                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77A5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+                      d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77A5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
                   ></path>
                 </g>
               </svg>
@@ -357,31 +358,31 @@
           <p class="auth-copyright">
             <svg width="16" xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24">
               <path
-                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                  d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
               ></path>
             </svg>
-            <span>© 2025 CodeCraft Template. Ваши данные в безопасности.</span>
+            <span>© 2025 ByteBattles Template. Ваши данные в безопасности.</span>
           </p>
         </div>
       </div>
       <div
-        aria-hidden="true"
-        class="auth-decoration-left auth-decoration"
+          aria-hidden="true"
+          class="auth-decoration-left auth-decoration"
       ></div>
       <div
-        aria-hidden="true"
-        class="auth-decoration-right auth-decoration"
+          aria-hidden="true"
+          class="auth-decoration-right auth-decoration"
       ></div>
     </main>
     <div class="auth-container4">
       <div class="auth-container5">
         <DangerousHTML
-          html="<style>
+            html="<style>
           @keyframes auth-fade-in {from {opacity: 0; transform: translateY(10px);}
   to {opacity: 1; transform: translateY(0);}}@keyframes auth-slide-in {from {transform: translateX(-20px); opacity: 0;}
   to {transform: translateX(0); opacity: 1;}}
@@ -392,7 +393,7 @@
     <div class="auth-container6">
       <div class="auth-container7">
         <DangerousHTML
-          html="<script defer data-name='auth'>
+            html="<script defer data-name='auth'>
   (function(){
     // Smooth form transitions
     const authTabs = document.querySelectorAll('.auth-tab')
@@ -484,7 +485,9 @@
 </template>
 
 <script>
-import DangerousHTML from 'dangerous-html/vue'
+import DangerousHTML from 'dangerous-html/vue';
+import {authAPI} from '@/api/auth'
+import { authUtils } from '@/utils/auth'
 
 export default {
   name: 'Auth',
@@ -516,60 +519,95 @@ export default {
       this.activeTab = tab
     },
 
-   async handleLogin() {
-  this.loading = true
-  this.errorMessage = ''
-  try {
-    const userData = {
-      email: this.loginForm.email,
-      password: this.loginForm.password,
-    }
+    async handleLogin() {
+      this.loading = true;
+      try {
+        const userData = {
+          email: this.loginForm.email,
+          password: this.loginForm.password,
+        };
 
-    const response = await fetch("http://hobbit1021.ru:50305/api/auth/login", {
-    //const response = await fetch("http://localhost:50307/api/auth/login", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', // ИСПРАВЛЕНА ОПЕЧАТКА
-        'accept': '*/*'
-      },
-      body: JSON.stringify(userData)
-    })
+        console.log('Sending login request:', userData);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+        const response = await authAPI.login(userData);
 
-    const data = await response.json()
-    console.log("Success: ", data)
+        console.log('Login response:', response);
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Login failed with status:', response.status, 'Response:', errorText);
 
-    localStorage.setItem('user', JSON.stringify(data))
-    localStorage.setItem('accessToken', data.accessToken)
-    localStorage.setItem('refreshToken', data.refreshToken)
-      if (this.loginForm.rememberMe) {
-        localStorage.setItem('rememberMe', 'true')
+          let errorMessage = `Ошибка входа (${response.status})`;
+
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorData.title || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = await response.json();
+          console.log("Login success data:", data);
+        } catch (parseError) {
+          console.error('Error parsing login response:', parseError);
+          throw new Error('Неверный формат ответа от сервера');
+        }
+
+        if (data.accessToken) {
+          // Сохраняем данные через утилиты
+          authUtils.setUser(data.user || data);
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken || '');
+
+          if (this.loginForm.rememberMe) {
+            localStorage.setItem('rememberMe', 'true');
+          }
+
+          // Уведомляем об изменении состояния аутентификации
+          authUtils.notifyAuthChange();
+
+          // Отправляем событие через глобальную шину
+          this.$root.$emit('userUpdated');
+
+          console.log('Login successful, redirecting...');
+
+          // Проверяем, есть ли redirect параметр
+          const redirect = this.$route.query.redirect || '/';
+          this.$router.push(redirect);
+        } else {
+          throw new Error('Отсутствует токен доступа в ответе');
+        }
+
+      } catch (error) {
+        console.error('Login error:', error);
+        let userMessage = 'Ошибка входа';
+        if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+          userMessage = 'Ошибка сети. Проверьте подключение к интернету.';
+        } else if (error.message.includes('JSON')) {
+          userMessage = 'Ошибка обработки ответа сервера.';
+        } else {
+          userMessage = error.message;
+        }
+
+        alert(userMessage);
+      } finally {
+        this.loading = false;
       }
-
-      // Перенаправляем на главную страницу
-      this.$router.push('/')
-
-
-  } catch (error) {
-    console.error('Login error:', error)
-    alert('Ошибка входа: ' + error.message)
-  } finally {
-    this.loading = false
-  }
-},
+    },
 
     async handleRegister() {
       if (this.registerForm.password !== this.registerForm.confirmPassword) {
         alert('Пароли не совпадают')
         return
       }
-      
+
       this.loading = true
-      
+
       try {
         const userData = {
           firstName: this.registerForm.firstName,
@@ -578,32 +616,82 @@ export default {
           password: this.registerForm.password,
           role: ["admin"]
         }
-        const response = await fetch("http://hobbit1021.ru:50305/api/auth/register", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'accept': '*/*'
-          },
-          body: JSON.stringify(userData)
-        })
+
+        const response = await authAPI.register(userData)
 
         const data = await response.json()
-        console.log("Success: ", data)
-        
-        localStorage.setItem('user', JSON.stringify(response))
-        localStorage.setItem('accessToken', data.accessToken)
-        console.log(localStorage.getItem('accessToken'))
-        localStorage.setItem('refreshToken', data.refreshToken)
 
-        
+        if (!response.ok) {
+          await this.handleErrorResponse(response.status, data)
+          return
+        }
+
+        console.log("Success: ", data)
+
+        // Сохраняем данные через утилиты
+        authUtils.setUser(data.user || data);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+
+        // Уведомляем об изменении состояния аутентификации
+        authUtils.notifyAuthChange();
+
+        // Отправляем событие через глобальную шину
+        this.$root.$emit('userUpdated');
+
+        // Показываем сообщение об успехе
+        alert('Регистрация прошла успешно!')
+
         // Перенаправляем на главную страницу
         this.$router.push('/')
-        
+
       } catch (error) {
         console.error('Registration error:', error)
-        // Здесь можно добавить обработку ошибок
+        this.handleNetworkError(error)
       } finally {
         this.loading = false
+      }
+    },
+
+// Метод для обработки ошибок HTTP
+    async handleErrorResponse(statusCode, errorData) {
+      const errorMessages = {
+        400: 'Неверный запрос. Проверьте введенные данные.',
+        409: 'Пользователь с таким email уже существует.',
+        422: 'Ошибка валидации данных.',
+        500: 'Внутренняя ошибка сервера. Попробуйте позже.',
+        503: 'Сервис временно недоступен.'
+      }
+
+      // Получаем сообщение об ошибке из ответа сервера или используем стандартное
+      const serverMessage = errorData?.message || errorData?.title
+      const defaultMessage = errorMessages[statusCode] || `Ошибка регистрации (код: ${statusCode})`
+
+      const finalMessage = serverMessage ? `${defaultMessage}\nДетали: ${serverMessage}` : defaultMessage
+
+      alert(finalMessage)
+
+      // Дополнительные действия для определенных ошибок
+      switch (statusCode) {
+        case 409:
+          // Очищаем поле email при конфликте
+          this.registerForm.email = ''
+          break
+        case 422:
+          // Можно добавить подсветку полей с ошибками
+          console.warn('Validation errors:', errorData.errors)
+          break
+      }
+    },
+
+// Метод для обработки сетевых ошибок
+    handleNetworkError(error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        alert('Ошибка сети. Проверьте подключение к интернету.')
+      } else if (error.name === 'SyntaxError') {
+        alert('Ошибка обработки ответа сервера.')
+      } else {
+        alert('Произошла непредвиденная ошибка. Попробуйте еще раз.')
       }
     },
 
@@ -620,27 +708,27 @@ export default {
 .auth-container1 {
   display: contents;
 }
- 
+
 .auth-container2 {
   display: none;
 }
- 
+
 .auth-container3 {
   display: contents;
 }
- 
+
 .auth-container4 {
   display: none;
 }
- 
+
 .auth-container5 {
   display: contents;
 }
- 
+
 .auth-container6 {
   display: none;
 }
- 
+
 .auth-container7 {
   display: contents;
 }
@@ -668,7 +756,7 @@ export default {
       transparent 2px,
       color-mix(in srgb, var(--color-border) 5%, transparent) 2px,
       color-mix(in srgb, var(--color-border) 5%, transparent) 4px
-    );
+  );
   pointer-events: none;
   z-index: 1;
   opacity: 0.2;
@@ -843,8 +931,12 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-divider {
@@ -928,15 +1020,15 @@ export default {
   .auth {
     padding: var(--spacing-lg);
   }
-  
+
   .auth-card {
     padding: var(--spacing-xl);
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .auth-social {
     grid-template-columns: 1fr;
   }

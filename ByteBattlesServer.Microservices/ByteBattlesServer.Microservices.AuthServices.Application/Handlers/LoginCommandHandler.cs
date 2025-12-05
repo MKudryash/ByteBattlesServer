@@ -39,7 +39,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             throw new ErrorRequest("Invalid credentials");
 
         if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            throw new ErrorRequest("Invalid credentials");
+            throw new ErrorRequest("Invalid password");
 
         // Revoke existing refresh tokens
         var existingToken = await _refreshTokenRepository.GetActiveByUserIdAsync(user.Id);
@@ -73,7 +73,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+                Role = new RoleDto()
+                {
+                    Id = user.Role.Id,
+                    Name = user.Role.Name,
+                    Description =  user.Role.Description
+                }
             }
         };
 

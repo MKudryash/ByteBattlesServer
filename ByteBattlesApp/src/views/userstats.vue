@@ -522,6 +522,7 @@
 import DangerousHTML from 'dangerous-html/vue'
 import AppNavigation from '../components/navigation'
 import AppFooter from '../components/footer'
+import { userProfilesAPI, userProfileHelpers, USER_PROFILE_CONSTANTS } from '../api/user'
 
 export default {
   name: 'UsersStatistics',
@@ -558,7 +559,10 @@ export default {
         { id: 'csharp', name: 'C#', icon: '🎵' },
         { id: 'go', name: 'Go', icon: '🐹' },
         { id: 'rust', name: 'Rust', icon: '🦀' }
-      ]
+      ],
+
+      isLoading: false,
+      error: null
     }
   },
   computed: {
@@ -572,15 +576,15 @@ export default {
       if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase()
         filtered = filtered.filter(user =>
-            user.name.toLowerCase().includes(term) ||
+            user.userName?.toLowerCase().includes(term) ||
             (user.bio && user.bio.toLowerCase().includes(term))
         )
       }
 
-      // Фильтр по языку
+      // Фильтр по языку (используем preferredLanguage из настроек)
       if (this.languageFilter) {
         filtered = filtered.filter(user =>
-            user.topLanguages.some(lang => lang.name.toLowerCase() === this.languageFilter)
+            user.settings?.preferredLanguage?.toLowerCase() === this.languageFilter.toLowerCase()
         )
       }
 
@@ -593,13 +597,13 @@ export default {
       filtered.sort((a, b) => {
         switch (this.sortBy) {
           case 'rating':
-            return b.rating - a.rating
+            return (b.stats?.totalExperience || 0) - (a.stats?.totalExperience || 0)
           case 'tasks':
-            return b.completedTasks - a.completedTasks
+            return (b.stats?.totalProblemsSolved || 0) - (a.stats?.totalProblemsSolved || 0)
           case 'recent':
-            return new Date(b.lastActive) - new Date(a.lastActive)
+            return new Date(b.lastActive || 0) - new Date(a.lastActive || 0)
           case 'name':
-            return a.name.localeCompare(b.name)
+            return (a.userName || '').localeCompare(b.userName || '')
           default:
             return 0
         }
@@ -646,28 +650,233 @@ export default {
     }
   },
   methods: {
-
     getLanguageName(langId) {
       const lang = this.availableLanguages.find(l => l.id === langId)
       return lang ? lang.name : langId
     },
 
     async loadData() {
-      // Загрузка лидерборда
-      this.leaderboard = await this.fetchLeaderboard()
+      this.isLoading = true
+      this.error = null
 
-      // Загрузка пользователей
-      this.users = await this.fetchUsers()
+      try {
+        // Загрузка лидерборда
+        this.leaderboard = await this.fetchLeaderboard()
 
-      // Загрузка статистики
-      this.communityStats = await this.fetchCommunityStats()
+        // Загрузка пользователей через поиск
+        this.users = await this.fetchUsers()
 
-      // Загрузка популярных языков
-      this.popularLanguages = await this.fetchPopularLanguages()
+        // Загрузка статистики сообщества
+        this.communityStats = await this.fetchCommunityStats()
+
+        // Загрузка популярных языков
+        this.popularLanguages = await this.fetchPopularLanguages()
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error)
+        this.error = 'Не удалось загрузить данные. Попробуйте обновить страницу.'
+      } finally {
+        this.isLoading = false
+      }
     },
 
     async fetchLeaderboard() {
-      // Имитация API запроса
+      try {
+        const leaderboardData = await userProfilesAPI.getLeaderboard(5)
+        return leaderboardData.map((user, index) => ({
+          id: user.userId,
+          name: user.userName || 'Аноним',
+          avatar: user.avatarUrl,
+          rating: user.totalExperience,
+          completedTasks: user.problemsSolved,
+          progress: userProfileHelpers.calculateLevelProgress(user.totalExperience, 1000), // Примерный расчет
+          level: user.level,
+          battlesWon: user.battlesWon,
+          position: user.position
+        }))
+      } catch (error) {
+        console.error('Ошибка загрузки лидерборда:', error)
+        return this.getFallbackLeaderboard()
+      }
+    },
+
+    async fetchUsers() {
+      try {
+        // Используем поиск пользователей
+        const searchData = await userProfilesAPI.searchUsers(this.searchTerm, 1, 100)
+
+        // Для каждого пользователя загружаем полный профиль и активность
+        const usersWithDetails = await Promise.all(
+            searchData.map(async (user) => {
+              try {
+                // Получаем полный профиль
+                const fullProfile = await userProfilesAPI.getProfileById(user.id)
+                // Получаем активность пользователя
+                const activity = await userProfilesAPI.getUserActivity(user.id, 5, 5)
+
+                return this.mapUserProfileToView(fullProfile, activity)
+              } catch (error) {
+                console.error(`Ошибка загрузки профиля пользователя ${user.id}:`, error)
+                return this.mapUserProfileToView(user, null)
+              }
+            })
+        )
+
+        return usersWithDetails
+      } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error)
+      }
+    },
+
+    mapUserProfileToView(profile, activity) {
+      const stats = userProfileHelpers.formatStats(profile.stats || {})
+      const settings = profile.settings || {}
+
+      return {
+        id: profile.id,
+        userId: profile.userId,
+        name: profile.userName || 'Аноним',
+        userName: profile.userName,
+        bio: profile.bio,
+        avatar: profile.avatarUrl,
+        country: profile.country,
+        level: profile.level || this.calculateLevel(profile.stats?.totalExperience || 0),
+        rating: profile.stats?.totalExperience || 0,
+        completedTasks: profile.stats?.totalProblemsSolved || 0,
+        successRate: profile.stats?.successRate,
+        rank: 0,
+        isOnline: this.isUserOnline(profile.lastActive),
+        lastActive: profile.lastActive || profile.createdAt,
+        recentTask: activity?.recentProblems?.[0]?.title || null,
+        topLanguages: this.getUserTopLanguages(settings.preferredLanguage),
+        achievements: profile.achievements || [],
+        stats: stats,
+        settings: settings,
+        recentActivities: activity?.recentActivities || [],
+        recentProblems: activity?.recentProblems || []
+      }
+    },
+
+    calculateLevel(experience) {
+      if (experience >= 5000) return 'expert'
+      if (experience >= 2000) return 'advanced'
+      if (experience >= 500) return 'intermediate'
+      return 'beginner'
+    },
+
+    isUserOnline(lastActive) {
+      if (!lastActive) return false
+      const lastActiveDate = new Date(lastActive)
+      const now = new Date()
+      return (now - lastActiveDate) < 15 * 60 * 1000 // 15 минут
+    },
+
+    getUserTopLanguages(preferredLanguage) {
+      const langMap = {
+        'python': { name: 'Python', icon: '🐍', color: '#3572A5' },
+        'java': { name: 'Java', icon: '☕', color: '#B07219' },
+        'javascript': { name: 'JavaScript', icon: '📜', color: '#F1E05A' },
+        'typescript': { name: 'TypeScript', icon: '📘', color: '#3178C6' },
+        'cpp': { name: 'C++', icon: '⚡', color: '#F34B7D' },
+        'csharp': { name: 'C#', icon: '🎵', color: '#178600' },
+        'go': { name: 'Go', icon: '🐹', color: '#00ADD8' },
+        'rust': { name: 'Rust', icon: '🦀', color: '#DEA584' }
+      }
+
+      const mainLang = langMap[preferredLanguage?.toLowerCase()] || langMap.javascript
+      return [mainLang]
+    },
+
+    async fetchCommunityStats() {
+      try {
+        // Для получения общей статистики нам нужно агрегировать данные
+        const allUsers = await userProfilesAPI.searchUsers('', 1, 1000)
+
+        const totalUsers = allUsers.length
+        const totalTasks = allUsers.reduce((sum, user) => sum + (user.stats?.totalProblemsSolved || 0), 0)
+
+        // Активные сегодня (за последние 24 часа)
+        const activeToday = allUsers.filter(user => {
+          if (!user.lastActive) return false
+          const lastActive = new Date(user.lastActive)
+          const now = new Date()
+          return (now - lastActive) < 24 * 60 * 60 * 1000
+        }).length
+
+        // Уникальные страны
+        const countries = new Set(allUsers.map(user => user.country).filter(Boolean)).size
+
+        return {
+          totalUsers,
+          totalTasks,
+          activeToday,
+          countries
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки статистики сообщества:', error)
+        return this.getFallbackCommunityStats()
+      }
+    },
+
+    async fetchPopularLanguages() {
+      try {
+        const allUsers = await userProfilesAPI.searchUsers('', 1, 1000)
+
+        const languageCount = {}
+        allUsers.forEach(user => {
+          const lang = user.settings?.preferredLanguage?.toLowerCase() || 'unknown'
+          languageCount[lang] = (languageCount[lang] || 0) + 1
+        })
+
+        const totalUsers = allUsers.length
+        const popularLangs = Object.entries(languageCount)
+            .map(([lang, count]) => ({
+              name: this.getLanguageDisplayName(lang),
+              icon: this.getLanguageIcon(lang),
+              percentage: Math.round((count / totalUsers) * 100),
+              color: lang
+            }))
+            .sort((a, b) => b.percentage - a.percentage)
+            .slice(0, 5)
+
+        return popularLangs
+      } catch (error) {
+        console.error('Ошибка загрузки популярных языков:', error)
+        return this.getFallbackPopularLanguages()
+      }
+    },
+
+    getLanguageDisplayName(lang) {
+      const names = {
+        'python': 'Python',
+        'java': 'Java',
+        'javascript': 'JavaScript',
+        'typescript': 'TypeScript',
+        'cpp': 'C++',
+        'csharp': 'C#',
+        'go': 'Go',
+        'rust': 'Rust',
+        'unknown': 'Не указан'
+      }
+      return names[lang] || lang
+    },
+
+    getLanguageIcon(lang) {
+      const icons = {
+        'python': '🐍',
+        'java': '☕',
+        'javascript': '📜',
+        'typescript': '📘',
+        'cpp': '⚡',
+        'csharp': '🎵',
+        'go': '🐹',
+        'rust': '🦀',
+        'unknown': '❓'
+      }
+      return icons[lang] || '💻'
+    },
+
+    // Fallback данные на случай ошибок API
+    getFallbackLeaderboard() {
       return [
         {
           id: 1,
@@ -692,58 +901,13 @@ export default {
           rating: 2543,
           completedTasks: 134,
           progress: 72
-        },
-        {
-          id: 4,
-          name: 'Екатерина Козлова',
-          avatar: '',
-          rating: 2432,
-          completedTasks: 128,
-          progress: 68
-        },
-        {
-          id: 5,
-          name: 'Сергей Николаев',
-          avatar: '',
-          rating: 2387,
-          completedTasks: 121,
-          progress: 65
         }
       ]
     },
 
-    async fetchUsers() {
-      // Имитация API запроса
-      return Array.from({ length: 50 }, (_, i) => ({
-        id: i + 1,
-        name: `Пользователь ${i + 1}`,
-        bio: i % 3 === 0 ? 'Люблю решать алгоритмические задачи и изучать новые технологии' :
-            i % 3 === 1 ? 'Full-stack разработчик с опытом в веб-приложениях' :
-                'Студент компьютерных наук, увлекаюсь машинным обучением',
-        avatar: i % 5 === 0 ? '/avatars/user' + (i + 1) + '.jpg' : '',
-        country: ['Россия', 'Украина', 'Беларусь', 'Казахстан'][i % 4],
-        level: ['beginner', 'intermediate', 'advanced', 'expert'][i % 4],
-        rating: 2500,
-        completedTasks: 20 + Math.floor(Math.random() * 150),
-        successRate: 60 + Math.floor(Math.random() * 35),
-        rank: i + 1,
-        isOnline: Math.random() > 0.7,
-        lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-        recentTask: ['Сортировка пузырьком', 'Поиск в глубину', 'Динамическое программирование'][i % 3],
-        topLanguages: [
-          { name: 'python', icon: '🐍', color: '#3572A5' },
-          { name: 'java', icon: '☕', color: '#B07219' },
-          { name: 'javascript', icon: '📜', color: '#F1E05A' }
-        ].slice(0, 1 + i % 3),
-        achievements: Array.from({ length: 2 + i % 5 }, (_, j) => ({
-          id: j,
-          icon: ['🏆', '⭐', '🚀', '💡', '🔧'][j % 5],
-          description: 'Достижение ' + (j + 1)
-        }))
-      }))
-    },
 
-    async fetchCommunityStats() {
+
+    getFallbackCommunityStats() {
       return {
         totalUsers: 1247,
         totalTasks: 45632,
@@ -752,13 +916,13 @@ export default {
       }
     },
 
-    async fetchPopularLanguages() {
+    getFallbackPopularLanguages() {
       return [
-        { name: 'Python', icon: '🐍', percentage: 35, color: 'python' },
-        { name: 'Java', icon: '☕', percentage: 25, color: 'java' },
-        { name: 'JavaScript', icon: '📜', percentage: 20, color: 'javascript' },
+        { name: 'JavaScript', icon: '📜', percentage: 35, color: 'javascript' },
+        { name: 'Python', icon: '🐍', percentage: 25, color: 'python' },
+        { name: 'Java', icon: '☕', percentage: 20, color: 'java' },
         { name: 'C++', icon: '⚡', percentage: 12, color: 'cpp' },
-        { name: 'Go', icon: '🐹', percentage: 8, color: 'go' }
+        { name: 'C#', icon: '🎵', percentage: 8, color: 'csharp' }
       ]
     },
 
@@ -769,25 +933,27 @@ export default {
 
     getLevelIcon(level) {
       const icons = {
-        beginner: '🌱',
-        intermediate: '🎯',
-        advanced: '🚀',
-        expert: '🏆'
+        Beginner: '🌱',
+        Intermediate: '🎯',
+        Advanced: '🚀',
+        Expert: '🏆'
       }
       return icons[level] || '💼'
     },
 
     getLevelLabel(level) {
       const labels = {
-        beginner: 'Начинающий',
-        intermediate: 'Средний',
-        advanced: 'Продвинутый',
-        expert: 'Эксперт'
+        Beginner: 'Начинающий',
+        Intermediate: 'Средний',
+        Advanced: 'Продвинутый',
+        Expert: 'Эксперт'
       }
       return labels[level] || level
     },
 
     formatTime(date) {
+      if (!date) return 'никогда'
+
       const now = new Date()
       const diff = now - new Date(date)
       const days = Math.floor(diff / (1000 * 60 * 60 * 24))
@@ -803,10 +969,6 @@ export default {
       this.$router.push(`/profile/${userId}`)
     },
 
-    sendMessage(userId) {
-      console.log('Отправка сообщения пользователю:', userId)
-    },
-
     refreshLeaderboard() {
       this.loadData()
     },
@@ -816,6 +978,7 @@ export default {
       this.languageFilter = ''
       this.levelFilter = ''
       this.sortBy = 'rating'
+      this.currentPage = 1
     },
 
     prevPage() {

@@ -15,6 +15,8 @@ public class UserProfileDbContext : DbContext
     public DbSet<Achievement> Achievements { get; set; }
     public DbSet<UserAchievement> UserAchievements { get; set; }
     public DbSet<BattleResult> BattleResults { get; set; }
+    public DbSet<RecentActivity> RecentActivities { get; set; }
+    public DbSet<RecentProblem> RecentProblems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

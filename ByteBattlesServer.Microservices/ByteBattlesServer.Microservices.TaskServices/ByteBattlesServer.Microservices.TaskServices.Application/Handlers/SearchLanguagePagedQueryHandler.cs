@@ -20,15 +20,4 @@ public class SearchLanguagePagedQueryHandler: IRequestHandler<SearchLanguagesPag
         
         return languages.Select(x=>LanguageMappings.MapToDto(x)).ToList();
     }
-    private LanguageDto MapToDto(Language language) => new()
-    {
-        Id = language.Id,
-        Title = language.Title,
-        ShortTitle = language.ShortTitle,
-        CompilerCommand = language.CompilerCommand,
-        ExecutionCommand = language.ExecutionCommand,
-        FileExtension = language.FileExtension,
-        SupportsCompilation = language.SupportsCompilation,
-        Pattern = language.Pattern,
-    };
 }

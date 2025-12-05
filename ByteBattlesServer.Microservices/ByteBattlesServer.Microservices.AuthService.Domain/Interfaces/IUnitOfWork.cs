@@ -1,6 +1,5 @@
 namespace ByteBattlesServer.Microservices.AuthService.Domain.Interfaces;
 
-// AuthService.Domain/Interfaces/IUnitOfWork.cs
 public interface IUnitOfWork : IDisposable
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

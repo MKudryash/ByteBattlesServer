@@ -6,12 +6,9 @@ using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Repositories
 using ByteBattlesServer.Microservices.AuthService.Domain.Interfaces.Services;
 using ByteBattlesServer.Microservices.AuthServices.Application.Commands;
 using ByteBattlesServer.Microservices.AuthServices.Application.DTOs;
-using MediatR;
-using ByteBattlesServer.SharedContracts.IntegrationEvents;
+using ByteBattlesServer.Microservices.UserProfile.Application.IntegrationEvents;
 using ByteBattlesServer.SharedContracts.Messaging;
-
-namespace ByteBattlesServer.Microservices.AuthServices.Application.Handlers;
-
+using MediatR;
 
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponseDto>
 {
@@ -23,12 +20,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMessageBus _messageBus;
     private readonly IRoleRepository _roleRepository;
-    
+
     public RegisterCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IPasswordPolicyService passwordPolicyService,
-        IRoleRepository  roleRepository,
+        IRoleRepository roleRepository,
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
         IUnitOfWork unitOfWork,
@@ -49,49 +46,31 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         // Check if user already exists
         if (await _userRepository.ExistsByEmailAsync(request.Email))
             throw new ErrorRequest("User with this email already exists");
-        var passwordValidationResult =  _passwordPolicyService.ValidatePassword(request.Password);
+
+        var passwordValidationResult = _passwordPolicyService.ValidatePassword(request.Password);
         if (!passwordValidationResult.IsValid)
             throw new ErrorRequest($"Invalid password: {string.Join(", ", passwordValidationResult.Errors)}");
 
-        // Create user
-        var passwordHash = _passwordHasher.HashPassword(request.Password);
-        var user = new User(request.Email, passwordHash, request.FirstName, request.LastName);
-
-
-
-        var rolesToAdd = new List<Role>();
-
-        if (request.Roles != null && request.Roles.Any())
+        // Determine which Role to assign
+        Role userRole;
+        if (!string.IsNullOrEmpty(request.Role.ToString()))
         {
-            // Получаем существующие роли из базы
-            var existingRoles = await _roleRepository.GetRolesByNamesAsync(request.Roles);
-            var existingRoleNames = existingRoles.Select(r => r.Name).ToHashSet();
-
-            // Проверяем, все ли запрошенные роли существуют
-            var missingRoles = request.Roles.Except(existingRoleNames).ToList();
-            if (missingRoles.Any())
-            {
-                throw new AuthException($"Roles not found: {string.Join(", ", missingRoles)}", "ROLES_NOT_FOUND");
-            }
-
-            rolesToAdd.AddRange(existingRoles);
+            // Get Role by name
+            userRole = await _roleRepository.GetByNameAsync(request.Role.ToString());
+            if (userRole == null)
+                throw new AuthException($"Role '{request.Role}' not found", "ROLE_NOT_FOUND");
         }
         else
         {
-            // Добавляем роль по умолчанию
-            var defaultRole = await _roleRepository.GetByNameAsync("user");
-            if (defaultRole == null)
-            {
-                throw new AuthException("Default role 'user' not found", "DEFAULT_ROLE_NOT_FOUND");
-            }
-            rolesToAdd.Add(defaultRole);
+            // Use default Role
+            userRole = await _roleRepository.GetByNameAsync("User");
+            if (userRole == null)
+                throw new AuthException("Default Role 'User' not found", "DEFAULT_ROLE_NOT_FOUND");
         }
 
-        // Добавляем роли пользователю
-        foreach (var role in rolesToAdd)
-        {
-            user.AddRole(role);
-        }
+        // Create user
+        var passwordHash = _passwordHasher.HashPassword(request.Password);
+        var user = new User(request.Email, passwordHash, request.FirstName, request.LastName, userRole);
 
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -99,33 +78,31 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         // Generate tokens
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshToken = _tokenService.GenerateRefreshToken();
-        
+
         var refreshTokenEntity = new RefreshToken(
-            user.Id, 
-            refreshToken, 
-            DateTime.UtcNow.AddDays(7), 
-            "127.0.0.1");
+            user.Id,
+            refreshToken,
+            DateTime.UtcNow.AddDays(7),
+            "127.0.0.1"); // TODO: Get real IP from request
+
+        await _refreshTokenRepository.AddAsync(refreshTokenEntity);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Публикация события
         var userRegisteredEvent = new UserRegisteredIntegrationEvent
-        {
-            UserId = user.Id,
-            Email = user.Email.Value,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            RegisteredAt = DateTime.UtcNow
-        };
+        (
+            user.Id,
+            user.Email.Value,
+            user.FirstName,
+            user.LastName,
+            true,
+            request.Role
+        );
 
         _messageBus.Publish(
             userRegisteredEvent,
             "user-events",
             "user.registered");
-        
-        
-        
-        
-        await _refreshTokenRepository.AddAsync(refreshTokenEntity);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = new AuthResponseDto
         {
@@ -138,7 +115,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = user.UserRoles.Select(r=>r.Role.Name).ToList()
+                Role = new RoleDto()
+                {
+                    Id = user.Role.Id,
+                    Name = user.Role.Name,
+                    Description =  user.Role.Description
+                }
             }
         };
 
