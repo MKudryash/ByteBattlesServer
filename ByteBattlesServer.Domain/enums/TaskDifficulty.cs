@@ -2,33 +2,53 @@ namespace ByteBattlesServer.Domain.enums;
 
 public enum TaskDifficulty
 {
-    Easy ,
-    Medium,
-    Hard
+    Easy =0,
+    Medium =1,
+    Hard =2
 }
+
 public static class TaskDifficultyHelper
 {
-    private static readonly Dictionary<TaskDifficulty, string> DifficultyNames = new()
-    {
-        { TaskDifficulty.Easy, "Easy" },
-        { TaskDifficulty.Medium, "Middle" },
-        { TaskDifficulty.Hard, "Hard" }
-    };
+    private static readonly Dictionary<TaskDifficulty, string> DifficultyNames;
+    private static readonly Dictionary<string, TaskDifficulty> StringToDifficulty;
     
-    // Для обратного преобразования создаем словарь в обратную сторону
-    private static readonly Dictionary<string, TaskDifficulty> StringToDifficulty = new(StringComparer.OrdinalIgnoreCase)
+    // Статический конструктор для безопасной инициализации
+    static TaskDifficultyHelper()
     {
-        { "Easy", TaskDifficulty.Easy },
-        { "Middle", TaskDifficulty.Medium },
-        { "Hard", TaskDifficulty.Hard },
-        // Можно добавить варианты на русском или другие синонимы
-        { "Легкая", TaskDifficulty.Easy },
-        { "Средняя", TaskDifficulty.Medium },
-        { "Сложная", TaskDifficulty.Hard },
-        { "Easy", TaskDifficulty.Easy },
-        { "Medium", TaskDifficulty.Medium }, // Если кто-то использует английское название
-        { "Hard", TaskDifficulty.Hard }
-    };
+        try
+        {
+            // Инициализируем первый словарь
+            DifficultyNames = new Dictionary<TaskDifficulty, string>
+            {
+                { TaskDifficulty.Easy, "Easy" },
+                { TaskDifficulty.Medium, "Middle" },
+                { TaskDifficulty.Hard, "Hard" }
+            };
+            
+            // Инициализируем обратный словарь
+            StringToDifficulty = new Dictionary<string, TaskDifficulty>(StringComparer.OrdinalIgnoreCase);
+            
+            // Заполняем обратный словарь из первого
+            foreach (var kvp in DifficultyNames)
+            {
+                StringToDifficulty[kvp.Value] = kvp.Key;
+                
+                // Также добавляем строковое представление enum
+                StringToDifficulty[kvp.Key.ToString()] = kvp.Key;
+            }
+            
+            // Добавляем русские варианты (опционально)
+            StringToDifficulty["Легкая"] = TaskDifficulty.Easy;
+            StringToDifficulty["Средняя"] = TaskDifficulty.Medium;
+            StringToDifficulty["Сложная"] = TaskDifficulty.Hard;
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку для отладки
+            Console.WriteLine($"Error initializing TaskDifficultyHelper: {ex.Message}");
+            throw;
+        }
+    }
     
     public static string GetName(TaskDifficulty difficulty)
     {
