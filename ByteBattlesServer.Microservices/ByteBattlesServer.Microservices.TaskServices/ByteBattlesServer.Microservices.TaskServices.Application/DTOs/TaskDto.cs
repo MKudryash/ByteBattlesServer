@@ -9,7 +9,7 @@ public class TaskDto
   public Guid Id { get; set; }
   public  string Title { get; set; }
   public  string Description { get; set; }
-  public  TaskDifficulty Difficulty { get; set; }
+  public  string Difficulty { get; set; }
   public  string Author { get; set; }
   public  string FunctionName { get; set; }
   public  string PatternMain { get; set; }

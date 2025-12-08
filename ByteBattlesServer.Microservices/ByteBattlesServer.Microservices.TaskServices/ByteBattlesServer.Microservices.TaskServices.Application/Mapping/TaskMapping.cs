@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using Task = ByteBattlesServer.Microservices.TaskServices.Domain.Entities.Task;
 
@@ -15,7 +16,7 @@ public class TaskMapping
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty,
+            Difficulty = TaskDifficultyHelper.GetName(task.Difficulty),
             Author = task.Author,
             FunctionName = task.FunctionName,
             PatternMain = task.PatternMain,
@@ -68,7 +69,7 @@ public class TaskMapping
             Id = task.Id,
             Title = task.Title,
             Description = task.Description,
-            Difficulty = task.Difficulty,
+            Difficulty = TaskDifficultyHelper.GetName(task.Difficulty),
             Author = task.Author,
             FunctionName = task.FunctionName,
             PatternMain = task.PatternMain,
