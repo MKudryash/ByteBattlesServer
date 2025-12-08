@@ -1,3 +1,4 @@
+using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.TaskServices.Application.DTOs;
 using ByteBattlesServer.Microservices.TaskServices.Application.Queries;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
@@ -130,7 +131,7 @@ private async Task HandleRandomTaskRequest(TaskInfoRequest request)
             Title = task.Title ?? string.Empty,
             Description = task.Description ?? string.Empty,
             Author = task.Author ?? string.Empty,
-            Difficulty = task.Difficulty,
+            Difficulty =   TaskDifficultyHelper.FromNameOrDefault(task.Difficulty),
             FunctionName = task.FunctionName ?? string.Empty,
             Parameters = task.Parameters ?? string.Empty,
             PatternFunction = task.PatternFunction ?? string.Empty,
