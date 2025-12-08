@@ -446,7 +446,7 @@ public static class TaskEndpoints
             throw new UnauthorizedAccessException("Authentication required to perform this action");
         }
 
-        if (!context.User.IsInRole("admin")&& !context.User.IsInRole("teacher")&& !context.User.IsInRole("user"))
+        if (!context.User.IsInRole("admin")&& !context.User.IsInRole("teacher")&& !context.User.IsInRole("student"))
         {
             var userRoles = context.User.Claims
                 .Where(c => c.Type == ClaimTypes.Role)
