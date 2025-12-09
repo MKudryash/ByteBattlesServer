@@ -53,21 +53,42 @@ public class UserStatsEventHandler : BackgroundService
 
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-
+        UpdateUserStatsCommand command;
         try
         {
-            var command = new UpdateUserStatsCommand(
-                arg.UserId,
-                arg.IsSuccessful,
-                arg.Difficulty,
-                arg.ExecutionTime,
-                arg.TaskId,
-                arg.ProblemTitle,
-                arg.Language,
-                arg.ActivityType,
-                arg.BattleId,
-                arg.BattleOponent
+            if (arg.IsSuccessful)
+            {
+                 command = new UpdateUserStatsCommand(
+                    UserId: arg.UserId,
+                    isSuccessful: true,
+                    difficulty: arg.Difficulty,
+                    executionTime: arg.ExecutionTime,
+                    taskId: arg.TaskId,
+                    problemTitle: arg.ProblemTitle,
+                    language: arg.Language,
+                    activityType: ActivityType.ProblemSolved, // Явно указываем тип активности
+                    battleId: arg.BattleId,
+                    battleOpponent: arg.BattleOponent,
+                    totalSubmission: 1 // Учитываем одну успешную попытку
                 );
+            }
+            else
+            {
+                 command = new UpdateUserStatsCommand(
+                    UserId: arg.UserId,
+                    isSuccessful: false,
+                    difficulty: null,
+                    executionTime: null,
+                    taskId: arg.TaskId,
+                    problemTitle: null,
+                    language: null,
+                    activityType: null,
+                    battleId: null,
+                    battleOpponent: null,
+                    totalSubmission: 1 
+                );
+            }
+
 
             var result = await mediator.Send(command);
 

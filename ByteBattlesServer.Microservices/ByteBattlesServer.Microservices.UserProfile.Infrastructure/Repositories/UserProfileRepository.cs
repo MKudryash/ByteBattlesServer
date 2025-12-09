@@ -38,7 +38,7 @@ public class UserProfileRepository : IUserProfileRepository
             .FirstOrDefaultAsync(up => up.Id == id);
     }
 
-    public async Task<Domain.Entities.UserProfile> GetByUserIdAsync(Guid userId)
+    public async Task<Domain.Entities.UserProfile> GetByUserIdAsync(Guid? userId)
     {
         return await _context.UserProfiles
             .Include(up => up.Achievements)

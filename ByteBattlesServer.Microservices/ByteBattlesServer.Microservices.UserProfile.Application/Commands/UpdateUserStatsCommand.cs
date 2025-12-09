@@ -8,14 +8,15 @@ using MediatR;
 namespace ByteBattlesServer.Microservices.UserProfile.Application.Commands;
 
 public record UpdateUserStatsCommand(
-    Guid UserId,
-    bool isSuccessful,
-    TaskDifficulty difficulty,
-    TimeSpan executionTime,
-    Guid taskId,
-    string problemTitle,
-    string language,
-    ActivityType activityType,
+    Guid UserId ,
+    bool? isSuccessful,
+    TaskDifficulty? difficulty,
+    TimeSpan? executionTime,
+    Guid? taskId,
+    string? problemTitle,
+    string? language,
+    ActivityType? activityType,
     Guid? battleId,
-    string battleOpponent
+    string? battleOpponent,
+    int? totalSubmission
 ) : IRequest<UserProfileDto>;

@@ -148,10 +148,15 @@ public class UserProfile : Entity
         UpdateTimestamps();
     }
 
+    public void AddTotalSubmissions()
+    {
+        Stats.IncrementProblemsSolved(0);
+    }
 
 
 
-  
+
+
 
     public void UpdateLevel()
     {

@@ -11,86 +11,161 @@ using Microsoft.Extensions.Logging;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Application.Handlers;
 
-public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsCommand, UserProfileDto>
+public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsCommand, UserProfileDto>
 {
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdateUserSettingsCommandHandler> _logger;
+    private readonly ILogger<UpdateUserStatsCommandHandler> _logger;
 
     public UpdateUserStatsCommandHandler(
-        IUserProfileRepository userProfileRepository, 
+        IUserProfileRepository userProfileRepository,
         IUnitOfWork unitOfWork,
-        ILogger<UpdateUserSettingsCommandHandler> logger)
+        ILogger<UpdateUserStatsCommandHandler> logger)
     {
         _userProfileRepository = userProfileRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
-    
+
     public async Task<UserProfileDto> Handle(UpdateUserStatsCommand request, CancellationToken cancellationToken)
     {
-        var userProfile = await _userProfileRepository.GetByUserIdAsync(request.UserId);
-        
-        if (userProfile == null)
+        _logger.LogInformation("Updating user stats for UserId: {UserId}", request.UserId);
+
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(request.UserId)
+            ?? throw new UserProfileNotFoundException(request.UserId);
+
+        var expGained = CalculateExperience(request.difficulty);
+
+        // Обработка решения задачи
+        if (request.activityType == ActivityType.ProblemSolved && request.isSuccessful == true)
         {
-            throw new UserProfileNotFoundException(request.UserId);
+            await HandleProblemSolution(userProfile, request, expGained, cancellationToken);
         }
-        var expGained = request.difficulty switch
+        else
+        {
+            userProfile.AddTotalSubmissions( );
+            _userProfileRepository.Update(userProfile);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        // Обработка битвы
+        if (request.activityType == ActivityType.Battle && request.battleId.HasValue)
+        {
+            await HandleBattleResult(userProfile, request, expGained, cancellationToken);
+        }
+
+        // Обновление уровня пользователя
+        userProfile.UpdateLevel();
+        _userProfileRepository.Update(userProfile);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("User stats updated successfully for UserId: {UserId}", request.UserId);
+
+        return MapToDto(userProfile);
+    }
+
+    private async Task HandleProblemSolution(
+        Domain.Entities.UserProfile userProfile,
+        UpdateUserStatsCommand request,
+        int expGained,
+        CancellationToken cancellationToken)
+    {
+        
+        if (request.taskId.HasValue && !userProfile.Stats.HasSolvedTask(request.taskId.Value))
+        {
+            userProfile.UpdateProblemStats(
+                request.isSuccessful ?? false,
+                request.difficulty?? TaskDifficulty.Easy,
+                request.executionTime?? TimeSpan.Zero,
+                request.taskId.Value);
+
+            _userProfileRepository.Update(userProfile);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        // Добавляем активность только если это успешное решение
+        if (request.isSuccessful == true)
+        {
+            var activityDescription = $"Сложность: {request.difficulty}, Язык: {request.language}";
+            var activity = new RecentActivity(
+                userProfile.Id,
+                request.activityType?? ActivityType.ProblemSolved,
+                $"Решена задача: {request.problemTitle ?? "Неизвестная задача"}",
+                activityDescription,
+                expGained);
+
+            await _userProfileRepository.AddRecentActivityAsync(activity);
+
+            // Добавляем в недавние задачи
+            if (request.taskId.HasValue)
+            {
+                var recentProblem = new RecentProblem(
+                    userProfile.Id,
+                    request.taskId.Value,
+                    request.problemTitle ?? "Неизвестная задача",
+                    request.difficulty?? TaskDifficulty.Easy,
+                    request.language);
+
+                await _userProfileRepository.AddRecentProblemAsync(recentProblem);
+            }
+        }
+
+        userProfile.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private async Task HandleBattleResult(
+        Domain.Entities.UserProfile userProfile,
+        UpdateUserStatsCommand request,
+        int expGained,
+        CancellationToken cancellationToken)
+    {
+        if (!request.battleId.HasValue) return;
+
+        var result = (request.isSuccessful == true) ? BattleResultType.Win : BattleResultType.Loss;
+        var battleExp = (request.isSuccessful == true) ? expGained * 5 : 0;
+
+        var battle = new BattleResult(
+            userProfile.Id,
+            request.battleId.Value,
+            request.battleOpponent ?? "Неизвестный соперник",
+            result,
+            battleExp,
+            request.taskId ?? Guid.Empty,
+            request.executionTime?? TimeSpan.Zero );
+
+        await _userProfileRepository.AddBattleResultAsync(battle);
+
+        // Добавляем активность
+        var activityDescription = $"Результат: {result}, Опыт: {battleExp}";
+        var activity = new RecentActivity(
+            userProfile.Id,
+            request.activityType?? ActivityType.Battle,
+            $"Завершена битва",
+            activityDescription,
+            battleExp);
+
+        await _userProfileRepository.AddRecentActivityAsync(activity);
+
+        // Обновляем статистику
+        userProfile.Stats.UpdateStats(battle);
+
+        userProfile.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private int CalculateExperience(TaskDifficulty? difficulty)
+    {
+        return difficulty switch
         {
             TaskDifficulty.Easy => 100,
             TaskDifficulty.Medium => 250,
             TaskDifficulty.Hard => 500,
             _ => 0
         };
-        if (request.activityType == ActivityType.ProblemSolved)
-        {
-            if (!userProfile.Stats.HasSolvedTask(request.taskId))
-            {
-                userProfile.UpdateProblemStats(request.isSuccessful, request.difficulty,
-                    request.executionTime, request.taskId);
-                _userProfileRepository.Update(userProfile);
+    }
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
-
-            var activity = new RecentActivity(userProfile.Id, request.activityType,$"Решена задача: {request.problemTitle}",
-                $"Сложность: {request.difficulty}, Язык: {request.language}",expGained);
-            await _userProfileRepository.AddRecentActivityAsync(activity);
-            
-            var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);
-            userProfile.UpdatedAt = DateTime.UtcNow;
-            await _userProfileRepository.AddRecentProblemAsync(recentProblem);
-            
-        }
-
-        if (request is { activityType: ActivityType.Battle, battleId: not null })
-        {
-
-            var result =request.isSuccessful? BattleResultType.Win : BattleResultType.Loss;
-            var battle = new BattleResult(userProfile.Id, request.battleId.Value,request.battleOpponent,result,
-               (request.isSuccessful? expGained*5:0), request.taskId,request.executionTime);
-            
-            await _userProfileRepository.AddBattleResultAsync(battle);
-            
-            var activityDescription = $"Результат: {request.isSuccessful}, Опыт: {expGained}";
-
-            var activity = new RecentActivity(userProfile.Id, request.activityType,$"Завершена битва",
-                activityDescription,expGained);
-            await _userProfileRepository.AddRecentActivityAsync(activity);
-            
-            var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);
-            userProfile.UpdatedAt = DateTime.UtcNow;
-            await _userProfileRepository.AddRecentProblemAsync(recentProblem);
-            
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            
-            userProfile.Stats.UpdateStats(battle);
-        }
-
-        userProfile.UpdateLevel();
-        _userProfileRepository.Update(userProfile);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-         return new UserProfileDto
+    private UserProfileDto MapToDto(Domain.Entities.UserProfile userProfile)
+    {
+        return new UserProfileDto
         {
             Id = userProfile.Id,
             UserId = userProfile.UserId,
@@ -109,7 +184,7 @@ public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsComman
                 BattleInvitations = userProfile.Settings.BattleInvitations,
                 EmailNotifications = userProfile.Settings.EmailNotifications,
                 PreferredLanguage = userProfile.Settings.PreferredLanguage,
-            }
+            },
         };
     }
 }

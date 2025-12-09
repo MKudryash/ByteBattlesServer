@@ -12,7 +12,7 @@ public interface IUserProfileRepository
     // Базовые методы
     Task<Entities.UserProfile> GetByIdAsync(Guid id);
     Task<Entities.UserProfile> GetByIdTeacherAsync(Guid id);
-    Task<Entities.UserProfile> GetByUserIdAsync(Guid userId);
+    Task<Entities.UserProfile> GetByUserIdAsync(Guid? userId);
     Task<Entities.UserProfile> GetByUserIdTeacherAsync(Guid userId);
     Task<List<Entities.UserProfile>> GetLeaderboardAsync(int topCount);
     Task<List<Entities.UserProfile>> SearchAsync(string searchTerm, int page, int pageSize);

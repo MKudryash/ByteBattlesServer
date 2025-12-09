@@ -188,10 +188,10 @@ public class UserStats : ValueObject
 
     public void IncrementProblemsSolved(int experience)
     {
-        TotalProblemsSolved++;
+        TotalSubmissions++;
         TotalExperience += experience;
     }
-
+    
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return TotalProblemsSolved;
