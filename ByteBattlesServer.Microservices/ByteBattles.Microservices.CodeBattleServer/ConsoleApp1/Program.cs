@@ -32,6 +32,7 @@ class Program
         // Добавляем токен в query string
         var uri = new Uri($"ws://api.m.hobbit1021.ru/api/battle");
         
+        
         // Или добавляем в заголовки (зависит от сервера)
         _webSocket.Options.SetRequestHeader("Authorization", $"Bearer {_jwtToken}");
         

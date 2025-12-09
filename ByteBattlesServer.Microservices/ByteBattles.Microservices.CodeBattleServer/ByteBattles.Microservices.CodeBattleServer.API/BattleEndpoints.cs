@@ -1068,32 +1068,44 @@ private static async Task SetPlayerReady(
     {
         try
         {
+            // Получаем задачу для комнаты
+            if (!_roomTasks.TryGetValue(roomId, out var taskInfo))
+            {
+                Console.WriteLine($"❌ No task found for room {roomId}");
+                return;
+            }
+
+            Console.WriteLine($"✅ Starting game in room {roomId} with task: {taskInfo.Title} (ID: {taskInfo.Id})");
+
             await BroadcastToRoom(Guid.Empty, roomId, new
             {
                 type = "game_started",
                 roomId = roomId,
                 message = "Игра началась! У вас есть 30 минут на решение задачи.",
                 startTime = DateTime.UtcNow,
-                duration = 1800 // 30 минут в секундах
+                duration = 1800, // 30 минут в секундах
+                taskId = taskInfo.Id.ToString(), // ВАЖНО: Добавляем taskId
+                taskTitle = taskInfo.Title,      // ВАЖНО: Добавляем taskTitle
+                problemId = taskInfo.Id.ToString(), // Для совместимости
             }, mediator);
 
-            
+            // Очищаем готовых игроков
             if (_readyPlayers.TryGetValue(roomId, out var readyPlayers))
             {
                 readyPlayers.Clear();
             }
 
-            
+            // Удаляем таймер
             if (_roomTimers.TryRemove(roomId, out var timer))
             {
                 timer?.Dispose();
             }
 
-            Console.WriteLine($"Game started in room {roomId}");
+            Console.WriteLine($"✅ Game started in room {roomId}. Task: {taskInfo.Title}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error starting game in room {roomId}: {ex.Message}");
+            Console.WriteLine($"❌ Error starting game in room {roomId}: {ex.Message}");
         }
     }
 
