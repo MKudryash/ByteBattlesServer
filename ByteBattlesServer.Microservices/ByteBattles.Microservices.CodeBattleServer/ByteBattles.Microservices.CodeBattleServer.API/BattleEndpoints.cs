@@ -1169,14 +1169,14 @@ private static async Task SetPlayerReady(
 
 private static Guid GetUserIdFromContext(HttpContext context)
 {
-    /*// Проверяем аутентификацию
+    // Проверяем аутентификацию
     if (!context.User.Identity?.IsAuthenticated ?? true)
     {
         // Для тестирования - генерируем test ID
         Console.WriteLine("⚠️ User not authenticated. Using test user ID.");
         var testUserId = Guid.NewGuid();
         return testUserId;
-    }*/
+    }
 
     // Получаем userId из claims
     var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
