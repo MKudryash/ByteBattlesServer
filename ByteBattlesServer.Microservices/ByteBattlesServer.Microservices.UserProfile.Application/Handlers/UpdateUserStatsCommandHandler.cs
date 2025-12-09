@@ -75,7 +75,7 @@ public class UpdateUserStatsCommandHandler:IRequestHandler<UpdateUserStatsComman
             var activityDescription = $"Результат: {request.isSuccessful}, Опыт: {expGained}";
 
             var activity = new RecentActivity(userProfile.Id, request.activityType,$"Завершена битва",
-                activityDescription);
+                activityDescription,expGained);
             await _userProfileRepository.AddRecentActivityAsync(activity);
             
             var recentProblem = new RecentProblem(userProfile.Id, request.taskId,request.problemTitle,request.difficulty,request.language);

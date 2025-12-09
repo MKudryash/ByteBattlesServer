@@ -149,6 +149,8 @@ public class UserProfileRepository : IUserProfileRepository
 
     public async Task<List<Domain.Entities.RecentProblem>> GetRecentProblemsAsync(Guid userProfileId, int count = 20)
     {
+        Console.Write("userProfileId ");
+        Console.WriteLine(userProfileId);
         return await _context.RecentProblems
             .Where(rp => rp.UserProfileId == userProfileId)
             .OrderByDescending(rp => rp.SolvedAt)

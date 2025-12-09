@@ -19,7 +19,7 @@ public class GetRecentProblemsQueryHandler:IRequestHandler<GetRecentProblemsQuer
         var user = await _userProfileRepository.GetByUserIdAsync(request.UserId);
         if(user == null)
             throw new UserProfileNotFoundException(request.UserId);
-        var recentProblems = await _userProfileRepository.GetRecentProblemsAsync(request.UserId);
+        var recentProblems = await _userProfileRepository.GetRecentProblemsAsync(user.Id);
        
         return  recentProblems.Select(x => new RecentProblemDto()
         {

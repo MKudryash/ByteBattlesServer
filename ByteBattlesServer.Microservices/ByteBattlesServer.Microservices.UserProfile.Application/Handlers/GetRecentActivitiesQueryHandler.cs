@@ -21,7 +21,7 @@ public class GetRecentActivitiesQueryHandler:IRequestHandler<GetRecentActivities
        if(user == null)
            throw new UserProfileNotFoundException(request.UserId);
        
-       var recentActivities = await _userProfileRepository.GetRecentActivitiesAsync(request.UserId);
+       var recentActivities = await _userProfileRepository.GetRecentActivitiesAsync(user.Id);
        return recentActivities.Select(x=>new RecentActivityDto()
        {
            Title = x.Title,

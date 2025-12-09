@@ -10,28 +10,117 @@ public class UserStats : ValueObject
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid UserProfileId { get; private set; } // Явный FK
     public UserProfile UserProfile { get; private set; }
+        /// <summary>
+    /// Общее количество решенных задач пользователем
+    /// </summary>
     public int TotalProblemsSolved { get; private set; }
+    
+    /// <summary>
+    /// Общее количество проведенных баттлов (соревновательных матчей)
+    /// </summary>
     public int TotalBattles { get; private set; }
+    
+    /// <summary>
+    /// Количество побед в баттлах
+    /// </summary>
     public int Wins { get; private set; }
+    
+    /// <summary>
+    /// Количество поражений в баттлах
+    /// </summary>
     public int Losses { get; private set; }
+    
+    /// <summary>
+    /// Количество ничьих в баттлах
+    /// </summary>
     public int Draws { get; private set; }
+    
+    /// <summary>
+    /// Текущая серия побед подряд
+    /// </summary>
     public int CurrentStreak { get; private set; }
+    
+    /// <summary>
+    /// Максимальная достигнутая серия побед подряд
+    /// </summary>
     public int MaxStreak { get; private set; }
+    
+    /// <summary>
+    /// Общее количество опыта пользователя
+    /// </summary>
     public int TotalExperience { get; private set; }
     
-    // Новая статистика по задачам
+    // Статистика по сложности решенных задач
+    
+    /// <summary>
+    /// Количество решенных задач легкой сложности
+    /// </summary>
     public int EasyProblemsSolved { get; private set; }
+    
+    /// <summary>
+    /// Количество решенных задач средней сложности
+    /// </summary>
     public int MediumProblemsSolved { get; private set; }
+    
+    /// <summary>
+    /// Количество решенных задач высокой сложности
+    /// </summary>
     public int HardProblemsSolved { get; private set; }
+    
+    /// <summary>
+    /// Общее количество отправленных решений (попыток)
+    /// </summary>
     public int TotalSubmissions { get; private set; }
+    
+    /// <summary>
+    /// Количество успешных отправок решений
+    /// </summary>
     public int SuccessfulSubmissions { get; private set; }
+    
+    /// <summary>
+    /// Общее время выполнения всех решений
+    /// </summary>
     public TimeSpan TotalExecutionTime { get; private set; }
+    
+    /// <summary>
+    /// Множество идентификаторов решенных задач (для отслеживания уникальных решений)
+    /// </summary>
     public HashSet<Guid> SolvedTaskIds { get; set; } = new();
     
+    /// <summary>
+    /// Процент побед в баттлах
+    /// Вычисляется как: (Количество побед / Общее количество баттлов) * 100%
+    /// Возвращает 0 если пользователь не участвовал в баттлах
+    /// </summary>
+    /// <example>
+    /// Если Wins = 15, TotalBattles = 20, то WinRate = 75.0
+    /// </example>
     public double WinRate => TotalBattles > 0 ? (double)Wins / TotalBattles * 100 : 0;
+    
+    /// <summary>
+    /// Процент успешных отправок решений
+    /// Вычисляется как: (Успешные отправки / Все отправки) * 100%
+    /// Показывает эффективность пользователя в решении задач
+    /// Возвращает 0 если не было отправок
+    /// </summary>
+    /// <example>
+    /// Если SuccessfulSubmissions = 45, TotalSubmissions = 60, то SuccessRate = 75.0
+    /// </example>
     public double SuccessRate => TotalSubmissions > 0 ? (double)SuccessfulSubmissions / TotalSubmissions * 100 : 0;
-    public TimeSpan AverageExecutionTime => SuccessfulSubmissions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / SuccessfulSubmissions) : TimeSpan.Zero;
-
+    
+    /// <summary>
+    /// Среднее время выполнения успешных решений
+    /// Вычисляется как: Общее время выполнения / Количество успешных отправок
+    /// Показывает среднюю скорость написания рабочего кода
+    /// Возвращает TimeSpan.Zero если не было успешных отправок
+    /// </summary>
+    /// <example>
+    /// Если TotalExecutionTime = 5 минут, SuccessfulSubmissions = 10, 
+    /// то AverageExecutionTime = 30 секунд на решение
+    /// </example>
+    public TimeSpan AverageExecutionTime => SuccessfulSubmissions > 0 
+        ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / SuccessfulSubmissions) 
+        : TimeSpan.Zero;
     public UserStats() { }
 
     public void UpdateStats(BattleResult battleResult)

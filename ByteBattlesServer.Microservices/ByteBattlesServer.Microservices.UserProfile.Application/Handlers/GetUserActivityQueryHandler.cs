@@ -19,9 +19,12 @@ public class GetUserActivityQueryHandler:IRequestHandler<GetUserActivityQuery,Us
         var user = await _userProfileRepository.GetByUserIdAsync(request.UserId);
         if(user == null)
             throw new UserProfileNotFoundException(request.UserId);
+        Console.WriteLine($"userProfileId : {user.Id}");
+        Console.WriteLine($"userId : {request.UserId}");
         
-        var recentProblems = await _userProfileRepository.GetRecentProblemsAsync(request.UserId);
-        var recentActivities = await _userProfileRepository.GetRecentActivitiesAsync(request.UserId);
+        
+        var recentProblems = await _userProfileRepository.GetRecentProblemsAsync(user.Id);
+        var recentActivities = await _userProfileRepository.GetRecentActivitiesAsync(user.Id);
 
         return new UserActivityResponse()
         {
