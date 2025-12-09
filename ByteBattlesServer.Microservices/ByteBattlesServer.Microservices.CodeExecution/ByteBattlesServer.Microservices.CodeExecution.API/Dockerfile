@@ -1,12 +1,26 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS compile
+﻿
+# Используем SDK образ с установленными компиляторами
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS base
 USER root
-# Устанавливаем Python, C, Java, C#
-RUN apk add --no-cache gcc musl-dev python3 py3-pip openjdk11-jdk
-ENV PATH=/root/.dotnet/tools:$PATH
-RUN dotnet tool update -g dotnet-execute && echo 'export "PATH=$PATH:/root/.dotnet/tools"' >> /etc/profile
+
+# Устанавливаем все необходимые компиляторы и инструменты
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    python3 \
+    py3-pip \
+    openjdk11-jdk \
+    bash
+
+# Устанавливаем dotnet-execute (или dotnet-script) ГЛОБАЛЬНО
+RUN dotnet tool install --global dotnet-execute
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
+# Создаем симлинк для dotnet-exec (на всякий случай)
+RUN ln -s /usr/bin/dotnet /usr/local/bin/dotnet-exec 2>/dev/null || true
 
 # Этот этап используется при запуске из VS в быстром режиме (по умолчанию для конфигурации отладки)
-FROM  compile AS base
+
 USER app
 WORKDIR /app
 EXPOSE 8080
@@ -38,4 +52,8 @@ RUN dotnet publish "./ByteBattlesServer.Microservices.CodeExecution.API.csproj" 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN dotnet --info && \
+    which dotnet-execute || echo "dotnet-execute not found" && \
+    which dotnet || echo "dotnet not found"
+
 ENTRYPOINT ["dotnet", "ByteBattlesServer.Microservices.CodeExecution.API.dll"]
