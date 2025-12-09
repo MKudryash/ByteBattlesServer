@@ -68,6 +68,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
             Stats = new UserStatsDto
             {
                 SuccessRate = userProfile.Stats.SuccessRate,
+                TotalExperience = userProfile.Stats.TotalExperience,
                 TotalExecutionTime = userProfile.Stats.TotalExecutionTime,
                 SolvedTaskIds = userProfile.Stats.SolvedTaskIds,
                 TotalSubmissions = userProfile.Stats.TotalSubmissions,
