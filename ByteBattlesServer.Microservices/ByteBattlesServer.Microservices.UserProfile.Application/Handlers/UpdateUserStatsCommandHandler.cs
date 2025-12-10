@@ -271,6 +271,9 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
     }
     
 
+    
+    
+    
     private async Task HandleProblemSolution(
         Domain.Entities.UserProfile userProfile,
         UpdateUserStatsCommand request,
