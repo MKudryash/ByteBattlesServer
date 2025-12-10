@@ -30,6 +30,7 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
     public async Task<UserProfileDto> Handle(UpdateUserStatsCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Updating user stats for UserId: {UserId}", request.UserId);
+        _logger.LogInformation("Updating type: {activityType}",request.activityType);
 
         var userProfile = await _userProfileRepository.GetByUserIdAsync(request.UserId)
             ?? throw new UserProfileNotFoundException(request.UserId);
@@ -47,10 +48,16 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
             _userProfileRepository.Update(userProfile);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
-
+        _logger.LogInformation("Received activity type: {ActivityType}, IsSuccessful: {IsSuccessful}", 
+            request.activityType, request.isSuccessful);
+        Console.WriteLine("ЗАШЕЛ В РЕДАКТИРОВАНИЕ");
+        Console.WriteLine(request.activityType);
+        Console.WriteLine(request.battleId.HasValue);
+        Console.WriteLine(request.battleId);
         // Обработка битвы
-        if (request.activityType == ActivityType.Battle && request.battleId.HasValue)
+        if (request.activityType == ActivityType.Battle)
         {
+            Console.WriteLine("ЗАШЕЛ В БИТВУ");
             await HandleBattleResult(userProfile, request, expGained, cancellationToken);
         }
 
@@ -124,6 +131,7 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
         var result = (request.isSuccessful == true) ? BattleResultType.Win : BattleResultType.Loss;
         var battleExp = (request.isSuccessful == true) ? expGained * 5 : 0;
 
+        Console.WriteLine($"Battle exp: {battleExp}");
         var battle = new BattleResult(
             userProfile.Id,
             request.battleId.Value,

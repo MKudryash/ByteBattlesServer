@@ -56,17 +56,17 @@ public class UserStatsEventHandler : BackgroundService
         UpdateUserStatsCommand command;
         try
         {
-            if (arg.IsSuccessful)
+            if (arg.IsSuccessful||arg.ActivityType==ActivityType.Battle)
             {
                  command = new UpdateUserStatsCommand(
                     UserId: arg.UserId,
-                    isSuccessful: true,
+                    isSuccessful: arg.IsSuccessful,
                     difficulty: arg.Difficulty,
                     executionTime: arg.ExecutionTime,
                     taskId: arg.TaskId,
                     problemTitle: arg.ProblemTitle,
                     language: arg.Language,
-                    activityType: ActivityType.ProblemSolved, // Явно указываем тип активности
+                    activityType: arg.ActivityType, // Явно указываем тип активности
                     battleId: arg.BattleId,
                     battleOpponent: arg.BattleOponent,
                     totalSubmission: 1 // Учитываем одну успешную попытку

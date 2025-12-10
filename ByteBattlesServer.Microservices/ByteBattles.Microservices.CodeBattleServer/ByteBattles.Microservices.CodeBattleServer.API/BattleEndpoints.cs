@@ -1084,7 +1084,7 @@ private static async Task SetPlayerReady(
                 message = "Игра началась! У вас есть 30 минут на решение задачи.",
                 startTime = DateTime.UtcNow,
                 duration = 1800, // 30 минут в секундах
-                taskId = taskInfo.Id.ToString(), 
+                taskId = taskInfo.Id.ToString(), // ВАЖНО: Добавляем taskId
                 taskTitle = taskInfo.Title,      
                 problemId = taskInfo.Id.ToString(), // Для совместимости
             }, mediator);
