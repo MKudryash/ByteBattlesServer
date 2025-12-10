@@ -43,7 +43,15 @@ public interface IUserProfileRepository
 
 
     Task AddBattleResultAsync(BattleResult battleResult);
- 
+    
+    
+    Task<List<UserAchievement>> GetUserAchievementsAsync(Guid userProfileId);
+    Task<UserAchievement?> GetUserAchievementAsync(Guid userProfileId, Guid achievementId);
+    Task AddUserAchievementAsync(UserAchievement userAchievement);
+    Task UpdateUserAchievementProgressAsync(Guid userProfileId, Guid achievementId, int progress);
+    Task<bool> HasAchievementAsync(Guid userProfileId, Guid achievementId);
+    Task<Dictionary<AchievementCategory, int>> GetAchievementStatsAsync(Guid userProfileId);
 
     
 }
+    

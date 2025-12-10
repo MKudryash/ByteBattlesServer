@@ -16,60 +16,260 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateUserStatsCommandHandler> _logger;
+    private readonly IAchievementRepository _achievementRepository;
 
     public UpdateUserStatsCommandHandler(
         IUserProfileRepository userProfileRepository,
         IUnitOfWork unitOfWork,
-        ILogger<UpdateUserStatsCommandHandler> logger)
+        ILogger<UpdateUserStatsCommandHandler> logger,
+        IAchievementRepository achievementRepository)
     {
         _userProfileRepository = userProfileRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _achievementRepository = achievementRepository;
     }
 
     public async Task<UserProfileDto> Handle(UpdateUserStatsCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Updating user stats for UserId: {UserId}", request.UserId);
-        _logger.LogInformation("Updating type: {activityType}",request.activityType);
+        _logger.LogInformation("Updating type: {activityType}", request.activityType);
 
         var userProfile = await _userProfileRepository.GetByUserIdAsync(request.UserId)
             ?? throw new UserProfileNotFoundException(request.UserId);
 
         var expGained = CalculateExperience(request.difficulty);
+        var achievementsUnlocked = new List<Achievement>();
 
         // Обработка решения задачи
         if (request.activityType == ActivityType.ProblemSolved && request.isSuccessful == true)
         {
             await HandleProblemSolution(userProfile, request, expGained, cancellationToken);
+            
+            // Проверяем достижения для решения задач
+            var problemAchievements = await CheckAndAwardProblemAchievements(userProfile, request);
+            achievementsUnlocked.AddRange(problemAchievements);
         }
-        else
+        else if (request.isSuccessful == false)
         {
-            userProfile.AddTotalSubmissions( );
-            _userProfileRepository.Update(userProfile);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            userProfile.AddTotalSubmissions();
         }
-        _logger.LogInformation("Received activity type: {ActivityType}, IsSuccessful: {IsSuccessful}", 
-            request.activityType, request.isSuccessful);
-        Console.WriteLine("ЗАШЕЛ В РЕДАКТИРОВАНИЕ");
-        Console.WriteLine(request.activityType);
-        Console.WriteLine(request.battleId.HasValue);
-        Console.WriteLine(request.battleId);
+
         // Обработка битвы
         if (request.activityType == ActivityType.Battle)
         {
-            Console.WriteLine("ЗАШЕЛ В БИТВУ");
             await HandleBattleResult(userProfile, request, expGained, cancellationToken);
+            
+            // Проверяем достижения для битв
+            var battleAchievements = await CheckAndAwardBattleAchievements(userProfile, request);
+            achievementsUnlocked.AddRange(battleAchievements);
         }
 
         // Обновление уровня пользователя
         userProfile.UpdateLevel();
+        
+        // Проверяем общие достижения
+        var generalAchievements = await CheckAndAwardGeneralAchievements(userProfile);
+        achievementsUnlocked.AddRange(generalAchievements);
+        
         _userProfileRepository.Update(userProfile);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("User stats updated successfully for UserId: {UserId}", request.UserId);
+      
+
+        _logger.LogInformation("User stats updated successfully for UserId: {UserId}. Unlocked achievements: {Count}", 
+            request.UserId, achievementsUnlocked.Count);
 
         return MapToDto(userProfile);
     }
+
+    private async Task<List<Achievement>> CheckAndAwardProblemAchievements(
+        Domain.Entities.UserProfile userProfile,
+        UpdateUserStatsCommand request)
+    {
+        var unlockedAchievements = new List<Achievement>();
+        var allAchievements = await _achievementRepository.GetAllAsync();
+
+        foreach (var achievement in allAchievements)
+        {
+            // Пропускаем если достижение уже получено
+            if (userProfile.HasAchievement(achievement.Id))
+                continue;
+
+            bool shouldUnlock = false;
+
+            switch (achievement.Type)
+            {
+                case AchievementType.TotalProblemsSolved:
+                    shouldUnlock = userProfile.Stats.TotalProblemsSolved >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.EasyProblemsSolved:
+                    if (request.difficulty == TaskDifficulty.Easy)
+                        shouldUnlock = userProfile.Stats.EasyProblemsSolved >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.MediumProblemsSolved:
+                    if (request.difficulty == TaskDifficulty.Medium)
+                        shouldUnlock = userProfile.Stats.MediumProblemsSolved >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.HardProblemsSolved:
+                    if (request.difficulty == TaskDifficulty.Hard)
+                        shouldUnlock = userProfile.Stats.HardProblemsSolved >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.SuccessRate:
+                    shouldUnlock = userProfile.Stats.SuccessRate >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.AverageExecutionTime:
+                    if (request.executionTime.HasValue)
+                    {
+                        var avgTime = userProfile.Stats.AverageExecutionTime.TotalSeconds;
+                        shouldUnlock = avgTime <= achievement.RequiredValue;
+                    }
+                    break;
+                    
+                case AchievementType.FastestSubmission:
+                    if (request.executionTime.HasValue && request.executionTime.Value.TotalSeconds <= achievement.RequiredValue)
+                    {
+                        shouldUnlock = true;
+                    }
+                    break;
+                
+            }
+
+            if (shouldUnlock)
+            {
+                await AwardAchievementToUser(userProfile, achievement);
+                unlockedAchievements.Add(achievement);
+            }
+        }
+
+        return unlockedAchievements;
+    }
+
+    private async Task<List<Achievement>> CheckAndAwardBattleAchievements(
+        Domain.Entities.UserProfile userProfile,
+        UpdateUserStatsCommand request)
+    {
+        var unlockedAchievements = new List<Achievement>();
+        var allAchievements = await _achievementRepository.GetAllAsync();
+
+        foreach (var achievement in allAchievements)
+        {
+            if (userProfile.HasAchievement(achievement.Id))
+                continue;
+
+            bool shouldUnlock = false;
+
+            switch (achievement.Type)
+            {
+                case AchievementType.Wins:
+                    if (request.isSuccessful == true)
+                        shouldUnlock = userProfile.Stats.Wins >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.TotalBattles:
+                    shouldUnlock = userProfile.Stats.TotalBattles >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.CurrentStreak:
+                    shouldUnlock = userProfile.Stats.CurrentStreak >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.MaxStreak:
+                    shouldUnlock = userProfile.Stats.MaxStreak >= achievement.RequiredValue;
+                    break;
+            }
+
+            if (shouldUnlock)
+            {
+                await AwardAchievementToUser(userProfile, achievement);
+                unlockedAchievements.Add(achievement);
+            }
+        }
+
+        return unlockedAchievements;
+    }
+
+    private async Task<List<Achievement>> CheckAndAwardGeneralAchievements(
+        Domain.Entities.UserProfile userProfile)
+    {
+        var unlockedAchievements = new List<Achievement>();
+        var allAchievements = await _achievementRepository.GetAllAsync();
+
+        foreach (var achievement in allAchievements)
+        {
+            if (userProfile.HasAchievement(achievement.Id))
+                continue;
+
+            bool shouldUnlock = false;
+
+            switch (achievement.Type)
+            {
+                case AchievementType.TotalExperience:
+                    shouldUnlock = userProfile.Stats.TotalExperience >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.TotalSubmissions:
+                    shouldUnlock = userProfile.Stats.TotalSubmissions >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.AccuracyRate:
+                    shouldUnlock = userProfile.Stats.SuccessRate >= achievement.RequiredValue;
+                    break;
+                    
+                case AchievementType.TimeSpentCoding:
+                    if (userProfile.Stats.TotalExecutionTime.TotalHours >= achievement.RequiredValue)
+                    {
+                        shouldUnlock = true;
+                    }
+                    break;
+            }
+
+            if (shouldUnlock)
+            {
+                await AwardAchievementToUser(userProfile, achievement);
+                unlockedAchievements.Add(achievement);
+            }
+        }
+
+        return unlockedAchievements;
+    }
+
+    private async Task AwardAchievementToUser(Domain.Entities.UserProfile userProfile, Achievement achievement)
+    {
+        // Используем userProfile.Id, а не userProfile.UserId!
+        var userAchievement = new UserAchievement(
+            userProfileId: userProfile.Id, // ← ИСПРАВЛЕНО!
+            achievementId: achievement.Id
+        );
+    
+        // Разблокируем достижение
+        userAchievement.Unlock();
+    
+        await _userProfileRepository.AddUserAchievementAsync(userAchievement);
+    
+        // Начисляем опыт за достижение
+        userProfile.Stats.AddExperience(achievement.RewardExperience);
+    
+        // Создаем запись в активности
+        var activity = new RecentActivity(
+            userProfileId: userProfile.Id, // ← Тут тоже используем userProfile.Id
+            type: ActivityType.AchievementUnlocked,
+            title: $"Получено достижение: {achievement.Name}",
+            description: achievement.Description,
+            experienceGained: achievement.RewardExperience
+        );
+    
+        await _userProfileRepository.AddRecentActivityAsync(activity);
+    
+        _logger.LogInformation("Achievement '{AchievementName}' awarded to user {UserId}", 
+            achievement.Name, userProfile.UserId);
+    }
+    
 
     private async Task HandleProblemSolution(
         Domain.Entities.UserProfile userProfile,
@@ -77,7 +277,6 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
         int expGained,
         CancellationToken cancellationToken)
     {
-        
         if (request.taskId.HasValue && !userProfile.Stats.HasSolvedTask(request.taskId.Value))
         {
             userProfile.UpdateProblemStats(
@@ -131,7 +330,6 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
         var result = (request.isSuccessful == true) ? BattleResultType.Win : BattleResultType.Loss;
         var battleExp = (request.isSuccessful == true) ? expGained * 5 : 0;
 
-        Console.WriteLine($"Battle exp: {battleExp}");
         var battle = new BattleResult(
             userProfile.Id,
             request.battleId.Value,
@@ -196,3 +394,4 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
         };
     }
 }
+  

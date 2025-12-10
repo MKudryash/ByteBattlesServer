@@ -1,5 +1,6 @@
 using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Interfaces;
 using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -69,7 +70,7 @@ public class UserProfileRepository : IUserProfileRepository
             .Include(up => up.RecentProblems.OrderByDescending(rp => rp.SolvedAt).Take(10))
             .Include(up => up.BattleHistory.OrderByDescending(bh => bh.BattleDate).Take(10))
             .Include(up => up.RecentActivities.OrderByDescending(ra => ra.Timestamp).Take(10))
-            .Include(up => up.Achievements.OrderByDescending(a => a.AchievedAt).Take(5))
+            .Include(up => up.Achievements.OrderByDescending(a => a.UnlockedAt).Take(5))
                 .ThenInclude(ua => ua.Achievement)
             .Where(up => up.UserId == userId && up.Role == UserRole.student)
             .FirstOrDefaultAsync();
@@ -214,4 +215,160 @@ public class UserProfileRepository : IUserProfileRepository
     {
         await _context.BattleResults.AddAsync(battleResult);
     }
+    public async Task<List<UserAchievement>> GetUserAchievementsAsync(Guid userProfileId)
+    {
+        return await _context.UserAchievements
+            .Include(ua => ua.Achievement)
+            .Where(ua => ua.UserProfileId == userProfileId)
+            .OrderByDescending(ua => ua.UnlockedAt)
+            .ToListAsync();
+    }
+
+    public async Task<UserAchievement?> GetUserAchievementAsync(Guid userProfileId, Guid achievementId)
+    {
+        return await _context.UserAchievements
+            .Include(ua => ua.Achievement)
+            .FirstOrDefaultAsync(ua => 
+                ua.UserProfileId == userProfileId && 
+                ua.AchievementId == achievementId);
+    }
+
+    public async Task AddUserAchievementAsync(UserAchievement userAchievement)
+    {
+        // Проверяем, нет ли уже такого достижения у пользователя
+        var existing = await _context.UserAchievements
+            .FirstOrDefaultAsync(ua => 
+                ua.UserProfileId == userAchievement.UserProfileId && 
+                ua.AchievementId == userAchievement.AchievementId);
+        
+        if (existing == null)
+        {
+            await _context.UserAchievements.AddAsync(userAchievement);
+        }
+        else
+        {
+            // Обновляем существующее достижение
+            existing.UnlockedAt = userAchievement.UnlockedAt;
+            existing.Progress = userAchievement.Progress;
+            _context.UserAchievements.Update(existing);
+        }
+    }
+
+    public async Task UpdateUserAchievementProgressAsync(Guid userProfileId, Guid achievementId, int progress)
+    {
+        var userAchievement = await _context.UserAchievements
+            .FirstOrDefaultAsync(ua => 
+                ua.UserProfileId == userProfileId && 
+                ua.AchievementId == achievementId);
+        
+        if (userAchievement != null)
+        {
+            userAchievement.Progress = progress;
+            
+            // Получаем требование для достижения
+            var achievement = await _context.Achievements
+                .FirstOrDefaultAsync(a => a.Id == achievementId);
+            
+            // Если прогресс достиг требуемого значения - разблокируем
+            if (achievement != null && progress >= achievement.RequiredValue && !userAchievement.IsUnlocked)
+            {
+                userAchievement.IsUnlocked = true;
+                userAchievement.UnlockedAt = DateTime.UtcNow;
+            }
+            
+            _context.UserAchievements.Update(userAchievement);
+        }
+    }
+
+    public async Task<bool> HasAchievementAsync(Guid userProfileId, Guid achievementId)
+    {
+        return await _context.UserAchievements
+            .AnyAsync(ua => 
+                ua.UserProfileId == userProfileId && 
+                ua.AchievementId == achievementId && 
+                ua.IsUnlocked);
+    }
+
+    public async Task<Dictionary<AchievementCategory, int>> GetAchievementStatsAsync(Guid userProfileId)
+    {
+        var achievements = await _context.UserAchievements
+            .Include(ua => ua.Achievement)
+            .Where(ua => ua.UserProfileId == userProfileId && ua.IsUnlocked)
+            .Select(ua => ua.Achievement.Category)
+            .ToListAsync();
+        
+        return achievements
+            .GroupBy(c => c)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    public async Task<List<UserAchievement>> GetRecentAchievementsAsync(Guid userProfileId, int count = 10)
+    {
+        return await _context.UserAchievements
+            .Include(ua => ua.Achievement)
+            .Where(ua => ua.UserProfileId == userProfileId && ua.IsUnlocked)
+            .OrderByDescending(ua => ua.UnlockedAt)
+            .Take(count)
+            .ToListAsync();
+    }
+
+  
+
+    public async Task<List<Achievement>> GetEligibleAchievementsAsync(Guid userProfileId)
+    {
+        // Получаем статистику пользователя
+        var userProfile = await _context.UserProfiles
+            .Include(up => up.Stats)
+            .Include(up => up.Achievements)
+            .FirstOrDefaultAsync(up => up.Id == userProfileId);
+        
+        if (userProfile == null || userProfile.Stats == null)
+            return new List<Achievement>();
+        
+        // Получаем все достижения
+        var allAchievements = await _context.Achievements.ToListAsync();
+        var userAchievements = userProfile.Achievements
+            .Where(ua => ua.IsUnlocked)
+            .Select(ua => ua.AchievementId)
+            .ToHashSet();
+        
+        var eligibleAchievements = new List<Achievement>();
+        
+        foreach (var achievement in allAchievements)
+        {
+            // Пропускаем уже полученные достижения
+            if (userAchievements.Contains(achievement.Id))
+                continue;
+            
+            // Пропускаем секретные достижения
+            if (achievement.IsSecret)
+                continue;
+            
+            // Проверяем критерии
+            var isEligible = achievement.Type switch
+            {
+                AchievementType.TotalProblemsSolved => userProfile.Stats.TotalProblemsSolved >= achievement.RequiredValue,
+                AchievementType.EasyProblemsSolved => userProfile.Stats.EasyProblemsSolved >= achievement.RequiredValue,
+                AchievementType.MediumProblemsSolved => userProfile.Stats.MediumProblemsSolved >= achievement.RequiredValue,
+                AchievementType.HardProblemsSolved => userProfile.Stats.HardProblemsSolved >= achievement.RequiredValue,
+                AchievementType.Wins => userProfile.Stats.Wins >= achievement.RequiredValue,
+                AchievementType.TotalBattles => userProfile.Stats.TotalBattles >= achievement.RequiredValue,
+                AchievementType.CurrentStreak => userProfile.Stats.CurrentStreak >= achievement.RequiredValue,
+                AchievementType.MaxStreak => userProfile.Stats.MaxStreak >= achievement.RequiredValue,
+                AchievementType.SuccessRate => userProfile.Stats.SuccessRate >= achievement.RequiredValue,
+                AchievementType.TotalExperience => userProfile.Stats.TotalExperience >= achievement.RequiredValue,
+                AchievementType.TotalSubmissions => userProfile.Stats.TotalSubmissions >= achievement.RequiredValue,
+                _ => false
+            };
+            
+            if (isEligible)
+            {
+                eligibleAchievements.Add(achievement);
+            }
+        }
+        
+        return eligibleAchievements;
+    }
+
+  
 }

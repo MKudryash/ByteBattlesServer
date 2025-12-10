@@ -68,7 +68,7 @@ public class GetUserProfileByIdQueryHandler : IRequestHandler<GetUserProfileById
                 {
                     Name = x.Achievement.Name,
                     Description = x.Achievement.Description,
-                    AchievedAt = x.AchievedAt,
+                    AchievedAt = x.UnlockedAt?? DateTime.Now,
                     IconUrl = x.Achievement.IconUrl,
                 }).ToList()
         };

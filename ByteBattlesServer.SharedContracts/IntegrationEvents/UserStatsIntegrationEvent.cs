@@ -20,5 +20,6 @@ public enum ActivityType
 {
     Battle = 0,
     ProblemSolved = 1,
-    Achievement = 2
+    Achievement = 2,
+    AchievementUnlocked
 }

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
@@ -22,7 +24,10 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     required_value = table.Column<int>(type: "integer", nullable: false),
                     reward_experience = table.Column<int>(type: "integer", nullable: false),
-                    is_secret = table.Column<bool>(type: "boolean", nullable: false)
+                    is_secret = table.Column<bool>(type: "boolean", nullable: false),
+                    category = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    rarity = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    unlock_message = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -154,19 +159,21 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_profile_id = table.Column<Guid>(type: "uuid", nullable: false),
                     achievement_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    achieved_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    unlocked_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    progress = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    is_unlocked = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_user_achievements", x => x.id);
                     table.ForeignKey(
-                        name: "FK_user_achievements_achievements_achievement_id",
+                        name: "fk_user_achievements_achievements",
                         column: x => x.achievement_id,
                         principalTable: "achievements",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_user_achievements_user_profiles_user_profile_id",
+                        name: "fk_user_achievements_user_profiles",
                         column: x => x.user_profile_id,
                         principalTable: "user_profiles",
                         principalColumn: "id",
@@ -230,13 +237,36 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "achievements",
+                columns: new[] { "id", "category", "description", "icon_url", "is_secret", "name", "rarity", "required_value", "reward_experience", "type", "unlock_message" },
+                values: new object[,]
+                {
+                    { new Guid("11111111-1111-1111-1111-111111111111"), "Problems", "Решите свою первую задачу", "/achievements/first-blood.png", false, "Первая кровь", "Common", 1, 100, "TotalProblemsSolved", "Отличный старт! Первая задача решена!" },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), "Problems", "Решите 10 задач", "/achievements/solver.png", false, "Решатель", "Common", 10, 250, "TotalProblemsSolved", null },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), "Battles", "Выиграйте первый баттл", "/achievements/first-victory.png", false, "Первая победа", "Common", 1, 200, "Wins", "Поздравляем с первой победой в баттле!" },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), "Streaks", "Выиграйте 10 баттлов подряд", "/achievements/invincible.png", false, "Непобедимый", "Epic", 10, 1500, "CurrentStreak", null },
+                    { new Guid("55555555-5555-5555-5555-555555555555"), "Problems", "Решите 100 задач", "/achievements/algorithm-master.png", false, "Мастер алгоритмов", "Rare", 100, 1000, "TotalProblemsSolved", null },
+                    { new Guid("66666666-6666-6666-6666-666666666666"), "Special", "Решите задачу за 10 секунд", "/achievements/code-ninja.png", true, "Ниндзя кода", "Legendary", 10, 2000, "FastestSubmission", "Невероятная скорость! Вы настоящий ниндзя кода!" }
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_achievements_required_value",
+                name: "ix_achievements_category",
+                table: "achievements",
+                column: "category");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_achievements_rarity",
+                table: "achievements",
+                column: "rarity");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_achievements_required_value",
                 table: "achievements",
                 column: "required_value");
 
             migrationBuilder.CreateIndex(
-                name: "IX_achievements_type",
+                name: "ix_achievements_type",
                 table: "achievements",
                 column: "type");
 
@@ -297,12 +327,28 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_user_achievements_achievement_id",
+                name: "ix_user_achievements_achievement",
                 table: "user_achievements",
                 column: "achievement_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_user_achievements_user_profile_id_achievement_id",
+                name: "ix_user_achievements_is_unlocked",
+                table: "user_achievements",
+                column: "is_unlocked");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_achievements_unlocked_at",
+                table: "user_achievements",
+                column: "unlocked_at",
+                filter: "unlocked_at IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_achievements_user_profile",
+                table: "user_achievements",
+                column: "user_profile_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_achievements_user_profile_achievement",
                 table: "user_achievements",
                 columns: new[] { "user_profile_id", "achievement_id" },
                 unique: true);

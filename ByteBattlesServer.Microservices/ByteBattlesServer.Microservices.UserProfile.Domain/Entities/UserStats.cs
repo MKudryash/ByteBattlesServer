@@ -208,4 +208,9 @@ public class UserStats : ValueObject
         yield return TotalSubmissions;
         yield return SuccessfulSubmissions;
     }
+
+    public void AddExperience(int achievementRewardExperience)
+    {
+        TotalExperience+=achievementRewardExperience;
+    }
 }

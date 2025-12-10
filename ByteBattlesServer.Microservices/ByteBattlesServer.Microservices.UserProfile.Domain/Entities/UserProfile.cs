@@ -1,5 +1,6 @@
 using ByteBattlesServer.Domain.enums;
 using ByteBattlesServer.Microservices.UserProfile.Domain.Enums;
+using ByteBattlesServer.Microservices.UserProfile.Infrastructure.Services;
 using ByteBattlesServer.SharedContracts.IntegrationEvents;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
@@ -154,7 +155,108 @@ public class UserProfile : Entity
     }
 
 
-
+ public void CheckAndAwardAchievements()
+    {
+        var unlockedAchievements = CheckForNewAchievements();
+        
+        foreach (var achievement in unlockedAchievements)
+        {
+            AwardAchievement(achievement);
+        }
+    }
+    
+    private List<Achievement> CheckForNewAchievements()
+    {
+        var unlocked = new List<Achievement>();
+        var achievementService = new AchievementService();
+        var allAchievements = achievementService.GetAvailableAchievements();
+        
+        foreach (var achievement in allAchievements)
+        {
+            if (!HasAchievement(achievement.Id) && CheckAchievementCriteria(achievement))
+            {
+                unlocked.Add(achievement);
+            }
+        }
+        
+        return unlocked;
+    }
+    
+    private bool CheckAchievementCriteria(Achievement achievement)
+    {
+        return achievement.Type switch
+        {
+            AchievementType.TotalProblemsSolved => Stats.TotalProblemsSolved >= achievement.RequiredValue,
+            AchievementType.Wins => Stats.Wins >= achievement.RequiredValue,
+            AchievementType.TotalBattles => Stats.TotalBattles >= achievement.RequiredValue,
+            AchievementType.CurrentStreak => Stats.CurrentStreak >= achievement.RequiredValue,
+            AchievementType.EasyProblemsSolved => Stats.EasyProblemsSolved >= achievement.RequiredValue,
+            AchievementType.MediumProblemsSolved => Stats.MediumProblemsSolved >= achievement.RequiredValue,
+            AchievementType.HardProblemsSolved => Stats.HardProblemsSolved >= achievement.RequiredValue,
+            AchievementType.SuccessRate => Stats.SuccessRate >= achievement.RequiredValue,
+            AchievementType.AverageExecutionTime => 
+                Stats.AverageExecutionTime.TotalSeconds <= achievement.RequiredValue,
+            AchievementType.TotalExperience => Stats.TotalExperience >= achievement.RequiredValue,
+            _ => false
+        };
+    }
+    
+    public void AwardAchievement(Achievement achievement)
+    {
+        if (HasAchievement(achievement.Id))
+            return;
+        
+        var userAchievement = new UserAchievement(Id, achievement.Id);
+        userAchievement.Unlock();
+        _achievements.Add(userAchievement);
+        
+        // Начисляем опыт за достижение
+        Stats.AddExperience(achievement.RewardExperience);
+        
+        // Создаем запись в активности
+        AddRecentActivity($"Получено достижение: {achievement.Name}", 
+            ActivityType.AchievementUnlocked);
+        
+        UpdateTimestamps();
+    }
+    
+    public bool HasAchievement(Guid achievementId)
+    {
+        return _achievements.Any(a => a.AchievementId == achievementId && a.IsUnlocked);
+    }
+    
+    public List<Achievement> GetUnlockedAchievements()
+    {
+        return _achievements
+            .Where(a => a.IsUnlocked)
+            .Select(a => a.Achievement)
+            .ToList();
+    }
+    
+    public List<Achievement> GetAchievementsByCategory(AchievementCategory category)
+    {
+        return GetUnlockedAchievements()
+            .Where(a => a.Category == category)
+            .ToList();
+    }
+    
+    // Метод для добавления активности
+    private void AddRecentActivity(string description, ActivityType type)
+    {
+        var activity = new RecentActivity(UserId,type,"Добавление достижения",description,0)
+        {
+            
+            
+        };
+        
+        _recentActivities.Insert(0, activity);
+        
+        // Ограничиваем историю последними 50 активностями
+        if (_recentActivities.Count > 50)
+        {
+            _recentActivities.RemoveAt(_recentActivities.Count - 1);
+        }
+    }
 
 
 

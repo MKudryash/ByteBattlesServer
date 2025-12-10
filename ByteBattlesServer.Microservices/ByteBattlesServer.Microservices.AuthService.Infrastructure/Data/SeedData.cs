@@ -23,7 +23,7 @@ public class SeedService : ISeedService
             var defaultRoles = new[]
             {
                 new Role ( "admin", "Администратор"),
-                new Role ( "user", "Студент"),
+                new Role ( "student", "Студент"),
                 new Role ( "teacher", "Преподаватель"),
             };
 

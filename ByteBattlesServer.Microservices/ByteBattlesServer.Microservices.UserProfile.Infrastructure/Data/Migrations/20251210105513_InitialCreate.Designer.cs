@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(UserProfileDbContext))]
-    [Migration("20251201142328_InitialCreate")]
+    [Migration("20251210105513_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -31,6 +31,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("category");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -54,6 +60,12 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<string>("Rarity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("rarity");
+
                     b.Property<int>("RequiredValue")
                         .HasColumnType("integer")
                         .HasColumnName("required_value");
@@ -68,13 +80,109 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("character varying(50)")
                         .HasColumnName("type");
 
+                    b.Property<string>("UnlockMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("unlock_message");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("RequiredValue");
+                    b.HasIndex("Category")
+                        .HasDatabaseName("ix_achievements_category");
 
-                    b.HasIndex("Type");
+                    b.HasIndex("Rarity")
+                        .HasDatabaseName("ix_achievements_rarity");
+
+                    b.HasIndex("RequiredValue")
+                        .HasDatabaseName("ix_achievements_required_value");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("ix_achievements_type");
 
                     b.ToTable("achievements", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Category = "Problems",
+                            Description = "Решите свою первую задачу",
+                            IconUrl = "/achievements/first-blood.png",
+                            IsSecret = false,
+                            Name = "Первая кровь",
+                            Rarity = "Common",
+                            RequiredValue = 1,
+                            RewardExperience = 100,
+                            Type = "TotalProblemsSolved",
+                            UnlockMessage = "Отличный старт! Первая задача решена!"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Category = "Problems",
+                            Description = "Решите 10 задач",
+                            IconUrl = "/achievements/solver.png",
+                            IsSecret = false,
+                            Name = "Решатель",
+                            Rarity = "Common",
+                            RequiredValue = 10,
+                            RewardExperience = 250,
+                            Type = "TotalProblemsSolved"
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Category = "Battles",
+                            Description = "Выиграйте первый баттл",
+                            IconUrl = "/achievements/first-victory.png",
+                            IsSecret = false,
+                            Name = "Первая победа",
+                            Rarity = "Common",
+                            RequiredValue = 1,
+                            RewardExperience = 200,
+                            Type = "Wins",
+                            UnlockMessage = "Поздравляем с первой победой в баттле!"
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                            Category = "Streaks",
+                            Description = "Выиграйте 10 баттлов подряд",
+                            IconUrl = "/achievements/invincible.png",
+                            IsSecret = false,
+                            Name = "Непобедимый",
+                            Rarity = "Epic",
+                            RequiredValue = 10,
+                            RewardExperience = 1500,
+                            Type = "CurrentStreak"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            Category = "Problems",
+                            Description = "Решите 100 задач",
+                            IconUrl = "/achievements/algorithm-master.png",
+                            IsSecret = false,
+                            Name = "Мастер алгоритмов",
+                            Rarity = "Rare",
+                            RequiredValue = 100,
+                            RewardExperience = 1000,
+                            Type = "TotalProblemsSolved"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
+                            Category = "Special",
+                            Description = "Решите задачу за 10 секунд",
+                            IconUrl = "/achievements/code-ninja.png",
+                            IsSecret = true,
+                            Name = "Ниндзя кода",
+                            Rarity = "Legendary",
+                            RequiredValue = 10,
+                            RewardExperience = 2000,
+                            Type = "FastestSubmission",
+                            UnlockMessage = "Невероятная скорость! Вы настоящий ниндзя кода!"
+                        });
                 });
 
             modelBuilder.Entity("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.BattleResult", b =>
@@ -284,13 +392,25 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("AchievedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("achieved_at");
-
                     b.Property<Guid>("AchievementId")
                         .HasColumnType("uuid")
                         .HasColumnName("achievement_id");
+
+                    b.Property<bool>("IsUnlocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_unlocked");
+
+                    b.Property<int>("Progress")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("progress");
+
+                    b.Property<DateTime?>("UnlockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("unlocked_at");
 
                     b.Property<Guid>("UserProfileId")
                         .HasColumnType("uuid")
@@ -298,10 +418,22 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AchievementId");
+                    b.HasIndex("AchievementId")
+                        .HasDatabaseName("ix_user_achievements_achievement");
+
+                    b.HasIndex("IsUnlocked")
+                        .HasDatabaseName("ix_user_achievements_is_unlocked");
+
+                    b.HasIndex("UnlockedAt")
+                        .HasDatabaseName("ix_user_achievements_unlocked_at")
+                        .HasFilter("unlocked_at IS NOT NULL");
+
+                    b.HasIndex("UserProfileId")
+                        .HasDatabaseName("ix_user_achievements_user_profile");
 
                     b.HasIndex("UserProfileId", "AchievementId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_achievements_user_profile_achievement");
 
                     b.ToTable("user_achievements", (string)null);
                 });
@@ -617,14 +749,16 @@ namespace ByteBattlesServer.Microservices.UserProfile.Infrastructure.Data.Migrat
                     b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.Achievement", "Achievement")
                         .WithMany()
                         .HasForeignKey("AchievementId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_achievements_achievements");
 
                     b.HasOne("ByteBattlesServer.Microservices.UserProfile.Domain.Entities.UserProfile", "UserProfile")
                         .WithMany("Achievements")
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_user_achievements_user_profiles");
 
                     b.Navigation("Achievement");
 
