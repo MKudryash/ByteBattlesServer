@@ -49,7 +49,7 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
             Country = userProfile.Country,
             GitHubUrl = userProfile.GitHubUrl,
             LinkedInUrl = userProfile.LinkedInUrl,
-            IsPublic = userProfile.IsPublic,
+            IsPublic = true,
         };
     }
 }
