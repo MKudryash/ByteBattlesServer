@@ -30,8 +30,8 @@ class Program
         Console.WriteLine("Подключение к серверу битв...");
         
         // Добавляем токен в query string
-        //var uri = new Uri($"ws://api.m.hobbit1021.ru/api/battle");
-        var uri = new Uri($"ws://localhost:50310/api/battle");
+        var uri = new Uri($"ws://api.m.hobbit1021.ru/api/battle");
+        //var uri = new Uri($"ws://localhost:50310/api/battle");
         
         
         // Или добавляем в заголовки (зависит от сервера)

@@ -355,6 +355,38 @@ public static class UserProfileEndpoints
         .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status403Forbidden);
         
+        
+        // Public endpoint для получения наград
+        group.MapGet("/achievements", async (IMediator mediator, HttpContext httpContext) =>
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims(httpContext);
+                var query = new GetAchievementsQuery(userId);
+                var result = await mediator.Send(query);
+                
+                return Results.Ok(result);
+            }
+            catch (UserProfileNotFoundException ex)
+            {
+                return Results.NotFound(new ErrorResponse(ex.Message, ex.ErrorCode));
+            }
+            catch (ProfileAccessDeniedException ex)
+            {
+                return Results.Forbid();
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred while retrieving user activity: {ex.Message}");
+            }
+        })
+        .WithName("GetUserAchievements")
+        .WithSummary("Get user's achievements ")
+        .AllowAnonymous()
+        .Produces<AchievementDto>(StatusCodes.Status200OK)
+        .Produces<ErrorResponse>(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status403Forbidden);
+        
     }
 
     private static UserRole GetUserRoleFromClaims(HttpContext context)

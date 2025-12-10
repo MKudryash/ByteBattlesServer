@@ -1,4 +1,5 @@
 using ByteBattlesServer.Microservices.UserProfile.Application.DTOs;
+using ByteBattlesServer.Microservices.UserProfile.Domain.Entities;
 using MediatR;
 
 namespace ByteBattlesServer.Microservices.UserProfile.Application.Queries;
