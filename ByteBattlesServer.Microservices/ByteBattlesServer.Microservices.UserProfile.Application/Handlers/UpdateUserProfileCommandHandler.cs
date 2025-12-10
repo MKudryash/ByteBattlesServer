@@ -32,7 +32,7 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
 
         userProfile.UpdateProfile(request.UserName, request.Bio,
             request.Country, request.GitHubUrl,
-            request.LinkedInUrl, request.IsPublic);
+            request.LinkedInUrl, true);
         userProfile.UpdatedAt = DateTime.UtcNow;
         
         _userProfileRepository.Update(userProfile);
@@ -49,7 +49,7 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
             Country = userProfile.Country,
             GitHubUrl = userProfile.GitHubUrl,
             LinkedInUrl = userProfile.LinkedInUrl,
-            IsPublic = true,
+            IsPublic = userProfile.IsPublic,
         };
     }
 }
