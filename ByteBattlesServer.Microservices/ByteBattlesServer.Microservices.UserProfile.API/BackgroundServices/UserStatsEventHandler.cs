@@ -50,6 +50,9 @@ public class UserStatsEventHandler : BackgroundService
     {
         _logger.LogInformation("🟣 [UserProfile] Received user stats update for user: {UserId}, successful: {IsSuccessful}", 
             arg.UserId, arg.IsSuccessful);
+        
+        _logger.LogInformation("🟣 [UserProfile] Received user stats update for user: type {type}", 
+            arg.ActivityType);
 
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -82,7 +85,7 @@ public class UserStatsEventHandler : BackgroundService
                     taskId: arg.TaskId,
                     problemTitle: null,
                     language: null,
-                    activityType: null,
+                    activityType: arg.ActivityType,
                     battleId: null,
                     battleOpponent: null,
                     totalSubmission: 1 

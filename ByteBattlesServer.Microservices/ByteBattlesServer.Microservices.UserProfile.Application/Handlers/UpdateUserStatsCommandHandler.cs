@@ -42,7 +42,7 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
         var achievementsUnlocked = new List<Achievement>();
 
         // Обработка решения задачи
-        if (request.activityType == ActivityType.ProblemSolved && request.isSuccessful == true)
+        if (request is { activityType: ActivityType.ProblemSolved, isSuccessful: true })
         {
             await HandleProblemSolution(userProfile, request, expGained, cancellationToken);
             
@@ -298,7 +298,7 @@ public class UpdateUserStatsCommandHandler : IRequestHandler<UpdateUserStatsComm
             var activityDescription = $"Сложность: {request.difficulty}, Язык: {request.language}";
             var activity = new RecentActivity(
                 userProfile.Id,
-                request.activityType?? ActivityType.ProblemSolved,
+                ActivityType.ProblemSolved,
                 $"Решена задача: {request.problemTitle ?? "Неизвестная задача"}",
                 activityDescription,
                 expGained);

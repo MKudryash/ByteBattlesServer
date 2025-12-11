@@ -157,6 +157,7 @@ public async Task<SolutionDto> Handle(SubmitSolutionCommand request, Cancellatio
                 {
                     UserId = request.UserId,
                     IsSuccessful = false,
+                    ActivityType = ActivityType.ProblemSolved
                 };
                 _messageBus.Publish(
                     userUpdateStats,
@@ -190,11 +191,14 @@ public async Task<SolutionDto> Handle(SubmitSolutionCommand request, Cancellatio
             solution.AddTestResult(testResult);
             await _solutionRepository.AddTestResultAsync(testResult);
         }
+        Console.WriteLine($"❌ [Solution] Sending failed ProblemSolved event for TaskId: {request.TaskId}, UserId: {request.UserId}");
         var userUpdateStats = new UserStatsIntegrationEvent()
         {
             UserId = request.UserId,
             IsSuccessful = false,
+            ActivityType = ActivityType.ProblemSolved
         };
+        Console.WriteLine($"📤 [Solution] Publishing failed event with ActivityType: {ActivityType.ProblemSolved}");
         _messageBus.Publish(
             userUpdateStats,
             "user_stats-events",
