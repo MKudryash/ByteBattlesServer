@@ -649,7 +649,7 @@ private static async Task JoinRoom(
                 type = "game_can_start",
                 roomId = roomId,
                 message = "Комната заполнена! Подтвердите готовность в течение 10 секунд.",
-                countdown = 10
+                countdown = 60
             }, mediator);
 
             // Запускаем таймер ожидания готовности
